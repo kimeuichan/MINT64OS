@@ -30,39 +30,39 @@ START:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;				화면을 모두 지우고, 속성값을 녹색으로 설정	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	mov si, 0
+	mov si, 0 				; si 레지스터를 초기화
 
 
 
 .SCREENCLEARLOOP:
-	mov byte[es:si], 0
-	mov byte[es:si+1], 0x0a
+	mov byte[es:si], 0 		; 비디오 메모리의 문자가 위치하는 어드레스에 0을 복사하여 문자를 삭제
+	mov byte[es:si+1], 0x0a 	; 비디오 메모리의 속성이 위치하는 어드레스에 0x0a(검은 바탕 밝은 녹색) 복사
 
-	add si,2
+	add si,2 				; 문자와 속성을 설정했으므로 다음 위치로 이동
 
-	cmp si, 80*25*2
-
-	jl .SCREENCLEARLOOP
+	cmp si, 80*25*2			; 화면의 전체 크기는 80 문자 * 25 라인
+							; 출력한 문자의 수를 의미하는 si 레지스터와 비교
+	jl .SCREENCLEARLOOP 	; si 레지스터가 80 * 25 * 2 보다 작다면 아직 지우지 못한 영역이므로 .SCREENCLEARLOOP로 이동
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;				화면 상단에 시작 메시지 출력
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-	push MESSAGE1
-	push 0
-	push 0
-	call PRINTMESSAGE
-	add sp,6
+	push MESSAGE1 			; 출력할 메시지의 어드레스를 스택에 삽입
+	push 0 					; 화면 y 좌표를 스택에 삽입
+	push 0 					; 화면 x 좌표를 스택에 삽입
+	call PRINTMESSAGE 		; PRINTMESSAGE 함수 호출
+	add sp,6 				; 삽입한 파라미터 제거
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;				OS 이미지를 로딩한다는 메시지 출력
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 	push IMAGELOADINGMESSAGE	; 출력할 메시지의 어드레스를 스택에 삽입
-	push 1
-	push 0
-	call PRINTMESSAGE
-	add sp,6
+	push 1 						; 화면 y 좌표를 스택에 삽입
+	push 0 						; 화면 x 좌표를 스택에 삽입
+	call PRINTMESSAGE 			; PRINTMESSAGE 함수 호출
+	add sp,6 					; 삽입한 파라미터 제거
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;				디스크에서 OS 이미지를 로딩
@@ -72,7 +72,7 @@ START:
 ;				디스크를 읽기 전에 먼저 리셋
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-RESETDIS:
+RESETDISK:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;				BIOS Reset Function 호출
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -172,10 +172,10 @@ HANDLEDISKERROR:
 ; PARAM : x,y 문자열
 
 PRINTMESSAGE:
-	push bp
-	mov bp,sp
+	push bp 					; bp 를 스택에 삽입
+	mov bp,sp 					; bp 에 sp 값 설정
 
-	push es
+	push es 					; es 세그먼트부터 dx 레지스터까지 스택에 삽입
 	push si
 	push di
 	push ax
@@ -185,7 +185,7 @@ PRINTMESSAGE:
 	; ES 세그먼트 레지스터에 비디오 모드 어드레스 설정
 
 	mov ax, 0xB800
-	mov es, ax
+	mov es, ax 					; es 에 비디오 메모리 시작 어드레스 설정
 
 	mov ax, word[bp+6]
 	mov si, 160
@@ -197,15 +197,15 @@ PRINTMESSAGE:
 	mul si
 	add di, ax
 
-	mov si, word[bp+8]
+	mov si, word[bp+8]			;출력할 문자열 어드레스(파라미터3)
 
 .MESSAGELOOP:
-	mov cl, byte[si+MESSAGE1]
+	mov cl, byte[si]	;si 레지스터가 가리키는 문자열 위치에서 한문자를 cl 레지스터에 복사
 
-	cmp cl, 0
-	je .MESSAGEEND
+	cmp cl, 0 					;복사된 문자열이 0 인지 아닌지 비교
+	je .MESSAGEEND 				;0이면 루프 종료
 
-	mov byte[es:di], cl
+	mov byte[es:di], cl 		;0이 아니면 문자를 채움
 
 	add si, 1
 	add di, 2
@@ -213,9 +213,28 @@ PRINTMESSAGE:
 	jmp .MESSAGELOOP
 
 .MESSAGEEND:
-	jmp $
+	pop dx 			 			; 함수에서 사용이 끝난 dx 레지스터부터 es 레지스터까지를 스택에
+	pop cx 						; 삽입된 값을 이용해서 복원
+	pop ax 						; 스택은 가장 마지막에 들어간 데이터가 가장 먼저 나오는
+	pop di 						; 자료구조(LIFO)이므로 삽입의 역순으로
+	pop si 						; 제거 해야함
+	pop es
+	pop bp
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;				데이터 영역
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 MESSAGE1: db 'MINT64 OS Boot Loader Start~!!!', 0
+DISKERRORMESSAGE: db 'DiSK ERROR~!!', 0
+IMAGELOADINGMESSAGE: db 'OS Image Loading...',0
+LOADINGCOMPLETEMESSAGE: db 'Complete~!!!',0
+
+SECTORNUMBER: db 0x02 				; OS 이미지가 시작하는 섹터 번호를 저장하는 영역
+HEADNUMBER: db 0x00 				; OS 이미지가 시작하는 헤드 번호를 저장하는 영역
+TRACKNUMBER: db 0x00 				; OS 이미지가 시작하는 트랙 번호를 저장하는 영역
 
 times 510 - ($-$$) db 0x00
 
