@@ -8,7 +8,7 @@ jmp 0x07c0:START 			; CS 세그먼트 레지스터에 0x07c0을 복사하면서,
 ;				MINT64 OS에 관련된 환경 설정 값
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-TOTALSECTORCOUNT: dw 1024	; 부트 로더를 제외한 MINT64 OS 이미지의 크기
+TOTALSECTORCOUNT: dw 2	; 부트 로더를 제외한 MINT64 OS 이미지의 크기
 							; 최대 1152 섹터(0x90000byte)까지 가능
 
 
@@ -165,6 +165,7 @@ HANDLEDISKERROR:
 	push 1
 	push 20
 	call PRINTMESSAGE
+	add sp, 6
 
 	jmp $ 						; 현재 위치에서 무한 루프 수행
 
