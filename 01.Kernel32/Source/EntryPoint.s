@@ -12,6 +12,26 @@ START:
 	mov ds, ax 			; DS 세그먼트 레지스터에 설정
 	mov es, ax			; es 세그먼트 레지스터에 설정
 
+
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	; A20 게이트를 활성화
+	; BIOS를 이용한 전환이 실패했을 때 시스템 컴트롤 포트로 전환시도
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	; BIOS 서비스를 사용해서 A0 게이트를 활성화
+	mov ax, 0x2401 		; A20 게이트 활성화 서비스 설정
+	int 0x15 			; BIOS 인터럽트 서비스 호출
+
+	jc .A20GATEERROR 	; A20 활성화 성공 확인
+	jmp .A20GATESUCCESS
+
+.A20GATEERROR:
+	; 에러 발생시, 시스템 컨트롤 포트로 전환시도
+	in al, 0x92 		; 시스템 컨트롤 포트에서 1 바이트를 읽어 al 레지스터에 저장
+	or al, 0x02 		; 읽은 값에 A20 게이트 비트를 1로 설정
+	and al, 0xfe 		; 시스템 리셋 방지를 위해 0xfe 와 and 연산하여 비트0를 0으로 설정
+	out 0x92, al 		; 시스템 컨트롤 포트에 변경된 값을 1로 설정
+
+.A20GATESUCCESS:
 	cli 				; 인터럽트가 발생하지 못하도록 설정
 	lgdt [GDTR] 			; GDTR 자료 구조를 프로세서에 설정하여 GDT 테이블 로드
 
@@ -25,7 +45,7 @@ START:
 
 	; 커널 코드 세그먼트를 0x00 기준 하는 것으로 교체하고 EIP 값을 0x00 기준으로 설정
 	; CS 세그먼트 셀럭터 : EIP
-	jmp dword 0x08: (PROTECTEDMODE - $$ + 0x10000)
+	jmp dword 0x08: ( PROTECTEDMODE - $$ + 0x10000)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -48,13 +68,13 @@ PROTECTEDMODE:
 	mov ebp, 0xFFFE 	; EBP 레지스터의 어드레스를 0xFFFE로 설정
 
 	; 화면에 보호 모드로 전환되었다는 메시지를 찍는다.
-	push (SWITCHSUCCESSMESSAGE - $$ + 0x10000) 	; 출력할 메시지의 어드레스를 스택에 삽입
+	push ( SWITCHSUCCESSMESSAGE - $$ + 0x10000 ) 	; 출력할 메시지의 어드레스를 스택에 삽입
 	push 2 				; 화면 Y 좌표를 스택에 삽입
 	push 0 				; 화면 X 좌표를 스택에 삽입
 	call PRINTMESSAGE 	; PRITMESSAGE 함수 실행
 	add esp, 12 		; 삽입한 파라미터 제거
 
-	jmp dword 0x0B: 0x10200 			; C 언어 커널이 존재하는 0x10200 어드레스로 이동하여 C언어 커널 수행
+	jmp dword 0x08: 0x10200 			; C 언어 커널이 존재하는 0x10200 어드레스로 이동하여 C언어 커널 수행
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;	함수 코드 영역
@@ -123,7 +143,7 @@ dw 0x0000
 ; GDTR 자료 구조 정의
 GDTR:
 	dw GDTEND - GDT - 1 		; 아래에 위치하는 GDT 테이블의 전체 크기
-	dd (GDT - $$ + 0x10000) 	; 아래에 위치하는 GDT 테이블의 시작 어드레스
+	dd ( GDT - $$ + 0x10000 ) 	; 아래에 위치하는 GDT 테이블의 시작 어드레스
 
 ; GDT 테이블 정의
 GDT:
@@ -151,14 +171,11 @@ GDT:
 		db 0x92 		; p=1, dpl=0, data segment, read/write
 		db 0xcf 		; g=1, d=1, l=0, limit[19:16]
 		db 0x00 		; base[31:24]
-
 GDTEND:
 
 ; 보호 모드로 전환되었다는 메시지
 SWITCHSUCCESSMESSAGE: db 'Switch To Protected Mode Success~!!!', 0
 
-times 512 - ($ - $$) db 0x00 		; 512 바이트를 맞추기 위해 남은 부분을 0으로 채움
-
-
+times 512 - ( $ - $$ ) db 0x00 		; 512 바이트를 맞추기 위해 남은 부분을 0으로 채움
 
 
