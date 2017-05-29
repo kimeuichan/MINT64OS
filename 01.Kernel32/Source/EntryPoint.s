@@ -45,7 +45,7 @@ START:
 
 	; 커널 코드 세그먼트를 0x00 기준 하는 것으로 교체하고 EIP 값을 0x00 기준으로 설정
 	; CS 세그먼트 셀럭터 : EIP
-	jmp dword 0x08: ( PROTECTEDMODE - $$ + 0x10000)
+	jmp dword 0x18: ( PROTECTEDMODE - $$ + 0x10000)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -56,7 +56,7 @@ START:
 
 [BITS 32] 				; 이하의 코드는 32비트 코드로 설정
 PROTECTEDMODE:			
-	mov ax, 0x10		; 보호 모드 커널용 데이터 세그먼트 디스크립터를 ax
+	mov ax, 0x20		; 보호 모드 커널용 데이터 세그먼트 디스크립터를 ax 레지스터에 저장
 	mov ds, ax 			; DS 세그먼트 셀렉터에 설정
 	mov es, ax 			; ES 세그먼트 셀렉터에 설정
 	mov fs, ax 			; FS 세그먼트 셀렉터에 설정
@@ -74,7 +74,7 @@ PROTECTEDMODE:
 	call PRINTMESSAGE 	; PRITMESSAGE 함수 실행
 	add esp, 12 		; 삽입한 파라미터 제거
 
-	jmp dword 0x08: 0x10200 			; C 언어 커널이 존재하는 0x10200 어드레스로 이동하여 C언어 커널 수행
+	jmp dword 0x18: 0x10200 			; C 언어 커널이 존재하는 0x10200 어드레스로 이동하여 C언어 커널 수행
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;	함수 코드 영역
@@ -155,6 +155,25 @@ GDT:
 		db 0x00
 		db 0x00
 		db 0x00
+
+	; IA-32e 모드 커널용 코드 세그먼트 디스크립터
+	IA_32eCODEEDSCRIPTOR:
+		dw 0xFFFF 		; Limit[15:0]
+		dw 0x0000		; Base [15:0]
+		db 0x00 		; Base [23:16]
+		db 0x9a 		; p=1, dpl=0, code segment, excute/read
+		db 0xaf 		; g=1, d=0, l=1, limit[19:16]
+		db 0x00 		; base[31:24]
+
+	; IA-32e 모드 커널용 데이터 세그먼트 디스크립터
+	IA_32eDATADESCRIPTOR:
+		dw 0xFFFF 		; limit[15:0]
+		dw 0x0000 		; base[15:0]
+		db 0x00			; base[21:16]
+		db 0x92 		; p=1, dpl=0, data segment, read/write
+		db 0xaf 		; g=1, d=0, l=1, limit[19:16]
+		db 0x00 		; base[31:24]	
+
 	; 보호 모드 커널용 코드 세그먼트 디스크립터
 	CODEDESCRIPTOR:
 		dw 0xFFFF 		; Limit[15:0]
@@ -164,6 +183,7 @@ GDT:
 		db 0xcf 		; g=1, d=1, l=0, limit[19:16]
 		db 0x00 		; base[31:24]
 
+	; 보호 모드 커널용 데이터 세그먼트 디스크립터
 	DATADESCRIPTOR:
 		dw 0xFFFF 		; limit[15:0]
 		dw 0x0000 		; base[15:0]
