@@ -1,19 +1,17 @@
-#ifndef __KEYBOARD_H
-#define __KEYBOARD_H
+#ifndef __KEYBOARD_H_
+#define __KEYBOARD_H_
 
 #include "Types.h"
 
-// 매크로
-// Pause 키를 처리하기 위해 무시해야 하는 나머지 스캔 코드수
+// ignore number for pause
 #define KEY_SKIPCOUNTFORPAUSE	2
 
-
-// 키 상태에 대한 플래그
+// flag for key status
 #define KEY_FLAGS_UP			0x00
 #define KEY_FLAGS_DOWN			0x01
-#define KEY_FLAGS_EXTENDKEY		0x02
+#define KEY_FLAGS_EXTENDEDKEY	0x02
 
-// 스캔 코드 매핑 테이블에 대한 매크로
+// scan code mapping table macro
 #define KEY_MAPPINGTABLEMAXCOUNT	89
 
 #define KEY_NONE        0x00
@@ -55,48 +53,43 @@
 #define KEY_F12         0x9F
 #define KEY_PAUSE       0xA0
 
-// 키 큐에 대한 매크로
-// 키 큐의 최대 크기
-#define KEY_MAXQUEUECOUNT	100
+// structure
+#pragma pack(push, 1)
 
-#pragma pack(push,1)
-
-// 스캔 코드 테이블을 구성하는 항목
-typedef struct kKeyMappingEntryStruct{
-	// Shift 키나 Caps Lock 키와 조합되지 않는 ASCII 코드
+// scan code table
+typedef struct kKeyMappingEntryStruct
+{
 	BYTE bNormalCode;
-
-	// Shift 키나 Caps Lock 키와 조합된 ASCII 코드
 	BYTE bCombinedCode;
 } KEYMAPPINGENTRY;
 
 #pragma pack(pop)
 
-// 키보드의 사애를 관리하는 자료구조
-typedef struct kKeyboardManagerStruct{
-	// 조합 키 정보
+// keyboard status manager
+typedef struct kKeyboardManagerStruct
+{
 	BOOL bShiftDown;
-	BOOL bCapsLockDown;
-	BOOL bNumLockDown;
-	BOOL bScrollLockDown;
+	BOOL bCapsLockOn;
+	BOOL bNumLockOn;
+	BOOL bScrollLockOn;
 
-	// 확장 키를 처리하기 위한 정보
 	BOOL bExtendedCodeIn;
 	int iSkipCountForPause;
 } KEYBOARDMANAGER;
 
-// 함수
-BOOL kIsOutputBufferFull( void );
-BOOL kIsInputBufferFull( void );
-BOOL kActivateKeyboard( void );
-BYTE kGetKeyboardScanCode( void );
-BOOL kChangeKeyboardLED( BOOL bCapsLockOn, BOOL bNumLockOn, BOOL bScrollLockOn );
-void kEnableA20Gate( void );
-void kReboot( void );
-BOOL kIsAlphabetScanCode( BYTE bScanCode );
-BOOL kIsNumberOrSymbolScanCode( BYTE bScanCode );
-BOOL kIsNumberPadScanCode( BYTE bScanCode );
-BOOL kIsUseCombinedCode( BOOL bScanCode );
-void UpdateCombinationKeyStatusAndLED( BYTE bScanCode );
-BOOL kConvertScanCodeToASCIICode( BYTE bScanCode, BYTE* pbASCIICode, BOOL* pbFlags );
+// fuction
+BOOL kIsOutputBufferFull(void);
+BOOL kIsInputBUfferFull(void);
+BOOL kActivateKeyboard(void);
+BYTE kGetKeyboardScanCode(void);
+BOOL kChangeKeyboardLED(BOOL bCapsLockOn, BOOL bNumLockOn, BOOL bScrollLockOn);
+void kEnableA20Gate(void);
+void kReboot(void);
+BOOL kIsAlphabetScanCode(BYTE bScanCode);
+BOOL kIsNumberOrSymbolScanCode(BYTE bScanCode);
+BOOL kIsNumberPadScanCode(BYTE bScanCode);
+BOOL kIsUseCombinedCode(BOOL bScanCode);
+void UpdateCombinationKeyStatusAndLED(BYTE bScanCode);
+BOOL kConvertScanCodeToASCIICode(BYTE bScanCode, BYTE *pbASCIICode, BOOL *pbFlags);
+
 #endif
