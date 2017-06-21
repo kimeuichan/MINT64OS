@@ -1,42 +1,41 @@
 #include "Utility.h"
-#include "AssemblyUtility.h"
 
-void kMemSet( void* pvDestination, BYTE bData, int iSize )
+// 메모리를 특정 값으로 채움o
+void kMemSet(void* pvDestination, BYTE bData, int iSize)
 {
     int i;
-    
-    for( i = 0 ; i < iSize ; i++ )
+
+    for (i = 0 ; i < iSize ; i++)
     {
-        ( ( char* ) pvDestination )[ i ] = bData;
+        ((char*)pvDestination)[i] = bData;
     }
 }
 
-
-
-int kMemCpy( void* pvDestination, const void* pvSource, int iSize )
+// 메모리 복사
+int kMemCpy(void* pvDestination, const void* pvSource, int iSize)
 {
     int i;
-    
-    for( i = 0 ; i < iSize ; i++ )
+
+    for (i = 0 ; i < iSize ; i++)
     {
-        ( ( char* ) pvDestination )[ i ] = ( ( char* ) pvSource )[ i ];
+        ((char*)pvDestination)[i] = ((char*)pvSource)[i];
     }
-    
+
     return iSize;
 }
 
-
-int kMemCmp( const void* pvDestination, const void* pvSource, int iSize )
+// 메모리 비교
+int kMemCmp(const void* pvDestination, const void* pvSource, int iSize)
 {
     int i;
     char cTemp;
-    
-    for( i = 0 ; i < iSize ; i++ )
+
+    for (i = 0 ; i < iSize ; i++)
     {
-        cTemp = ( ( char* ) pvDestination )[ i ] - ( ( char* ) pvSource )[ i ];
-        if( cTemp != 0 )
+        cTemp = ((char*)pvDestination)[i] - ((char*)pvSource)[i];
+        if (cTemp != 0)
         {
-            return ( int ) cTemp;
+            return (int)cTemp;
         }
     }
     return 0;

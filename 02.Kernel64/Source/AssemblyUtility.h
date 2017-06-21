@@ -1,9 +1,13 @@
-#ifndef __ASSEMBLY_UTILITY_H_
-#define __ASSEMBLY_UTILITY_H_
+#ifndef __ASSEMBLYUTILITY_H__
+#define __ASSEMBLYUTILITY_H__
 
 #include "Types.h"
 
+// 함수
 BYTE kInPortByte(WORD wPort);
 void kOutPortByte(WORD wPort, BYTE bData);
+void kLoadGDTR(QWORD qwGDTRAddress);
+void kLoadTR(WORD wTSSSegmentOffset);
+void kLoadIDTR(QWORD qwIDTRAddress);
 
-#endif
+#endif /* __ASSEMBLYUTILITY_H__ */

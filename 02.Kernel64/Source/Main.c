@@ -1,54 +1,81 @@
 #include "Types.h"
 #include "Keyboard.h"
+#include "Descriptor.h"
 
-void kPrintString(int iX, int iY, const char *pcString);
+void kPrintString( int iX, int iY, const char * pcString );
 
-void Main(void)
+void Main( void )
 {
-	char vcTemp[2] = { 0, };
-	BYTE bFlags;
-	BYTE bTemp;
-	int i = 0;
+  char vcTemp[2] = {0, };
+  BYTE bFlags;
+  BYTE bTemp;
+  int i = 0;
 
-	kPrintString(0, 10, "Switch To IA-32e Mode.......................[PASS]");
-	kPrintString(0, 11, "IA-32e C Language Kernel Start..............[PASS]");
-	kPrintString(0, 12, "Keyboard Activate...........................[    ]");
+  kPrintString( 0, 10, "Switch To IA-32e Mode Success~!!" );
+  kPrintString( 0, 11, "IA-32e C Language Kernel Start..............[Pass]" );
+  kPrintString( 0, 12, "GDT Initialize And Switch For IA-32e Mode...[    ]" );
+  kInitializeGDTTableAndTSS();
+  kLoadGDTR( GDTR_STARTADDRESS );
+  kPrintString( 45, 12, "Pass" );
 
-	if (kActivateKeyboard() == TRUE)
-	{
-		kPrintString(45, 12, "PASS");
-		kChangeKeyboardLED(FALSE, FALSE, FALSE);
-	}
-	else
-	{
-		kPrintString(45, 12, "FAIL");
-		while (1);
-	}
+  kPrintString( 0, 13, "TSS Segment Load............................[    ]" );
+  kLoadTR( GDT_TSSSEGMENT );
+  kPrintString( 45, 13, "Pass" );
 
-	while (1)
-	{
-		if (kIsOutputBufferFull() == TRUE)
-		{
-			bTemp = kGetKeyboardScanCode();
+  kPrintString( 0, 14, "IDT Initialize..............................[    ]" );
+  kInitializeIDTTables();
+  kLoadIDTR( IDTR_STARTADDRESS );
+  kPrintString( 45, 14, "Pass" );
 
-			if (kConvertScanCodeToASCIICode(bTemp, &(vcTemp[i]), &bFlags) == TRUE)
-			{
-				if (bFlags & KEY_FLAGS_DOWN)
-				{
-					kPrintString(i++, 13, vcTemp);
-				}
-			}
-		}
-	}
+  kPrintString( 0, 15, "Keyboard Activate...........................[    ]" );
+
+  // 키보드 활성화
+  if( kActivateKeyboard() == TRUE )
+  {
+    kPrintString( 45, 15, "Pass" );
+    kChangeKeyboardLED( FALSE, FALSE, FALSE );
+  }
+  else
+  {
+    kPrintString( 45, 15, "Fail" );
+    while( 1 );
+  }
+
+  while( 1 )
+  {
+    // 출력 버퍼가 차 있으면 스캔 코드를 읽을 수 있음
+    if( kIsOutputBufferFull() == TRUE )
+    {
+      // 출력 버퍼에서 스캔 코드를 읽어서 저장
+      bTemp = kGetKeyboardScanCode();
+
+      // 스캔 코드 => ASCII 코드, 눌림/떨어짐 정보
+      if( kConvertScanCodeToASCIICode( bTemp, &(vcTemp[0]), &bFlags ) == TRUE )
+      {
+        // 키가 눌러졌으면 ASCII 코드 값 화면에 출력
+        if( bFlags & KEY_FLAGS_DOWN )
+        {
+          kPrintString( i++, 16, vcTemp );
+
+          // 0이 입력되면 0으로 나누어 Divide Error 발생
+          if( vcTemp[0] == '0' )
+          {
+            bTemp = bTemp / 0;
+          }
+        }
+      }
+    }
+  }
 }
 
-void kPrintString(int iX, int iY, const char *pcString)
+void kPrintString( int iX, int iY, const char * pcString )
 {
-	CHARACTER *pstScreen = (CHARACTER *)0xB8000;
-	const char *p;
+  CHARACTER * pstScreen = ( CHARACTER * ) 0xB8000;
+  int i;
 
-	pstScreen += (iY * 80) + iX;
-	for (p = pcString; *p; ++p, ++pstScreen)
-		pstScreen->bCharactor = *p;
+  pstScreen += ( iY * 80 ) + iX;
+  for ( i = 0; pcString[ i ] != 0; i++ )
+  {
+    pstScreen[ i ].bCharactor  = pcString[ i ];
+  }
 }
-
