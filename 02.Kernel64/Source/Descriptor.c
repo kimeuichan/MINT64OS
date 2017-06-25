@@ -1,121 +1,130 @@
 #include "Descriptor.h"
 #include "Utility.h"
+#include "ISR.h"
 
-//========================================================================
-// GDT ë° TSS
-//========================================================================
+//====================================================================================================
+// GDT/TSS °ü·Ã ÇÔ¼ö
+//====================================================================================================
+void kInitializeGDTTableAndTSS(void){
+	GDTR* pstGDTR;
+	GDTENTRY8* pstEntry;
+	TSSSEGMENT* pstTSS;
 
-// GDT í…Œì´ë¸”ì„ ì´ˆê¸°í™”
-void kInitializeGDTTableAndTSS(void)
-{
-    GDTR* pstGDTR;
-    GDTENTRY8* pstEntry;
-    TSSSEGMENT* pstTSS;
-    int i;
+	// GDTR »ı¼º
+	pstGDTR = (GDTR*)GDTR_STARTADDRESS;
+	pstEntry = (GDTENTRY8*)(GDTR_STARTADDRESS + sizeof(GDTR));
+	pstGDTR->wLimit = GDT_TABLESIZE - 1;
+	pstGDTR->qwBaseAddress = (QWORD)pstEntry;
+	pstGDTR->wPadding = 0;
+	pstGDTR->dwPadding = 0;
 
-    // GDTR ì„¤ì •
-    pstGDTR = (GDTR*)0x142000;
-    pstEntry = (GDTENTRY8*)(0x142000 +sizeof(GDTR));
-    pstGDTR->wLimit = (sizeof(GDTENTRY8) * 3) + (sizeof(GDTENTRY16) * 1) - 1;
-    pstGDTR->qwBaseAddress = (QWORD)pstEntry;
-    // TSS ì˜ì—­ ì„¤ì •
-    pstTSS = (TSSSEGMENT*)((QWORD)pstEntry + GDT_TABLESIZE);
+	// TSS ¾îµå·¹½º ¼³Á¤
+	pstTSS = (TSSSEGMENT*)((QWORD)pstEntry + GDT_TABLESIZE);
 
-    // NULL, 64ë¹„íŠ¸ Code/Data, TSSë¥¼ ìœ„í•´ ì´ 4ê°œì˜ ì„¸ê·¸ë¨¼íŠ¸ë¥¼ ìƒì„±í•œë‹¤.
-    kSetGDTEntry8(&(pstEntry[0]), 0, 0, 0, 0, 0);
-    kSetGDTEntry8(&(pstEntry[1]), 0, 0xFFFFF, GDT_FLAGS_UPPER_CODE,
-            GDT_FLAGS_LOWER_KERNELCODE, GDT_TYPE_CODE);
-    kSetGDTEntry8(&(pstEntry[2]), 0, 0xFFFFF, GDT_FLAGS_UPPER_DATA,
-            GDT_FLAGS_LOWER_KERNELDATA, GDT_TYPE_DATA);
-    kSetGDTEntry16((GDTENTRY16*)&(pstEntry[3]), (QWORD)pstTSS,
-            sizeof(TSSSEGMENT) - 1, GDT_FLAGS_UPPER_TSS, GDT_FLAGS_LOWER_TSS,
-            GDT_TYPE_TSS);
+	// GDT(³Î/ÄÚµå/µ¥ÀÌÅÍ/TSS ¼¼±×¸ÕÆ® µğ½ºÅ©¸³ÅÍ) »ı¼º
+	kSetGDTEntry8(&(pstEntry[0]), 0, 0, 0, 0, 0);
+	kSetGDTEntry8(&(pstEntry[1]), 0x00000000, 0xFFFFF, GDT_FLAGS_UPPER_CODE, GDT_FLAGS_LOWER_KERNELCODE, GDT_TYPE_CODE);
+	kSetGDTEntry8(&(pstEntry[2]), 0x00000000, 0xFFFFF, GDT_FLAGS_UPPER_DATA, GDT_FLAGS_LOWER_KERNELDATA, GDT_TYPE_DATA);
+	kSetGDTEntry16((GDTENTRY16*)&(pstEntry[3]), (QWORD)pstTSS, sizeof(TSSSEGMENT) - 1, GDT_FLAGS_UPPER_TSS, GDT_FLAGS_LOWER_TSS, GDT_TYPE_TSS);
 
-    // TSS ì´ˆê¸°í™” GDT ì´í•˜ ì˜ì—­ì„ ì‚¬ìš©í•¨
-    kInitializeTSSSegment(pstTSS);
+	// TSS »ı¼º
+	kInitializeTSSSegment(pstTSS);
 }
 
-// 8ë°”ì´íŠ¸ í¬ê¸°ì˜ GDT ì—”íŠ¸ë¦¬ì— ê°’ì„ ì„¤ì •
-// ì½”ë“œì™€ ë°ì´í„° ì„¸ê·¸ë¨¼íŠ¸ì˜ ë””ìŠ¤í¬ë¦½í„°
-void kSetGDTEntry8(GDTENTRY8* pstEntry, DWORD dwBaseAddress, DWORD dwLimit,
-        BYTE bUpperFlags, BYTE bLowerFlags, BYTE bType)
-{
-    pstEntry->wLowerLimit = dwLimit & 0xFFFF;
-    pstEntry->wLowerBaseAddress = dwBaseAddress & 0xFFFF;
-    pstEntry->bUpperBaseAddress1 = (dwBaseAddress >> 16) & 0xFF;
-    pstEntry->bTypeAndLowerFlag = bLowerFlags | bType;
-    pstEntry->bUpperLimitAndUpperFlag = ((dwLimit >> 16) & 0xFF) | bUpperFlags;
-    pstEntry->bUpperBaseAddress2 = (dwBaseAddress >> 24) & 0xFF;
+void kSetGDTEntry8(GDTENTRY8* pstEntry, DWORD dwBaseAddress, DWORD dwLimit, BYTE bUpperFlags, BYTE bLowerFlags, BYTE bType){
+	pstEntry->wLowerLimit = dwLimit & 0xFFFF;
+	pstEntry->wLowerBaseAddress = dwBaseAddress & 0xFFFF;
+	pstEntry->bUpperBaseAddress1 = (dwBaseAddress >> 16) & 0xFF;
+	pstEntry->bTypeAndLowerFlags = bLowerFlags | bType;
+	pstEntry->bUpperLimitAndUpperFlags = bUpperFlags | ((dwLimit >> 16) & 0xF);
+	pstEntry->bUpperBaseAddress2 = (dwBaseAddress >> 24) & 0xFF;
 }
 
-// 16ë°”ì´íŠ¸ í¬ê¸°ì˜ GDT ì—”íŠ¸ë¦¬ì— ê°’ì„ ì„¤ì •
-//     TSS ì„¸ê·¸ë¨¼íŠ¸ ë””ìŠ¤í¬ë¦½í„°
-void kSetGDTEntry16(GDTENTRY16* pstEntry, QWORD qwBaseAddress, DWORD dwLimit,
-        BYTE bUpperFlags, BYTE bLowerFlags, BYTE bType)
-{
-    pstEntry->wLowerLimit = dwLimit & 0xFFFF;
-    pstEntry->wLowerBaseAddress = qwBaseAddress & 0xFFFF;
-    pstEntry->bMiddleBaseAddress1 = (qwBaseAddress >> 16) & 0xFF;
-    pstEntry->bTypeAndLowerFlag = bLowerFlags | bType;
-    pstEntry->bUpperLimitAndUpperFlag = ((dwLimit >> 16) & 0xFF) | bUpperFlags;
-    pstEntry->bMiddleBaseAddress2 = (qwBaseAddress >> 24) & 0xFF;
-    pstEntry->dwUpperBaseAddress = qwBaseAddress >> 32;
-    pstEntry->dwReserved = 0;
+void kSetGDTEntry16(GDTENTRY16* pstEntry, QWORD qwBaseAddress, DWORD dwLimit, BYTE bUpperFlags, BYTE bLowerFlags, BYTE bType){
+	pstEntry->wLowerLimit = dwLimit & 0xFFFF;
+	pstEntry->wLowerBaseAddress = qwBaseAddress & 0xFFFF;
+	pstEntry->bMiddleBaseAddress1 = (qwBaseAddress >> 16) & 0xFF;
+	pstEntry->bTypeAndLowerFlags = bLowerFlags | bType;
+	pstEntry->bUpperLimitAndUpperFlags = bUpperFlags | ((dwLimit >> 16) & 0xF);
+	pstEntry->bMiddleBaseAddress2 = (qwBaseAddress >> 24) & 0xFF;
+	pstEntry->dwUpperBaseAddress = (qwBaseAddress >> 32) & 0xFFFFFFFF;
+	pstEntry->dwReserved = 0;
 }
 
-// TSS ì„¸ê·¸ë¨¼íŠ¸ì˜ ì •ë³´ë¥¼ ì´ˆê¸°í™”
-void kInitializeTSSSegment(TSSSEGMENT* pstTSS)
-{
+void kInitializeTSSSegment(TSSSEGMENT* pstTSS){
 	kMemSet(pstTSS, 0, sizeof(TSSSEGMENT));
-	pstTSS->qwIST[0] = 0x800000;
-	pstTSS->wIOMapBaseAddress = 0xFFFF;
+	pstTSS->qwIST[0] = IST_STARTADDRESS + IST_SIZE;
+	pstTSS->wIOMapBaseAddress = 0xFFFF; // IO¸¦ TSSÀÇ Limit°ªº¸´Ù Å©°Ô ¼³Á¤ÇÔÀ¸·Î½á IO MapÀ» »ç¿ëÇÏÁö ¾Êµµ·Ï ÇÔ
 }
 
-//========================================================================
-// IDT
-//========================================================================
-// IDT í…Œì´ë¸”ì„ ì´ˆê¸°í™”
-void kInitializeIDTTables(void)
-{
+//====================================================================================================
+// IDT °ü·Ã ÇÔ¼ö
+//====================================================================================================
+void kInitializeIDTTable(void){
 	IDTR* pstIDTR;
 	IDTENTRY* pstEntry;
 	int i;
 
-	// IDTRì˜ ì‹œì‘ ì–´ë“œë ˆìŠ¤
+	// IDTR »ı¼º
 	pstIDTR = (IDTR*)IDTR_STARTADDRESS;
-	// IDT í…Œì´ë¸”ì˜ ì •ë³´ ìƒì„±
 	pstEntry = (IDTENTRY*)(IDTR_STARTADDRESS + sizeof(IDTR));
-	pstIDTR->qwBaseAddress = (QWORD)pstEntry;
 	pstIDTR->wLimit = IDT_TABLESIZE - 1;
+	pstIDTR->qwBaseAddress = (QWORD)pstEntry;
 
-	// 0~99ê¹Œì§€ ë²¡í„°ë¥¼ ëª¨ë‘ DummyHnadlerë¡œ ì—°ê²°
-	for (i = 0; i < IDT_MAXENTRYCOUNT; i++)
-	{
-		kSetIDTEntry(&(pstEntry[i]), kDummyHandler, 0x08, IDT_FLAGS_IST1,
-				IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	// IDT(IDT °ÔÀÌÆ® µğ½ºÅ©¸³ÅÍ 100°³) »ı¼º : 0~99±îÁöÀÇ º¤ÅÍ¿¡ ISR(Handler)¸¦ ¿¬°á
+	// ¿¹¿Ü Ã³¸®¿ë ISR(21°³): #0~#19, #20~#31
+	kSetIDTEntry(&(pstEntry[0]),  kISRDivideError,               GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[1]),  kISRDebug,                     GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[2]),  kISRNMI,                       GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[3]),  kISRBreakPoint,                GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[4]),  kISROverflow,                  GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[5]),  kISRBoundRangeExceeded,        GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[6]),  kISRInvalidOpcode,             GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[7]),  kISRDeviceNotAvailable,        GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[8]),  kISRDoubleFault,               GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[9]),  kISRCoprocessorSegmentOverrun, GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[10]), kISRInvalidTSS,                GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[11]), kISRSegmentNotPresent,         GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[12]), kISRStackSegmentFault,         GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[13]), kISRGeneralProtection,         GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[14]), kISRPageFault,                 GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[15]), kISR15,                        GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[16]), kISRFPUError,                  GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[17]), kISRAlignmentCheck,            GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[18]), kISRMachineCheck,              GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[19]), kISRSIMDError,                 GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	for(i = 20; i < 32; i++){
+		kSetIDTEntry(&(pstEntry[i]), kISRETCException,           GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	}
+
+	// ÀÎÅÍ·´Æ® Ã³¸®¿ë ISR(17°³): #32~#47, #48~#99
+	kSetIDTEntry(&(pstEntry[32]), kISRTimer,                     GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[33]), kISRKeyboard,                  GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[34]), kISRSlavePIC,                  GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[35]), kISRSerial2,                   GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[36]), kISRSerial1,                   GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[37]), kISRParallel2,                 GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[38]), kISRFloppy,                    GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[39]), kISRParallel1,                 GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[40]), kISRRTC,                       GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[41]), kISRReserved,                  GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[42]), kISRNotUsed1,                  GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[43]), kISRNotUsed2,                  GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[44]), kISRMouse,                     GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[45]), kISRCoprocessor,               GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[46]), kISRHDD1,                      GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	kSetIDTEntry(&(pstEntry[47]), kISRHDD2,                      GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+	for(i = 48; i < IDT_MAXENTRYCOUNT; i++){
+		kSetIDTEntry(&(pstEntry[i]), kISRETCInterrupt,           GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
 	}
 }
 
-// IDT ê²Œì´íŠ¸ ë””ìŠ¤í¬ë¦½í„°ì— ê°’ì„ ì„¤ì •
-void kSetIDTEntry(IDTENTRY* pstEntry, void* pvHandler, WORD wSelector,
-		BYTE bIST, BYTE bFlags, BYTE bType)
-{
+void kSetIDTEntry(IDTENTRY* pstEntry, void* pvHandler, WORD wSelector, BYTE bIST, BYTE bFlags, BYTE bType){
 	pstEntry->wLowerBaseAddress = (QWORD)pvHandler & 0xFFFF;
 	pstEntry->wSegmentSelector = wSelector;
-	pstEntry->bIST = bIST & 0x3;
-	pstEntry->bTypeAndFlags = bType | bFlags;
+	pstEntry->bIST = bIST & 0x7;
+	pstEntry->bTypeAndFlags = bFlags | bType;
 	pstEntry->wMiddleBaseAddress = ((QWORD)pvHandler >> 16) & 0xFFFF;
-	pstEntry->dwUpperBaseAddress = (QWORD)pvHandler >> 32;
+	pstEntry->dwUpperBaseAddress = ((QWORD)pvHandler >> 32) & 0xFFFFFFFF;
 	pstEntry->dwReserved = 0;
-}
-
-// ì„ì‹œ ì˜ˆì™¸ ë˜ëŠ” ì¸í„°ëŸ½íŠ¸ í•¸ë“¤ëŸ¬
-void kDummyHandler(void)
-{
-	kPrintString(0, 0, "=======================================================================");
-	kPrintString(0, 1, "                 Dummy Interrupt Handler Execute~!!!                   ");
-	kPrintString(0, 2, "                  Interrupt or Exception Occur~!!!!                    ");
-	kPrintString(0, 3, "=======================================================================");
-
-	while (1);
 }

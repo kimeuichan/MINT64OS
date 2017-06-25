@@ -3,155 +3,141 @@
 
 #include "Types.h"
 
-// Îß§ÌÅ¨Î°ú
-//==============================================================================
-// GDT
-//==============================================================================
-// Ï°∞Ìï©Ïóê ÏÇ¨Ïö©Ìï† Í∏∞Î≥∏ Îß§ÌÅ¨Î°ú
-#define GDT_TYPE_CODE                 0x0A
-#define GDT_TYPE_DATA                 0x02
-#define GDT_TYPE_TSS                  0x09
-#define GDT_FLAGS_LOWER_S             0x10
-#define GDT_FLAGS_LOWER_DPL0          0x00
-#define GDT_FLAGS_LOWER_DPL1          0x20
-#define GDT_FLAGS_LOWER_DPL2          0x40
-#define GDT_FLAGS_LOWER_DPL3          0x60
-#define GDT_FLAGS_LOWER_P             0x80
-#define GDT_FLAGS_UPPER_L             0x20
-#define GDT_FLAGS_UPPER_DB            0x40
-#define GDT_FLAGS_UPPER_G             0x80
+//====================================================================================================
+// GDT/TSS ∞¸∑√ ∏≈≈©∑Œ
+//====================================================================================================
+// ≥Œ/ƒ⁄µÂ/µ•¿Ã≈Õ/TSS ºº±◊∏’∆Æ µΩ∫≈©∏≥≈Õ « µÂ
+#define GDT_TYPE_CODE        0x0A // Code Segment (Ω««‡/¿–±‚)
+#define GDT_TYPE_DATA        0x02 // Data Segment (¿–±‚/æ≤±‚)
+#define GDT_TYPE_TSS         0x09 // TSS Segment (Not Busy)
+#define GDT_FLAGS_LOWER_S    0x10 // Descriptor Type (1:ºº±◊∏’∆Æ µΩ∫≈©∏≥≈Õ, 0:Ω√Ω∫≈€ µΩ∫≈©∏≥≈Õ)
+#define GDT_FLAGS_LOWER_DPL0 0x00 // Descriptor Privilege Level 0 (Highest, Kernel)
+#define GDT_FLAGS_LOWER_DPL1 0x20 // Descriptor Privilege Level 1
+#define GDT_FLAGS_LOWER_DPL2 0x40 // Descriptor Privilege Level 2
+#define GDT_FLAGS_LOWER_DPL3 0x60 // Descriptor Privilege Level 3 (Lowest, User)
+#define GDT_FLAGS_LOWER_P    0x80 // Present (1:«ˆ¿Á µΩ∫≈©∏≥≈Õ∞° ¿Ø»ø«‘, 0:«ˆ¿Á µΩ∫∆Æ∏≥≈Õ∞° ¿Ø»ø«œ¡ˆ æ ¿Ω)
+#define GDT_FLAGS_UPPER_L    0x20 // IA-32e ∏µÂø°º≠ ªÁøÎ«œ¥¬ « µÂ (1:IA-32e ∏µÂ¿« 64∫Ò∆ÆøÎ ƒ⁄µÂ ºº±◊∏’∆Æ, 0:IA-32e ∏µÂ¿« 32∫Ò∆Æ »£»ØøÎ ƒ⁄µÂ ºº±◊∏’∆Æ)
+#define GDT_FLAGS_UPPER_DB   0x40 // Default Operation Size (1:32∫Ò∆ÆøÎ ºº±◊∏’∆Æ, 0:16∫Ò∆ÆøÎ ºº±◊∏’∆Æ)
+#define GDT_FLAGS_UPPER_G    0x80 // Granularity (1:ºº±◊∏’∆Æ ≈©±‚∏¶ 1MB(Limit 20∫Ò∆Æ)*4KB(∞°¡ﬂƒ°)=4GB ±Ó¡ˆ º≥¡§ ∞°¥…, 0:ºº±◊∏’∆Æ ≈©±‚∏¶ 1MB(Limit 20∫Ò∆Æ) ±Ó¡ˆ º≥¡§ ∞°¥…)
 
-// Ïã§Ï†úÎ°ú ÏÇ¨Ïö©Ìï† Îß§ÌÅ¨Î°ú
-// Lower FlagsÎäî Code/Data/TSS, DPL0, PresentÎ°ú ÏÑ§Ï†ï
-#define GDT_FLAGS_LOWER_KERNELCODE    ( GDT_TYPE_CODE | GDT_FLAGS_LOWER_S | GDT_FLAGS_LOWER_DPL0 | GDT_FLAGS_LOWER_P )
-#define GDT_FLAGS_LOWER_KERNELDATA    ( GDT_TYPE_DATA | GDT_FLAGS_LOWER_S | GDT_FLAGS_LOWER_DPL0 | GDT_FLAGS_LOWER_P )
-#define GDT_FLAGS_LOWER_TSS           ( GDT_FLAGS_LOWER_DPL0 | GDT_FLAGS_LOWER_P )
-#define GDT_FLAGS_LOWER_USERCODE      ( GDT_TYPE_CODE | GDT_FLAGS_LOWER_S | GDT_FLAGS_LOWER_DPL3 | GDT_FLAGS_LOWER_P )
-#define GDT_FLAGS_LOWER_USERDATA      ( GDT_TYPE_DATA | GDT_FLAGS_LOWER_S | GDT_FLAGS_LOWER_DPL3 | GDT_FLAGS_LOWER_P )
+// ¿⁄¡÷ ªÁøÎ«“ ∏≈≈©∑Œ
+#define GDT_FLAGS_LOWER_KERNELCODE (GDT_TYPE_CODE | GDT_FLAGS_LOWER_S | GDT_FLAGS_LOWER_DPL0 | GDT_FLAGS_LOWER_P)
+#define GDT_FLAGS_LOWER_KERNELDATA (GDT_TYPE_DATA | GDT_FLAGS_LOWER_S | GDT_FLAGS_LOWER_DPL0 | GDT_FLAGS_LOWER_P)
+#define GDT_FLAGS_LOWER_TSS        (GDT_FLAGS_LOWER_DPL0 | GDT_FLAGS_LOWER_P)
+#define GDT_FLAGS_LOWER_USERCODE   (GDT_TYPE_CODE | GDT_FLAGS_LOWER_S | GDT_FLAGS_LOWER_DPL3 | GDT_FLAGS_LOWER_P)
+#define GDT_FLAGS_LOWER_USERDATA   (GDT_TYPE_DATA | GDT_FLAGS_LOWER_S | GDT_FLAGS_LOWER_DPL3 | GDT_FLAGS_LOWER_P)
+#define GDT_FLAGS_UPPER_CODE       (GDT_FLAGS_UPPER_G | GDT_FLAGS_UPPER_L)
+#define GDT_FLAGS_UPPER_DATA       (GDT_FLAGS_UPPER_G | GDT_FLAGS_UPPER_L)
+#define GDT_FLAGS_UPPER_TSS        (GDT_FLAGS_UPPER_G)
 
-// Upper FlagsÎäî GranulatyÎ•º ÏÑ§Ï†ïÌïòÍ≥† ÏΩîÎìú/Îç∞Ïù¥ÌÑ∞Îäî 64ÎπÑÌä∏
-#define GDT_FLAGS_UPPER_CODE          ( GDT_FLAGS_UPPER_G | GDT_FLAGS_UPPER_L )
-#define GDT_FLAGS_UPPER_DATA          ( GDT_FLAGS_UPPER_G | GDT_FLAGS_UPPER_L )
-#define GDT_FLAGS_UPPER_TSS           ( GDT_FLAGS_UPPER_G )
+// GDT¿« ±‚¡ÿ ¡÷º“ø°º≠ ºº±◊∏’∆Æ µΩ∫≈©∏≥≈Õ¿« ø¿«¡º¬
+#define GDT_KERNELCODESEGMENT 0x08
+#define GDT_KERNELDATASEGMENT 0x10
+#define GDT_TSSSEGMENT        0x18
 
-// ÏÑ∏Í∑∏Î®ºÌä∏ ÎîîÏä§ÌÅ¨Î¶ΩÌÑ∞ Ïò§ÌîÑÏÖã
-#define GDT_KERNELCODESEGMENT         0x08
-#define GDT_KERNELDATASEGMENT         0x10
-#define GDT_TSSSEGMENT                0x18
+// ±‚≈∏ GDTø° ∞¸∑√µ» ∏≈≈©∑Œ
+#define GDTR_STARTADDRESS   0x142000
+#define GDT_MAXENTRY8COUNT  3
+#define GDT_MAXENTRY16COUNT 1
+#define GDT_TABLESIZE       ((sizeof(GDTENTRY8) * GDT_MAXENTRY8COUNT) + (sizeof(GDTENTRY16) * GDT_MAXENTRY16COUNT))
+#define TSS_SEGMENTSIZE     (sizeof(TSSSEGMENT))
 
-// Í∏∞ÌÉÄ GDTÏóê Í¥ÄÎ†®Îêú Îß§ÌÅ¨Î°ú
-// GDTRÏùò ÏãúÏûë Ïñ¥ÎìúÎ†àÏä§, 1MB Î∂ÄÌÑ∞ 264KBÍπåÏßÄÎäî ÌéòÏù¥ÏßÄ ÌÖåÏù¥Î∏î ÏòÅÏó≠
-#define GDTR_STARTADDRESS             0x142000
-// 8Î∞îÏù¥Ìä∏ ÏóîÌä∏Î¶¨Ïùò Í∞úÏàò, ÎÑê ÎîîÏä§ÌÅ¨Î¶ΩÌÑ∞/Ïª§ÎÑê ÏΩîÎìú/Ïª§ÎÑê Îç∞Ïù¥ÌÑ∞
-#define GDT_MAXENTRY8COUNT            3
-// 16Î∞îÏù¥Ìä∏ ÏóîÌä∏Î¶¨Ïùò Í∞úÏàò, TSS
-#define GDT_MAXENTRY16COUNT           1
-// GDT ÌÖåÏù¥Î∏îÏùò ÌÅ¨Í∏∞
-#define GDT_TABLESIZE                 ( ( sizeof( GDTENTRY8 ) * GDT_MAXENTRY8COUNT ) + ( sizeof ( GDTENTRY16 ) * GDT_MAXENTRY16COUNT ) )
-#define TSS_SEGMENTSIZE               ( sizeof( TSSSEGMENT ) )
+//====================================================================================================
+// IDT ∞¸∑√ ∏≈≈©∑Œ
+//====================================================================================================
+// IDT ∞‘¿Ã∆Æ µΩ∫≈©∏≥≈Õ « µÂ
+#define IDT_TYPE_INTERRUPT 0x0E // Interrupt Gate
+#define IDT_TYPE_TRAP      0x0F // Trap Date
+#define IDT_FLAGS_DPL0     0x00 // Descriptor Privilege Level 0 (Highest, Kernel)
+#define IDT_FLAGS_DPL1     0x20 // Descriptor Privilege Level 1
+#define IDT_FLAGS_DPL2     0x40 // Descriptor Privilege Level 2
+#define IDT_FLAGS_DPL3     0x60 // Descriptor Privilege Level 3 (Lowest, User)
+#define IDT_FLAGS_P        0x80 // Present (1:«ˆ¿Á µΩ∫≈©∏≥≈Õ∞° ¿Ø»ø«‘, 0:«ˆ¿Á µΩ∫∆Æ∏≥≈Õ∞° ¿Ø»ø«œ¡ˆ æ ¿Ω)
+#define IDT_FLAGS_IST0     0    // ±‚¡∏ πÊΩƒ¿« Ω∫≈√ Ω∫¿ßƒ™ (±‚¡∏πÊΩƒ:±««— ∫Øµø¿Ã ¿÷¿ª ∂ß∏∏ Ω∫≈√ Ω∫¿ßƒ™¿Ã ¿œæÓ≥≤)
+#define IDT_FLAGS_IST1     1    // IST πÊΩƒ¿« Ω∫≈√ Ω∫¿ßƒ™ (IST πÊΩƒ:π´¡∂∞« Ω∫≈√ Ω∫¿ßƒ™¿Ã ¿œæÓ≥≤, IST1~7¡ﬂø°º≠ MINT64¥¬ IST1∏∏ ¿ÃøÎ)
 
-//==============================================================================
-// IDT
-//==============================================================================
-// Ï°∞Ìï©Ïóê ÏÇ¨Ïö©Ìï† Í∏∞Î≥∏ Îß§ÌÅ¨Î°ú
-#define IDT_TYPE_INTERRUPT            0x0E
-#define IDT_TYPE_TRAP                 0x0F
-#define IDT_FLAGS_DPL0                0x00
-#define IDT_FLAGS_DPL1                0x20
-#define IDT_FLAGS_DPL2                0x40
-#define IDT_FLAGS_DPL3                0x60
-#define IDT_FLAGS_P                   0x80
-#define IDT_FLAGS_IST0                0
-#define IDT_FLAGS_IST1                1
+// ¿⁄¡÷ ªÁøÎ«“ ∏≈≈©∑Œ
+#define IDT_FLAGS_KERNEL (IDT_FLAGS_DPL0 | IDT_FLAGS_P)
+#define IDT_FLAGS_USER   (IDT_FLAGS_DPL3 | IDT_FLAGS_P)
 
-// Ïã§Ï†úÎ°ú ÏÇ¨Ïö©Ìï† Îß§ÌÅ¨Î°ú
-#define IDT_FLAGS_KERNEL              ( IDT_FLAGS_DPL0 | IDT_FLAGS_P )
-#define IDT_FLAGS_USER                ( IDT_FLAGS_DPL3 | IDT_FLAGS_P )
+// ±‚≈∏  IDTø° ∞¸∑√µ» ∏≈≈©∑Œ
+#define IDT_MAXENTRYCOUNT 100
+#define IDTR_STARTADDRESS (GDTR_STARTADDRESS + sizeof(GDTR) + GDT_TABLESIZE + TSS_SEGMENTSIZE)
+#define IDT_STARTADDRESS  (IDTR_STARTADDRESS + sizeof(IDTR))
+#define IDT_TABLESIZE     (IDT_MAXENTRYCOUNT * sizeof(IDTENTRY))
 
-// Í∏∞ÌÉÄ IDT Í¥ÄÎ†® Îß§ÌÅ¨Î°ú
-// IDT ÏóîÌä∏Î¶¨Ïùò Í∞úÏàò
-#define IDT_MAXENTRYCOUNT             100
-// IDTRÏùò ÏãúÏûë Ïñ¥ÎìúÎ†àÏä§, TSS ÏÑ∏Í∑∏Î®ºÌä∏Ïùò Îí§Ï™ΩÏóê ÏúÑÏπò
-#define IDTR_STARTADDRESS             ( GDTR_STARTADDRESS + sizeof( GDTR ) + GDT_TABLESIZE + TSS_SEGMENTSIZE )
-// IDT ÌÖåÏù¥Î∏îÏùò ÏãúÏûë Ïñ¥ÎìúÎ†àÏä§
-#define IDT_STARTADDRESS              ( IDTR_STARTADDRESS + sizeof( IDTR ) )
-// IDT ÌÖåÏù¥Î∏îÏùò Ï†ÑÏ≤¥ ÌÅ¨Í∏∞
-#define IDT_TABLESIZE                 ( IDT_MAXENTRYCOUNT + sizeof( IDTENTRY ) )
+// ISTø° ∞¸∑√µ» ∏≈≈©∑Œ
+#define IST_STARTADDRESS 0x700000 // 7M
+#define IST_SIZE         0x100000 // 1M
 
-// ISTÏùò ÏãúÏûë Ïñ¥ÎìúÎ†àÏä§
-#define IST_STARTADDRESS              0x700000
-// ISTÏùò ÌÅ¨Í∏∞
-#define IST_SIZE                      0x100000
+//====================================================================================================
+// ¿⁄∑·±∏¡∂
+//====================================================================================================
+#pragma pack(push, 1)
 
-// Íµ¨Ï°∞Ï≤¥
-#pragma pack( push, 1 )
-
-// GDTRÍ≥º IDTRÍµ¨Ï°∞Ï≤¥
-typedef struct kGDTRStruct
-{
-  WORD wLimit;
-  QWORD qwBaseAddress;
-  WORD wPadding;
-  DWORD dwPadding;
+// GDTR/IDTR ¿⁄∑·±∏¡∂ (16byte: 8byte¿« πËºˆ¿Œ 16byte∑Œ ¡§∑ƒ«œ±‚ ¿ß«ÿº≠ Padding Byte∏¶ √ﬂ∞°)
+typedef struct kGDTRStruct{
+	WORD wLimit;         // GDT/IDT Size
+	QWORD qwBaseAddress; // GDT/IDT BaseAddress
+	WORD wPadding;       // Padding Byte
+	DWORD dwPadding;     // Padding Byte
 } GDTR, IDTR;
 
-// 8Î∞îÏù¥Ìä∏ ÌÅ¨Í∏∞Ïùò GDT ÏóîÌä∏Î¶¨ Íµ¨Ï°∞
-typedef struct kGDTEntry8Struct
-{
-  WORD wLowerLimit;
-  WORD wLowerBaseAddress;
-  BYTE bUpperBaseAddress1;
-  BYTE bTypeAndLowerFlag;
-  BYTE bUpperLimitAndUpperFlag;
-  BYTE bUpperBaseAddress2;
+// ≥Œ/ƒ⁄µÂ/µ•¿Ã≈Õ ºº±◊∏’∆Æ µΩ∫≈©∏≥≈Õ (8byte)
+typedef struct kGDTEntry8Struct{   // æÓº¿∫Ì∏Æ ƒ⁄µÂ
+	WORD wLowerLimit;              // dw 0xFFFF     ; Limit=0xFFFF
+	WORD wLowerBaseAddress;        // dw 0x0000     ; BaseAddress=0x0000
+	BYTE bUpperBaseAddress1;       // db 0x00       ; BaseAddress=0x00
+	BYTE bTypeAndLowerFlags;       // db 0x9A|0x92  ; P=1, DPL=00, S=1, Type=0xA:CodeSegment(Ω««‡/¿–±‚)|0x2:DataSegment(¿–±‚/æ≤±‚)
+	BYTE bUpperLimitAndUpperFlags; // db 0xAF       ; G=1, D/B=0, L=1, AVL=0, Limit=0xF
+	BYTE bUpperBaseAddress2;       // db 0x00       ; BaseAddress=0x00
 } GDTENTRY8;
 
-// 16Î∞îÏù¥Ìä∏ ÌÅ¨Í∏∞Ïùò GDT ÏóîÌä∏Î¶¨ Íµ¨Ï°∞
-typedef struct kGDTEntry16Struct
-{
-  WORD wLowerLimit;
-  WORD wLowerBaseAddress;
-  BYTE bMiddleBaseAddress1;
-  BYTE bTypeAndLowerFlag;
-  BYTE bUpperLimitAndUpperFlag;
-  BYTE bMiddleBaseAddress2;
-  DWORD dwUpperBaseAddress;
-  DWORD dwReserved;
+// TSS ºº±◊∏’∆Æ µΩ∫≈©∏≥≈Õ (16byte)
+typedef struct kGDTEntry16Struct{  // æÓº¿∫Ì∏Æ ƒ⁄µÂ
+	WORD wLowerLimit;              // dw 0xFFFF     ; Limit=0xFFFF
+	WORD wLowerBaseAddress;        // dw 0x0000     ; BaseAddress=0x0000
+	BYTE bMiddleBaseAddress1;      // db 0x00       ; BaseAddress=0x00
+	BYTE bTypeAndLowerFlags;       // db 0x99       ; P=1, DPL=00, S=1, Type=0x9:TSSSegment(NotBusy)
+	BYTE bUpperLimitAndUpperFlags; // db 0xAF       ; G=1, D/B=0, L=0, AVL=0, Limit=0xF
+	BYTE bMiddleBaseAddress2;      // db 0x00       ; BaseAddress=0x00
+	DWORD dwUpperBaseAddress;      // dd 0x00000000 ; BaseAddress=0x00000000
+	DWORD dwReserved;              // dd 0x00000000 ; Reserved=0x00000000
 } GDTENTRY16;
 
-// TSS Data Íµ¨Ï°∞Ï≤¥
-typedef struct kTSSDataStruct
-{
-  DWORD dwReserved1;
-  QWORD qwRsp[3];
-  QWORD qwReserved2;
-  QWORD qwIST[7];
-  QWORD qwReserved3;
-  WORD wReserved;
-  WORD wIOMapBaseAddress;
+// TSS ºº±◊∏’∆Æ (104byte)
+typedef struct kTSSDataStruct{
+	DWORD dwReserved1;
+	QWORD qwRsp[3];
+	QWORD qwReserved2;
+	QWORD qwIST[7];
+	QWORD qwReserved3;
+	WORD wReserved4;
+	WORD wIOMapBaseAddress;
 } TSSSEGMENT;
 
-// IDT Í≤åÏù¥Ìä∏ ÎîîÏä§ÌÅ¨Î¶ΩÌÑ∞ Íµ¨Ï°∞Ï≤¥
-typedef struct kIDTEntryStruct
-{
-  WORD wLowerBaseAddress;
-  WORD wSegmentSelector;
-  BYTE bIST;
-  BYTE bTypeAndFlags;
-  WORD wMiddleBaseAddress;
-  DWORD dwUpperBaseAddress;
-  DWORD dwReserved;
-} IDTENTRY;
+// IDT ∞‘¿Ã∆Æ µΩ∫≈©∏≥≈Õ (16byte)
+typedef struct kIDTEntryStruct{ // æÓº¿∫Ì∏Æ ƒ⁄µÂ
+	WORD wLowerBaseAddress;     // dw 0x????     ; HandlerOffset=0x????
+	WORD wSegmentSelector;      // dw 0x0008     ; KernelCodeSegmentDescriptor=0x0008
+	BYTE bIST;                  // db 0x01       ; Padding=00000, IST=001
+	BYTE bTypeAndFlags;         // db 0x8E       ; P=1, DPL=00, Padding=0, Type=0xE:InterruptGate|0xF:TrapGate
+	WORD wMiddleBaseAddress;    // dw 0x????     ; HandlerOffset=0x????
+	DWORD dwUpperBaseAddress;   // dd 0x???????? ; HandlerOffset=0x????????
+	DWORD dwReserved;           // dd 0x00000000 ; Reserved=0x00000000
+}IDTENTRY;
 
-#pragma pack( pop )
+#pragma pack(pop)
 
-void kInitializeGDTTableAndTSS( void );
-void kSetGDTEntry8( GDTENTRY8 * pstEntry, DWORD dwBaseAddress, DWORD dwLimit, BYTE bUpperFlags, BYTE bLowerFlags, BYTE bType );
-void kSetGDTEntry16( GDTENTRY16 * pstEntry, QWORD dwBaseAddress, DWORD dwLimit, BYTE bUpperFlags, BYTE bLowerFlags, BYTE bType );
-void kInitializeTSSSegment( TSSSEGMENT * pstTSS );
+//====================================================================================================
+// «‘ºˆ
+//====================================================================================================
+void kInitializeGDTTableAndTSS(void);
+void kSetGDTEntry8(GDTENTRY8* pstEntry, DWORD dwBaseAddress, DWORD dwLimit, BYTE bUpperFlags, BYTE bLowerFlags, BYTE bType);
+void kSetGDTEntry16(GDTENTRY16* pstEntry, QWORD qwBaseAddress, DWORD dwLimit, BYTE bUpperFlags, BYTE bLowerFlags, BYTE bType);
+void kInitializeTSSSegment(TSSSEGMENT* pstTSS);
+void kInitializeIDTTable(void);
+void kSetIDTEntry(IDTENTRY* pstEntry, void* pvHandler, WORD wSelector, BYTE bIST, BYTE bFlags, BYTE bType);
+void kDummyHandler(void);
 
-void kInitializeIDTTables( void );
-void kSetIDTEntry( IDTENTRY * pstEntry, void * pvHandler, WORD wSelector, BYTE bIST, BYTE bFlags, BYTE bType );
-void kDummyHandler( void );
-
-#endif /* __DESCRIPTOR_H__ */
+#endif // __DESCRIPTOR_H__

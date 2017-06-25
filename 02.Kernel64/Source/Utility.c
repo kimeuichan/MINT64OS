@@ -1,42 +1,44 @@
 #include "Utility.h"
 
-// 메모리를 특정 값으로 채움o
-void kMemSet(void* pvDestination, BYTE bData, int iSize)
-{
-    int i;
+void kPrintString(int iX, int iY, const char* pcString){
+	CHARACTER* pstScreen = (CHARACTER*)0xB8000;
+	int i;
 
-    for (i = 0 ; i < iSize ; i++)
-    {
-        ((char*)pvDestination)[i] = bData;
-    }
+	pstScreen += (iY*80) + iX;
+
+	for(i = 0; pcString[i] != NULL; i++){
+		pstScreen[i].bCharacter = pcString[i];
+	}
 }
 
-// 메모리 복사
-int kMemCpy(void* pvDestination, const void* pvSource, int iSize)
-{
-    int i;
+void kMemSet(void* pvDest, BYTE bData, int iSize){
+	int i;
 
-    for (i = 0 ; i < iSize ; i++)
-    {
-        ((char*)pvDestination)[i] = ((char*)pvSource)[i];
-    }
-
-    return iSize;
+	for(i = 0; i < iSize; i++){
+		((char*)pvDest)[i] = bData;
+	}
 }
 
-// 메모리 비교
-int kMemCmp(const void* pvDestination, const void* pvSource, int iSize)
-{
-    int i;
-    char cTemp;
+int kMemCpy(void* pvDest, const void* pvSrc, int iSize){
+	int i;
 
-    for (i = 0 ; i < iSize ; i++)
-    {
-        cTemp = ((char*)pvDestination)[i] - ((char*)pvSource)[i];
-        if (cTemp != 0)
-        {
-            return (int)cTemp;
-        }
-    }
-    return 0;
+	for(i = 0; i < iSize; i++){
+		((char*)pvDest)[i] = ((char*)pvSrc)[i];
+	}
+
+	return iSize;
+}
+
+int kMemCmp(const void* pvDest, const void* pvSrc, int iSize){
+	int i;
+	char cTemp;
+
+	for(i = 0; i < iSize; i++){
+		cTemp = ((char*)pvDest)[i] - ((char*)pvSrc)[i];
+		if(cTemp != 0){
+			return (int)cTemp;
+		}
+	}
+
+	return 0;
 }

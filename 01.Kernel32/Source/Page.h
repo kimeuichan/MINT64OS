@@ -3,37 +3,37 @@
 
 #include "Types.h"
 
-#define PAGE_FLAGS_P        0x00000001 // Present
-#define PAGE_FLAGS_RW       0x00000002 // Read/Write
-#define PAGE_FLAGS_US       0x00000004 // User/Supervisor
-#define PAGE_FLAGS_PWT      0x00000008 // Page Level Write-through
-#define PAGE_FLAGS_PCD      0x00000010 // Page Level Cache Disable
-#define PAGE_FLAGS_A        0x00000020 // Accessed
-#define PAGE_FLAGS_D        0x00000040 // Dirty
-#define PAGE_FLAGS_PS       0x00000080 // Page Size
-#define PAGE_FLAGS_G        0x00000100 // Global
-#define PAGE_FLAGS_PAT      0x00001000 // Page Attribute Table Index
-#define PAGE_FLAGS_EXB      0x80000000 // Execute Disable
-#define PAGE_FLAGS_DEFAULT  ( PAGE_FLAGS_P | PAGE_FLAGS_RW )
-#define PAGE_TABLESIZE      0x1000     // 4096Byte
-#define PAGE_MAXENTRYCOUNT  512        // 4096Byte / 8Byte(Table Entry Size)
-#define PAGE_DEFAULTSIZE    0x200000
+// 페이지 테이블 엔트리 필드
+#define PAGE_FLAGS_P   0x00000001 // (1 << 0)  : Present
+#define PAGE_FLAGS_RW  0x00000002 // (1 << 1)  : Read/Write
+#define PAGE_FLAGS_US  0x00000004 // (1 << 2)  : User/Supervisor
+#define PAGE_FLAGS_PWT 0x00000008 // (1 << 3)  : Page-level Write Through
+#define PAGE_FLAGS_PCD 0x00000010 // (1 << 4)  : Page-level Cache Disable
+#define PAGE_FLAGS_A   0x00000020 // (1 << 5)  : Accessed
+#define PAGE_FLAGS_D   0x00000040 // (1 << 6)  : Dirty
+#define PAGE_FLAGS_PS  0x00000080 // (1 << 7)  : Page Size
+#define PAGE_FLAGS_G   0x00000100 // (1 << 8)  : Global
+#define PAGE_FLAGS_PAT 0x00001000 // (1 << 12) : Page Attribute Table Index
+#define PAGE_FLAGS_EXB 0x80000000 // (1 << 31) : Excute Disable
 
-#pragma pack( push, 1 )
+// 자주 사용할 매크로
+#define PAGE_FLAGS_DEFAULT (PAGE_FLAGS_P | PAGE_FLAGS_RW)
 
-typedef struct kPageTableEntryStruct
-{
-  DWORD dwAttributeAndLowerBaseAddress;
-  DWORD dwUpperBaseAddressAndEXB;
+// 기타 매크로
+#define PAGE_TABLE_SIZE      0x1000     // 4KB
+#define PAGE_MAX_ENTRY_COUNT 512
+#define PAGE_DEFAULT_SIZE    0x200000   // 2MB
+
+#pragma pack(push, 1)
+
+typedef struct kPageTableEntryStruct {
+	DWORD dwAttributeAndLowerBaseAddress;
+	DWORD dwUpperBaseAddressAndEXB;
 } PML4TENTRY, PDPTENTRY, PDENTRY, PTENTRY;
 
-#pragma pack( pop )
+#pragma pack(pop)
 
-void kInitializePageTables( void );
-void kSetPageEntryData( PTENTRY * pstEntry, 
-                        DWORD dwUpperBaseAddress,
-                        DWORD dwLowerBaseAddress,
-                        DWORD dwLowerFlags,
-                        DWORD dwUpperFlags );
+void kInitializePageTables(void);
+void kSetPageEntryData(PTENTRY* pstEntry, DWORD dwUpperBaseAddress, DWORD dwLowerBaseAddress, DWORD dwLowerFlags, DWORD dwUpperFlags);
 
-#endif /* __PAGE_H__ */
+#endif // __PAGE_H__

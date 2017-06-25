@@ -2,538 +2,447 @@
 #include "AssemblyUtility.h"
 #include "Keyboard.h"
 
-////////////////////////////////////////////////////////////////////////////////
-// í‚¤ë³´ë“œ ì»¨íŠ¸ë¡¤ëŸ¬ì™€ í‚¤ë³´ë“œ ì œì–´ì— ê´€ë ¨ëœ í•¨ìˆ˜
-////////////////////////////////////////////////////////////////////////////////
-// ì¶œë ¥ ë²„í¼(í¬íŠ¸ 0x60)ì— ìˆ˜ì‹ ëœ ë°ì´í„°ê°€ ìˆëŠ”ì§€ ì—¬ë¶€ë¥¼ ë°˜í™˜
-BOOL kIsOutputBufferFull( void )
-{
-  // ìƒíƒœ ë ˆì§€ìŠ¤íŠ¸(í¬íŠ¸ 0x64)ì—ì„œ ì½ì€ ê°’ì— ì¶œë ¥ ë²„í¼ ìƒíƒœ ë¹„íŠ¸(ë¹„íŠ¸ 0)ê°€
-  // 1ë¡œ ì„¤ì •ë˜ì–´ ìˆìœ¼ë©´ ì¶œë ¥ ë²„í¼ì— í‚¤ë³´ë“œê°€ ì „ì†¡í•œ ë°ì´í„°ê°€ ì¡´ì¬í•¨
-  if( kInPortByte( 0x64 ) & 0x01 )
-  {
-    return TRUE;
-  }
+/* @Å°º¸µå ÄÁÆ®·Ñ·¯ÀÇ ·¹Áö½ºÅÍ¿Í Æ÷Æ® I/O ÇÔ¼ö
+ *  1.ÄÁÆ®·Ñ ·¹Áö½ºÅÍ : kOutPortByte(0x64, bData)
+ *  2.»óÅÂ ·¹Áö½ºÅÍ    : kInPortByte(0x64) : return bData
+ *  3.ÀÔ·Â ¹öÆÛ          : kOutPortByte(0x60, bData)
+ *  4.Ãâ·Â ¹öÆÛ          : kInPortByte(0x60) : return bData
+ */
 
-  return FALSE;
+BOOL kIsOutputBufferFull(void){
+
+	// »óÅÂ ·¹Áö½ºÅÍÀÇ OUTB(ºñÆ® 0)À» È®ÀÎ
+	if(kInPortByte(0x64) & 0x01){
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
-// ì…ë ¥ ë²„í¼(í¬íŠ¸ 0x60)ì— í”„ë¡œì„¸ì„œê°€ ì“´ ë°ì´í„°ê°€ ë‚¨ì•„ìˆëŠ”ì§€ ì—¬ë¶€ë¥¼ ë°˜í™˜
-BOOL kIsInputBufferFull( void )
-{
-  // ìƒíƒœ ë ˆì§€ìŠ¤í„°(í¬íŠ¸ 0x64)ì—ì„œ ì½ì€ ê°’ì— ì…ë ¥ ë²„í¼ ìƒíƒœ ë¹„íŠ¸(ë¹„íŠ¸ 1)ê°€
-  // 1ë¡œ ì„¤ì •ë˜ì–´ ìˆìœ¼ë©´ ì•„ì§ í‚¤ë³´ë“œê°€ ë°ì´í„°ë¥¼ ê°€ì ¸ê°€ì§€ ì•Šì•˜ìŒ
-  if( kInPortByte( 0x64 ) & 0x02 )
-  {
-    return TRUE;
-  }
-  return FALSE;
+BOOL kIsInputBufferFull(void){
+
+	// »óÅÂ ·¹Áö½ºÅÍÀÇ INPB(ºñÆ® 1)À» È®ÀÎ
+	if(kInPortByte(0x64) & 0x02){
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
-// í‚¤ë³´ë“œë¥¼ í™œì„±í™”
-BOOL kActivateKeyboard( void )
-{
-  int i;
-  int j;
+BOOL kActivateKeyboard(void){
+	int i, j;
 
-  // ì»¨íŠ¸ë¡¤ ë ˆì§€ìŠ¤í„°(í¬íŠ¸ 0x64)ì— í‚¤ë³´ë“œ í™œì„±í™” ì»¤ë§¨ë“œ(0xAE)ë¥¼ ì „ë‹¬í•˜ì—¬ í‚¤ë³´ë“œ ë””ë°”ì´ìŠ¤ í™œì„±í™”
-  kOutPortByte( 0x64, 0xAE );
+	// Å°º¸µå ÄÁÆ®·Ñ·¯ÀÇ Å°º¸µå µğ¹ÙÀÌ½º È°¼ºÈ­: ÄÁÆ®·Ñ ·¹Áö½ºÅÍ¿¡ [0xAE:Å°º¸µå µğ¹ÙÀÌ½º È°¼ºÈ­ Ä¿¸Çµå]¸¦ ¾¸
+	kOutPortByte(0x64, 0xAE);
 
-  // ì…ë ¥ ë²„í¼(í¬íŠ¸ 0x60)ê°€ ë¹Œ ë•Œê¹Œì§€ ê¸°ë‹¤ë ¸ë‹¤ê°€ í‚¤ë³´ë“œì— í™œì„±í™” ì»¤ë§¨ë“œë¥¼ ì „ì†¡
-  // 0xFFFFë§Œí¼ ë£¨í”„ë¥¼ ìˆ˜í–‰í•  ì‹œê°„ì´ë©´ ì»¤ë§¨ë“œ ì „ì†¡ì— ì¶©ë¶„
-  // 0xFFFFë£¨í”„ë¥¼ ìˆ˜í–‰í•œ ì´í›„ì—ë„ ì…ë ¥ ë²„í¼(í¬íŠ¸ 0x60)ê°€ ë¹„ì§€ ì•Šìœ¼ë©´ ë¬´ì‹œí•˜ê³  ì „ì†¡
-  for( i = 0; i < 0xFFFF; i++)
-  {
-    // ì…ë ¥ ë²„í¼(í¬íŠ¸ 0x60)ê°€ ë¹„ì–´ìˆìœ¼ë©´ í‚¤ë³´ë“œ ì»¤ë§¨ë“œ ì „ì†¡ ê°€ëŠ¥
-    if( kIsInputBufferFull() == FALSE )
-    {
-      break;
-    }
-  }
-  // ì…ë ¥ ë²„í¼(í¬íŠ¸ 0x60)ë¡œ í‚¤ë³´ë“œ í™œì„±í™”(0xF4) ì»¤ë§¨ë“œë¥¼ ì „ë‹¬í•˜ì—¬ í‚¤ë³´ë“œë¡œ ì „ì†¡
-  kOutPortByte( 0x60, 0xF4 );
+	for(i = 0; i < 0xFFFF; i++){
+		if(kIsInputBufferFull() == FALSE){
+			break;
+		}
+	}
 
-  // ACKê°€ ì˜¬ ë•Œê¹Œì§€ ëŒ€ê¸°í•¨
-  // ACKê°€ ì˜¤ê¸° ì „ í‚¤ë³´ë“œ ì¶œë ¥ ë²„í¼ì— í‚¤ ë°ì´í„°ê°€ ì €ì¥ë˜ì–´ ìˆì„ ìˆ˜ ìˆìœ¼ë¯€ë¡œ
-  // ìµœëŒ€ 100ë²ˆ ê¹Œì§€ ACKë¥¼ ê¸°ë‹¤ë¦¼
-  for( j = 0; j < 100; j++)
-  {
-    // 0xFFFFë§Œí¼ ë£¨í”„ë¥¼ ìˆ˜í–‰í•  ì‹œê°„ì´ë©´ ì¶©ë¶„íˆ ì»¤ë§¨ë“œì˜ ì‘ë‹µì´ ì˜¬ ìˆ˜ ìˆìŒ
-    for( i = 0; i < 0xFFFF; i++ )
-    {
-      // ì¶œë ¥ ë²„í¼ê°€ ì°¨ìˆìœ¼ë©´ ë°ì´í„°ë¥¼ ì½ì„ ìˆ˜ ìˆìŒ
-      if( kIsOutputBufferFull() == TRUE )
-      {
-        break;
-      }
-    }
+	// Å°º¸µå È°¼ºÈ­: ÀÔ·Â ¹öÆÛ¿¡ [0xF4:Å°º¸µå È°¼ºÈ­ Ä¿¸Çµå]¸¦ ¾¸
+	kOutPortByte(0x60, 0xF4);
 
-    // ì¶œë ¥ ë²„í¼ì—ì„œ ì½ì€ ë°ì´í„°ê°€ ACK(0xFA)ì´ë©´ ì„±ê³µ
-    if( kInPortByte( 0x60 ) == 0xFA )
-    {
-      return TRUE;
-    }
-  }
-  return FALSE;
+	for(j = 0; j < 100; j++){
+		for(i = 0; i < 0xFFFF; i++){
+			if(kIsOutputBufferFull() == TRUE){
+				break;
+			}
+		}
+
+		// ÀÀ´äÄÚµå È®ÀÎ: Ãâ·Â ¹öÆÛ¿¡¼­ ÀĞÀº µ¥ÀÌÅÍ°¡ [0xFA:ACK]ÀÎÁö È®ÀÎ
+		if(kInPortByte(0x60) == 0xFA){
+			return TRUE;
+		}
+	}
+
+	return FALSE;
 }
 
-// ì¶œë ¥ ë²„í¼(í¬íŠ¸ 0x60)ì—ì„œ í‚¤ë¥¼ ì½ìŒ
-BYTE kGetKeyboardScanCode( void )
-{
-  // ì¶œë ¥ ë²„í¼(í¬íŠ¸ 0x60)ì— ë°ì´í„°ê°€ ìˆì„ ë•Œê¹Œì§€ ëŒ€ê¸°
-  while( kIsOutputBufferFull() == FALSE )
-  {
-    ;
-  }
-  return kInPortByte( 0x60 );
+BYTE kGetKeyboardScanCode(void){
+	while(kIsOutputBufferFull() == FALSE){
+		;
+	}
+
+	// Ãâ·Â ¹öÆÛ¿¡¼­ ÀĞÀº µ¥ÀÌÅÍ(½ºÄµ ÄÚµå)¸¦ ¹İÈ¯
+	return kInPortByte(0x60);
 }
 
-// í‚¤ë³´ë“œì˜ LEDì˜ ON/OFFë¥¼ ë³€ê²½
-BOOL kChangeKeyboardLED( BOOL bCapsLockOn, BOOL bNumLockOn, BOOL bScrollLockOn )
-{
-  int i, j;
+BOOL kChangeKeyboardLED(BOOL bCapsLockOn, BOOL bNumLockOn, BOOL bScrollLockOn){
+	int i, j;
 
-  // í‚¤ë³´ë“œì— LED ë³€ê²½ ì»¤ë§¨ë“œë¥¼ ì „ì†¡í•˜ê³  ì»¤ë§¨ë“œê°€ ì²˜ë¦¬ë  ë•Œê¹Œì§€ ëŒ€ê¸°
-  for( i = 0; i < 0xFFFF; i++ )
-  {
-    // ì¶œë ¥ ë²„í¼ê°€ ë¹„ì—ˆìœ¼ë©´ ì»¤ë§¨ë“œ ì „ì†¡ ê°€ëŠ¥
-    if( kIsInputBufferFull() == FALSE)
-    {
-      break;
-    }
-  }
+	for(i = 0; i < 0xFFFF; i++){
+		if(kIsInputBufferFull() == FALSE){
+			break;
+		}
+	}
 
-  // ì¶œë ¥ ë²„í¼(í¬íŠ¸ 0x60)ë¡œ LED ìƒíƒœ ë³€ê²½ ì»¤ë§¨ë“œ(0xED) ì „ì†¡
-  kOutPortByte( 0x60, 0xED );
-  for( i = 0; i < 0xFFFF; i++ )
-  {
-    // ì…ë ¥ ë²„í¼(0x60)ê°€ ë¹„ì–´ ìˆìœ¼ë©´ í‚¤ë³´ë“œê°€ ì»¤ë§¨ë“œë¥¼ ê°€ì ¼ê°„ ê²ƒ
-    if( kIsInputBufferFull() == FALSE )
-    {
-      break;
-    }
-  }
+	// Å°º¸µå LED »óÅÂ º¯°æ Ä¿¸Çµå Àü¼Û: ÀÔ·Â ¹öÆÛ¿¡ [0xED:Å°º¸µå LED »óÅÂ º¯°æ Ä¿¸Çµå]¸¦ ¾¸
+	kOutPortByte(0x60, 0xED);
 
-  // í‚¤ë³´ë“œê°€ LED ìƒíƒœ ë³€ê²½ ì»¤ë§¨ë“œë¥¼ ê°€ì ¸ê°”ìœ¼ë¯€ë¡œ ACKê°€ ì˜¬ë•Œê¹Œì§€ ëŒ€ê¸°
-  for( j = 0; j < 0x100; j++ )
-  {
-    for( i = 0; i < 0xFFFF; i++ )
-    {
-      // ì¶œë ¥ ë²„í¼(í¬íŠ¸ 0x60)ê°€ ì°¨ ìˆìœ¼ë©´ ë°ì´í„°ë¥¼ ì½ì„ ìˆ˜ ì‡ìŒ
-      if( kIsOutputBufferFull() == TRUE )
-      {
-        break;
-      }
-    }
+	for(i = 0; i < 0xFFFF; i++){
+		if(kIsInputBufferFull() == FALSE){
+			break;
+		}
+	}
 
-    // ì¶œë ¥ ë²„í¼(í¬íŠ¸ 0x60)ì—ì„œ ì½ì€ ë°ì´í„°ê°€ ACK(0xFA)ì´ë©´ ì„±ê³µ
-    if( kInPortByte( 0x60 ) == 0xFA )
-    {
-      break;
-    }
-  }
-  if( j >= 100 )
-  {
-    return FALSE;
-  }
+	for(j = 0; j < 100; j++){
+		for(i = 0; i < 0xFFFF; i++){
+			if(kIsOutputBufferFull() == TRUE){
+				break;
+			}
+		}
 
-  // LED ë³€ê²½ ê°’ì„ í‚¤ë³´ë“œë¡œ ì „ì†¡í•˜ê³  ë°ì´í„° ì²˜ë¦¬ê°€ ì™„ë£Œë  ë•Œê¹Œì§€ ëŒ€ê¸°
-  kOutPortByte( 0x60, (bCapsLockOn << 2) | (bNumLockOn << 1) | bScrollLockOn );
-  for( i = 0; i < 0xFFFF; i++ )
-  {
-    // ì…ë ¥ ë²„í¼(0x60)ê°€ ë¹„ì–´ ìˆìœ¼ë©´ í‚¤ë³´ë“œê°€ LED ë°ì´í„°ë¥¼ ê°€ì ¸ê°„ ê²ƒ
-    if( kIsInputBufferFull() == FALSE )
-    {
-      break;
-    }
-  }
+		// ÀÀ´äÄÚµå È®ÀÎ: Ãâ·Â ¹öÆÛ¿¡¼­ ÀĞÀº µ¥ÀÌÅÍ°¡ [0xFA:ACK]ÀÎÁö È®ÀÎ
+		if(kInPortByte(0x60) == 0xFA){
+			break;
+		}
+	}
 
-  // í‚¤ë³´ë“œê°€ LED ë°ì´í„°ë¥¼ ê°€ì ¸ê°”ìœ¼ë¯€ë¡œ ACKê°€ ì˜¬ ë•Œê¹Œì§€ ëŒ€ê¸°í•¨
-  for( j = 0; j < 100; j++ )
-  {
-    for( i = 0; i < 0xFFFF; i++ )
-    {
-      if( kIsOutputBufferFull() == TRUE )
-      {
-        break;
-      }
-    }
+	if(j >= 100){
+		return FALSE;
+	}
 
-    if( kInPortByte( 0x60 ) == 0xFA )
-    {
-      break;
-    }
-  }
+	// Å°º¸µå LED »óÅÂ º¯°æ µ¥ÀÌÅÍ Àü¼Û: ÀÔ·Â ¹öÆÛ¿¡ [CapsLock(ºñÆ® 2) | NumLock(ºñÆ® 1) | ScrollLock(ºñÆ® 0)]¸¦ ¾¸
+	kOutPortByte(0x60, (bCapsLockOn << 2) | (bNumLockOn << 1) | (bScrollLockOn));
 
-  if( j >= 100 )
-  {
-    return FALSE;
-  }
-  return TRUE;
+	for(i = 0; i < 0xFFFF; i++){
+		if(kIsInputBufferFull() == FALSE){
+			break;
+		}
+	}
+
+	for(j = 0; j < 100; j++){
+		for(i = 0; i < 0xFFFF; i++){
+			if(kIsOutputBufferFull() == TRUE){
+				break;
+			}
+		}
+
+		// ÀÀ´äÄÚµå È®ÀÎ: Ãâ·Â ¹öÆÛ¿¡¼­ ÀĞÀº µ¥ÀÌÅÍ°¡ [0xFA:ACK]ÀÎÁö È®ÀÎ
+		if(kInPortByte(0x60) == 0xFA){
+			break;
+		}
+	}
+
+	if(j >= 100){
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
-// A20 ê²Œì´íŠ¸ë¥¼ í™œì„±í™”
-void kEnableA20Gate( void )
-{
-  BYTE bOutputPortData;
-  int i;
+void kEnableA20Gate(void){
+	BYTE bOutputPortData; // Ãâ·Â Æ÷Æ® µ¥ÀÌÅÍ
+	int i;
 
-  // ì»¨íŠ¸ë¡¤ ë ˆì§€ìŠ¤í„°(í¬íŠ¸ 0x64)ì— í‚¤ë³´ë“œ ì»¨ë“œë¡¤ëŸ¬ì˜ ì¶œë ¥ í¬íŠ¸ ê°’ì„ ì½ëŠ” ì»¤ë§¨ë“œ(0xD0)ì „ì†¡
-  kOutPortByte( 0x64, 0xD0 );
+	// ÄÁÆ®·Ñ ·¹Áö½ºÅÍ¿¡ [0xD0:Ãâ·Â Æ÷Æ® ÀĞ±â Ä¿¸Çµå]¸¦ ¾¸
+	kOutPortByte(0x64, 0xD0);
 
-  // ì¶œë ¥ í¬íŠ¸ì˜ ë°ì´í„°ë¥¼ ê¸°ë‹¤ë ¸ë‹¤ê°€ ì½ìŒ
-  for( i = 0; i < 0xFFFF; i++ )
-  {
-    if( kIsOutputBufferFull() == TRUE)
-    {
-      break;
-    }
-  }
-  // ì¶œë ¥ í¬íŠ¸ì— ìˆ˜ì‹ ëœ í‚¤ë³´ë“œ ì»¨íŠ¸ë¡¤ëŸ¬ì˜ ì¶œë ¥ í¬íŠ¸ ê°’ì„ ì½ìŒ
-  bOutputPortData = kInPortByte( 0x60 );
+	for(i = 0; i < 0xFFFF; i++){
+		if(kIsOutputBufferFull() == TRUE){
+			break;
+		}
+	}
 
-  // A20 ê²Œì´íŠ¸ ë¹„íŠ¸ ì„¤ì •
-  bOutputPortData |= 0x01;
+	// Ãâ·Â ¹öÆÛ¿¡¼­ µ¥ÀÌÅÍ¸¦ ÀĞÀ½
+	bOutputPortData = kInPortByte(0x60);
 
-  // ì…ë ¥ ë²„í¼ì— ë°ì´í„°ê°€ ë¹„ì–´ ìˆìœ¼ë©´ ì¶œë ¥ í¬íŠ¸ì— ê°’ì„ ì“°ëŠ” ì»¤ë§¨ë“œì™€ ì¶œë ¥ í¬íŠ¸ ë°ì´í„° ì „ì†¡
-  for( i = 0; i < 0xFFFF; i++ )
-  {
-    if( kIsInputBufferFull() == FALSE )
-    {
-      break;
-    }
-  }
+	// A20 °ÔÀÌÆ® È°¼ºÈ­ ºñÆ®(ºñÆ® 1)À» 1·Î ¼³Á¤
+	bOutputPortData |= 0x02;
 
-  // ì»¤ë§¨ë“œ ë ˆì§€ìŠ¤í„°(0x64)ì— ì¶œë ¥ í¬íŠ¸ ì„¤ì • ì»¤ë§¨ë“œ(0xD1)ë¥¼ ì „ë‹¬
-  kOutPortByte( 0x64, 0xD1 );
+	for(i = 0; i < 0xFFFF; i++){
+		if(kIsInputBufferFull() == FALSE){
+			break;
+		}
+	}
 
-  // ì…ë ¥ ë²„í¼(0x60)ì— A20 ê²Œì´íŠ¸ ë¹„íŠ¸ê°€ 1ë¡œ ì„¤ì •ëœ ê°’ì„ ì „ë‹¬
-  kOutPortByte( 0x60, bOutputPortData );
+	// ÄÁÆ®·Ñ ·¹Áö½ºÅÍ¿¡ [0xD1:Ãâ·Â Æ÷Æ® ¾²±â Ä¿¸Çµå]¸¦ ¾¸
+	kOutPortByte(0x64, 0xD1);
+
+	// ÀÔ·Â ¹öÆÛ¿¡ µ¥ÀÌÅÍ¸¦ ¾¸
+	kOutPortByte(0x60, bOutputPortData);
 }
 
-// í”„ë¡œì„¸ì„œë¥¼ ë¦¬ì…‹
-void kReboot( void )
-{
-  int i;
+void kReboot(void){
+	int i;
 
-  for( i = 0; i < 0xFFFF; i++ )
-  {
-    if( kIsInputBufferFull() == FALSE )
-    {
-      break;
-    }
-  }
+	for(i = 0; i < 0xFFFF; i++){
+		if(kIsInputBufferFull() == FALSE){
+			break;
+		}
+	}
 
-  // ì»¤ë§¨ë“œ ë ˆì§€ìŠ¤í„°(0x64)ì— ì¶œë ¥ í¬íŠ¸ ì„¤ì • ì»¤ë§¨ë“œ(0xD1)ë¥¼ ì „ë‹¬
-  kOutPortByte( 0x64, 0xD1 );
+	// ÄÁÆ®·Ñ ·¹Áö½ºÅÍ¿¡ [0xD1:Ãâ·Â Æ÷Æ® ¾²±â Ä¿¸Çµå]¸¦ ¾¸
+	kOutPortByte(0x64, 0xD1);
 
-  // ì…ë ¥ ë²„í¼(0x60)ì— 0ì„ ì „ë‹¬í•˜ì—¬ í”„ë¡œì„¸ì„œë¥¼ ë¦¬ì…‹í•¨
-  kOutPortByte( 0x60, 0x00 );
+	// ÇÁ·Î¼¼¼­ ¸®¼Â ºñÆ®(ºñÆ® 0)À» 0·Î ¼³Á¤
+	kOutPortByte(0x60, 0x00);
 
-  while( 1 )
-  {
-    ;
-  }
+	while(1){
+		;
+	}
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// ìŠ¤ìº” ì½”ë“œë¥¼ ASCII ì½”ë“œë¡œ ë³€í™˜í•˜ëŠ” ê¸°ëŠ¥ì— ê´€ë ¨ëœ í•¨ìˆ˜ë“¤
-////////////////////////////////////////////////////////////////////////////////
-// í‚¤ë³´ë“œ ìƒíƒœë¥¼ ê´€ë¦¬í•˜ëŠ” í‚¤ë³´ë“œ ë§¤ë‹ˆì €
+///////////////////////////////////////////////
+// ½ºÄµ ÄÚµå¸¦  ¾Æ½ºÅ° ÄÚµå·Î º¯È¯ÇÏ´Â ±â´É¿¡ °ü·ÃµÈ ÇÔ¼öµé
+///////////////////////////////////////////////
+
+// Å°º¸µå »óÅÂ¸¦ °ü¸®ÇÏ´Â Å°º¸µå ¸Å´ÏÀú
 static KEYBOARDMANAGER gs_stKeyboardManager = {0, };
 
-// ìŠ¤ìº” ì½”ë“œë¥¼ ASCII ì½”ë“œë¡œ ë³€í™˜í•˜ëŠ” í…Œì´ë¸”
-static KEYMAPPINGENTRY gs_vstKeyMappingTable[ KEY_MAPPINGTABLEMAXCOUNT ] =
-{
-  { KEY_NONE      , KEY_NONE      },
-  { KEY_ESC       , KEY_ESC       },
-  { '1'           , '!'           },
-  { '2'           , '@'           },
-  { '3'           , '#'           },
-  { '4'           , '$'           },
-  { '5'           , '%'           },
-  { '6'           , '^'           },
-  { '7'           , '&'           },
-  { '8'           , '*'           },
-  { '9'           , '('           },
-  { '0'           , ')'           },
-  { '-'           , '_'           },
-  { '='           , '+'           },
-  { KEY_BACKSPACE , KEY_BACKSPACE },
-  { KEY_TAB       , KEY_TAB       },
-  { 'q'           , 'Q'           },
-  { 'w'           , 'W'           },
-  { 'e'           , 'E'           },
-  { 'r'           , 'R'           },
-  { 't'           , 'T'           },
-  { 'y'           , 'Y'           },
-  { 'u'           , 'U'           },
-  { 'i'           , 'I'           },
-  { 'o'           , 'O'           },
-  { 'p'           , 'P'           },
-  { '['           , '{'           },
-  { ']'           , '}'           },
-  { '\n'          , '\n'          },
-  { KEY_CTRL      , KEY_CTRL      },
-  { 'a'           , 'A'           },
-  { 's'           , 'S'           },
-  { 'd'           , 'D'           },
-  { 'f'           , 'F'           },
-  { 'g'           , 'G'           },
-  { 'h'           , 'H'           },
-  { 'j'           , 'J'           },
-  { 'k'           , 'K'           },
-  { 'l'           , 'L'           },
-  { ';'           , ':'           },
-  { '\''          , '\"'          },
-  { '`'           , '~'           },
-  { KEY_LSHIFT    , KEY_LSHIFT    },
-  { '\\'          , '|'           },
-  { 'z'           , 'Z'           },
-  { 'x'           , 'X'           },
-  { 'c'           , 'C'           },
-  { 'v'           , 'V'           },
-  { 'b'           , 'B'           },
-  { 'n'           , 'N'           },
-  { 'm'           , 'M'           },
-  { ','           , '<'           },
-  { '.'           , '>'           },
-  { '/'           , '?'           },
-  { KEY_RSHIFT    , KEY_RSHIFT    },
-  { '*'           , '*'           },
-  { KEY_LALT      , KEY_LALT      },
-  { ' '           , ' '           },
-  { KEY_CAPSLOCK  , KEY_CAPSLOCK  },
-  { KEY_F1        , KEY_F1        },
-  { KEY_F2        , KEY_F2        },
-  { KEY_F3        , KEY_F3        },
-  { KEY_F4        , KEY_F4        },
-  { KEY_F5        , KEY_F5        },
-  { KEY_F6        , KEY_F6        },
-  { KEY_F7        , KEY_F7        },
-  { KEY_F8        , KEY_F8        },
-  { KEY_F9        , KEY_F9        },
-  { KEY_F10       , KEY_F10       },
-  { KEY_NUMLOCK   , KEY_NUMLOCK   },
-  { KEY_SCROLLLOCK, KEY_SCROLLLOCK},
-
-  { KEY_HOME      , '7'           },
-  { KEY_UP        , '8'           },
-  { KEY_PAGEUP    , '9'           },
-  { '-'           , '-'           },
-  { KEY_LEFT      , '4'           },
-  { KEY_CENTER    , '5'           },
-  { KEY_RIGHT     , '6'           },
-  { '+'           , '+'           },
-  { KEY_END       , '1'           },
-  { KEY_DOWN      , '2'           },
-  { KEY_PAGEDOWN  , '3'           },
-  { KEY_INS       , '0'           },
-  { KEY_DEL       , '.'           },
-  { KEY_NONE      , KEY_NONE      },
-  { KEY_NONE      , KEY_NONE      },
-  { KEY_NONE      , KEY_NONE      },
-  { KEY_F11       , KEY_F11       },
-  { KEY_F12       , KEY_F12       }
+// ½ºÄµ ÄÚµå¸¦ ¾Æ½ºÅ° ÄÚµå·Î º¯È¯ÇÏ´Â Å×ÀÌºí
+static KEYMAPPINGENTRY gs_vstKeyMappingTable[KEY_MAPPINGTABLEMAXCOUNT] = {
+		//----------------------------------------------------------------
+		//    Scan Code    |       ASCII Code
+		//----------------------------------------------------------------
+		//    Down  Up     | Normal          Combined
+		//----------------------------------------------------------------
+		/*  0:0x00, 0x80 */ {KEY_NONE,       KEY_NONE},
+		/*  1:0x01, 0x81 */ {KEY_ESC,        KEY_ESC},
+		/*  2:0x02, 0x82 */ {'1',            '!'},
+		/*  3:0x03, 0x83 */ {'2',            '@'},
+		/*  4:0x04, 0x84 */ {'3',            '#'},
+		/*  5:0x05, 0x85 */ {'4',            '$'},
+		/*  6:0x06, 0x86 */ {'5',            '%'},
+		/*  7:0x07, 0x87 */ {'6',            '^'},
+		/*  8:0x08, 0x88 */ {'7',            '&'},
+		/*  9:0x09, 0x89 */ {'8',            '*'},
+		/* 10:0x0A, 0x8A */ {'9',            '('},
+		/* 11:0x0B, 0x8B */ {'0',            ')'},
+		/* 12:0x0C, 0x8C */ {'-',            '_'},
+		/* 13:0x0D, 0x8D */ {'=',            '+'},
+		/* 14:0x0E, 0x8E */ {KEY_BACKSPACE,  KEY_BACKSPACE},
+		/* 15:0x0F, 0x8F */ {KEY_TAB,        KEY_TAB},
+		/* 16:0x10, 0x90 */ {'q',            'Q'},
+		/* 17:0x11, 0x91 */ {'w',            'W'},
+		/* 18:0x12, 0x92 */ {'e',            'E'},
+		/* 19:0x13, 0x93 */ {'r',            'R'},
+		/* 20:0x14, 0x94 */ {'t',            'T'},
+		/* 21:0x15, 0x95 */ {'y',            'Y'},
+		/* 22:0x16, 0x96 */ {'u',            'U'},
+		/* 23:0x17, 0x97 */ {'i',            'I'},
+		/* 24:0x18, 0x98 */ {'o',            'O'},
+		/* 25:0x19, 0x99 */ {'p',            'P'},
+		/* 26:0x1A, 0x9A */ {'[',            '{'},
+		/* 27:0x1B, 0x9B */ {']',            '}'},
+		/* 28:0x1C, 0x9C */ {KEY_ENTER,      KEY_ENTER},
+		/* 29:0x1D, 0x9D */ {KEY_CTRL,       KEY_CTRL},
+		/* 30:0x1E, 0x9E */ {'a',            'A'},
+		/* 31:0x1F, 0x9F */ {'s',            'S'},
+		/* 32:0x20, 0xA0 */ {'d',            'D'},
+		/* 33:0x21, 0xA1 */ {'f',            'F'},
+		/* 34:0x22, 0xA2 */ {'g',            'G'},
+		/* 35:0x23, 0xA3 */ {'h',            'H'},
+		/* 36:0x24, 0xA4 */ {'j',            'J'},
+		/* 37:0x25, 0xA5 */ {'k',            'K'},
+		/* 38:0x26, 0xA6 */ {'l',            'L'},
+		/* 39:0x27, 0xA7 */ {';',            ':'},
+		/* 40:0x28, 0xA8 */ {'\'',           '\"'},
+		/* 41:0x29, 0xA9 */ {'`',            '~'},
+		/* 42:0x2A, 0xAA */ {KEY_LSHIFT,     KEY_LSHIFT},
+		/* 43:0x2B, 0xAB */ {'\\',           '|'},
+		/* 44:0x2C, 0xAC */ {'z',            'Z'},
+		/* 45:0x2D, 0xAD */ {'x',            'X'},
+		/* 46:0x2E, 0xAE */ {'c',            'C'},
+		/* 47:0x2F, 0xAF */ {'v',            'V'},
+		/* 48:0x30, 0xB0 */ {'b',            'B'},
+		/* 49:0x31, 0xB1 */ {'n',            'N'},
+		/* 50:0x32, 0xB2 */ {'m',            'M'},
+		/* 51:0x33, 0xB3 */ {',',            '<'},
+		/* 52:0x34, 0xB4 */ {'.',            '>'},
+		/* 53:0x35, 0xB5 */ {'/',            '?'},
+		/* 54:0x36, 0xB6 */ {KEY_RSHIFT,     KEY_RSHIFT},
+		/* 55:0x37, 0xB7 */ {'*',            '*'},
+		/* 56:0x38, 0xB8 */ {KEY_LALT,       KEY_LALT},
+		/* 57:0x39, 0xB9 */ {' ',            ' '},
+		/* 58:0x3A, 0xBA */ {KEY_CAPSLOCK,   KEY_CAPSLOCK},
+		/* 59:0x3B, 0xBB */ {KEY_F1,         KEY_F1},
+		/* 60:0x3C, 0xBC */ {KEY_F2,         KEY_F2},
+		/* 61:0x3D, 0xBD */ {KEY_F3,         KEY_F3},
+		/* 62:0x3E, 0xBE */ {KEY_F4,         KEY_F4},
+		/* 63:0x3F, 0xBF */ {KEY_F5,         KEY_F5},
+		/* 64:0x40, 0xC0 */ {KEY_F6,         KEY_F6},
+		/* 65:0x41, 0xC1 */ {KEY_F7,         KEY_F7},
+		/* 66:0x42, 0xC2 */ {KEY_F8,         KEY_F8},
+		/* 67:0x43, 0xC3 */ {KEY_F9,         KEY_F9},
+		/* 68:0x44, 0xC4 */ {KEY_F10,        KEY_F10},
+		/* 69:0x45, 0xC5 */ {KEY_NUMLOCK,    KEY_NUMLOCK},
+		/* 70:0x46, 0xC6 */ {KEY_SCROLLLOCK, KEY_SCROLLLOCK},
+		/* 71:0x47, 0xC7 */ {KEY_HOME,       '7'},
+		/* 72:0x48, 0xC8 */ {KEY_UP,         '8'},
+		/* 73:0x49, 0xC9 */ {KEY_PAGEUP,     '9'},
+		/* 74:0x4A, 0xCA */ {'-',            '-'},
+		/* 75:0x4B, 0xCB */ {KEY_LEFT,       '4'},
+		/* 76:0x4C, 0xCC */ {KEY_CENTER,     '5'},
+		/* 77:0x4D, 0xCD */ {KEY_RIGHT,      '6'},
+		/* 78:0x4E, 0xCE */ {'+',            '+'},
+		/* 79:0x4F, 0xCF */ {KEY_END,        '1'},
+		/* 80:0x50, 0xD0 */ {KEY_DOWN,       '2'},
+		/* 81:0x51, 0xD1 */ {KEY_PAGEDOWN,   '3'},
+		/* 82:0x52, 0xD2 */ {KEY_INS,        '0'},
+		/* 83:0x53, 0xD3 */ {KEY_DEL,        '.'},
+		/* 84:0x54, 0xD4 */ {KEY_NONE,       KEY_NONE},
+		/* 85:0x55, 0xD5 */ {KEY_NONE,       KEY_NONE},
+		/* 86:0x56, 0xD6 */ {KEY_NONE,       KEY_NONE},
+		/* 87:0x57, 0xD7 */ {KEY_F11,        KEY_F11},
+		/* 88:0x58, 0xD8 */ {KEY_F12,        KEY_F12}
 };
 
-// ìŠ¤ìº” ì½”ë“œê°€ ì•ŒíŒŒë²³ ë²”ìœ„ì¸ì§€ ì—¬ë¶€ë¥¼ ë°˜í™˜
-BOOL kIsAlphabetScanCode( BYTE bScanCode )
-{
-  if( ('a' <= gs_vstKeyMappingTable[ bScanCode ].bNormalCode ) &&
-      ( gs_vstKeyMappingTable[ bScanCode ].bNormalCode <= 'z' ) )
-  {
-    return TRUE;
-  }
-  return FALSE;
+BOOL kIsAlphabetScanCode(BYTE bDownScanCode){
+	// ½ºÄµ ÄÚµåÀÇ ¾Æ½ºÅ° ÄÚµå°¡ [a~z]ÀÌ¸é ¾ËÆÄºªÀÓ
+	if(('a' <= gs_vstKeyMappingTable[bDownScanCode].bNormalCode) && (gs_vstKeyMappingTable[bDownScanCode].bNormalCode <= 'z')){
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
-// ìˆ«ì ë˜ëŠ” ê¸°í˜¸ ë²”ìœ„ì¸ì§€ ì—¬ë¶€ë¥¼ ë°˜í™˜
-BOOL kIsNumberOrSymbolScanCode( BYTE bScanCode )
-{
-  if( (2 <= bScanCode) && (bScanCode <= 53) &&
-      ( kIsAlphabetScanCode( bScanCode ) == FALSE ) )
-  {
-    return TRUE;
-  }
-  return FALSE;
+BOOL kIsNumberOrSymbolScanCode(BYTE bDownScanCode){
+	// ¼ıÀÚ ÆĞµå¿Í È®Àå Å°¸¦ Á¦¿ÜÇÑ ¹üÀ§(½ºÄµÄÚµå 2~53)¿¡¼­ ¾ËÆÄºªÀÌ ¾Æ´Ï¸é ¼ıÀÚ³ª ±âÈ£ÀÓ
+	if((2 <= bDownScanCode) && (bDownScanCode <= 53) && (kIsAlphabetScanCode(bDownScanCode) == FALSE)){
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
-// ìˆ«ì íŒ¨ë“œ ë²”ìœ„ì¸ì§€ ì—¬ë¶€ë¥¼ ë°˜í™˜
-BOOL kIsNumberPadScanCode( BYTE bScanCode )
-{
-  if( (71 <= bScanCode) && (bScanCode <= 83) )
-  {
-    return TRUE;
-  }
-  return FALSE;
+BOOL kIsNumberPadScanCode(BYTE bDownScanCode){
+	// ½ºÄµÄÚµå 71~83ÀÌ ¼ıÀÚ ÆĞµåÀÓ
+	if((71 <= bDownScanCode) && (bDownScanCode <= 83)){
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
-// ì¡°í•©ëœ í‚¤ ê°’ì„ ì‚¬ìš©í•´ì•¼ í•˜ëŠ”ì§€ ì—¬ë¶€ë¥¼ ë°˜í™˜
-BOOL kIsUseCombinedCode( BOOL bScanCode )
-{
-  BYTE bDownScanCode;
-  BOOL bUseCombinedKey;
+BOOL kIsUseCombinedCode(BYTE bScanCode){
+	BYTE bDownScanCode;
+	BOOL bUseCombinedKey = FALSE;
 
-  bDownScanCode = bScanCode & 0x7F;
+	bDownScanCode = bScanCode & 0x7F;
 
-  // ì•ŒíŒŒë²³ í‚¤: Shiftì™€ Caps Lock ì˜í–¥ ë°›ìŒ
-  if( kIsAlphabetScanCode( bDownScanCode ) == TRUE )
-  {
-    // ë§Œì•½ Shift í‚¤ì™€ Caps Lock í‚¤ ì¤‘ì— í•˜ë‚˜ë§Œ ëˆŒëŸ¬ì ¸ ìˆìœ¼ë©´ ì¡°í•©ëœ í‚¤ë¥¼ ë˜ëŒë ¤ ì¤Œ
-    if( gs_stKeyboardManager.bShiftDown ^ gs_stKeyboardManager.bCapsLockOn )
-    {
-      bUseCombinedKey = TRUE;
-    }
-    else
-    {
-      bUseCombinedKey = FALSE;
-    }
-  }
-  // ìˆ«ìì™€ ê¸°í˜¸ í‚¤ë¼ë©´ Shiftí‚¤ ì˜í–¥ ë°›ìŒ
-  else if( kIsNumberOrSymbolScanCode( bDownScanCode ) == TRUE )
-  {
-    // Shift í‚¤ê°€ ëˆŒëŸ¬ì ¸ ìˆìœ¼ë©´ ì¡°í•©ëœ í‚¤ë¥¼ ë˜ëŒë ¤ ì¤Œ
-    if( gs_stKeyboardManager.bShiftDown == TRUE )
-    {
-      bUseCombinedKey = TRUE;
-    }
-    else
-    {
-      bUseCombinedKey = FALSE;
-    }
-  }
-  // ìˆ«ì íŒ¨ë“œ í‚¤ë¼ë©´ Num Lock í‚¤ì˜ ì˜í–¥ì„ ë°›ìŒ
-  // 0xE0ë§Œ ì œì™¸í•˜ë©´ í™•ì¥ í‚¤ ì½”ë“œì™€ ìˆ«ì íŒ¨ë“œì˜ ì½”ë“œê°€ ê²¹ì¹˜ë¯€ë¡œ,
-  // í™•ì¥ í‚¤ ì½”ë“œê°€ ìˆ˜ì‹ ë˜ì§€ ì•Šì•˜ì„ ë•Œë§Œ ì²˜ë¦¬ ì¡°í•©ëœ ì½”ë“œ ì‚¬ìš©
-  else if( ( kIsNumberPadScanCode( bDownScanCode ) == TRUE ) &&
-           ( gs_stKeyboardManager.bExtendedCodeIn == FALSE ) )
-  {
-    // Num Lock í‚¤ê°€ ëˆŒëŸ¬ì ¸ ìˆìœ¼ë©´, ì¡°í•©ëœ í‚¤ë¥¼ ë˜ëŒë ¤ ì¤Œ
-    if( gs_stKeyboardManager.bNumLockOn == FALSE )
-    {
-      bUseCombinedKey = TRUE;
-    }
-    else
-    {
-      bUseCombinedKey = FALSE;
-    }
-  }
+	// ¾ËÆÄºªÅ°´Â ShiftÅ°¿Í Caps LockÅ°ÀÇ ¿µÇ×À» ¹ŞÀ½
+	if(kIsAlphabetScanCode(bDownScanCode) == TRUE){
+		if(gs_stKeyboardManager.bShiftDown ^ gs_stKeyboardManager.bCapsLockOn){
+			bUseCombinedKey = TRUE;
 
-  return bUseCombinedKey;
+		}else{
+			bUseCombinedKey = FALSE;
+		}
+
+	// ¼ıÀÚ³ª ±âÈ£Å°´Â ShiftÅ°ÀÇ ¿µÇâÀ» ¹ŞÀ½
+	}else if(kIsNumberOrSymbolScanCode(bDownScanCode) == TRUE){
+		if(gs_stKeyboardManager.bShiftDown == TRUE){
+			bUseCombinedKey = TRUE;
+
+		}else{
+			bUseCombinedKey = FALSE;
+		}
+
+	// ¼ıÀÚ ÆĞµåÅ°´Â Num LockÅ°ÀÇ ¿µÇâ¸¦ ¹ŞÀ½
+	// AND 0xE0¸¸ Á¦¿ÜÇÏ¸é È®ÀåÅ° ÄÚµå¿Í ¼ıÀÚ ÆĞµåÅ° ÄÚµå°¡ °ãÄ¡¹Ç·Î, È®ÀåÅ° ÄÚµå°¡ ¼ö½ÅµÇÁö ¾Ê¾ÒÀ» ¶§¸¸ Ã³¸®
+	}else if((kIsNumberPadScanCode(bDownScanCode) == TRUE) && (gs_stKeyboardManager.bExtendedCodeIn == FALSE)){
+		if(gs_stKeyboardManager.bNumLockOn == TRUE){
+			bUseCombinedKey = TRUE;
+
+		}else{
+			bUseCombinedKey = FALSE;
+
+		}
+	}
+
+	return bUseCombinedKey;
 }
 
-// ì¡°í•©ëœ í‚¤ì˜ ìƒíƒœë¥¼ ê°±ì‹ í•˜ê³  LED ìƒíƒœë„ ë™ê¸°í™” í•¨
-void UpdateCombinationKeyStatusAndLED( BYTE bScanCode )
-{
-  BOOL bDown;
-  BYTE bDownScanCode;
-  BOOL bLEDStatusChanged = FALSE;
+void kUpdateCombinationKeyStatusAndLED(BYTE bScanCode){
+	BOOL bDown = FALSE;
+	BYTE bDownScanCode;
+	BOOL bLEDStatusChanged = FALSE;
 
-  // ëˆŒë¦¼ ë˜ëŠ” ë–¨ì–´ì§ ìƒíƒœ ì²˜ë¦¬ ìµœìƒìœ„ ë¹„íŠ¸(ë¹„íŠ¸ 7)ê°€ 1ì´ë©´ í‚¤ê°€ ë–¨ì–´ì¡ŒìŒ
-  if( bScanCode & 0x80 )
-  {
-    bDown = FALSE;
-    bDownScanCode = bScanCode & 0x7F;
-  }
-  else
-  {
-    bDown = TRUE;
-    bDownScanCode = bScanCode;
-  }
+	// ½ºÄµ ÄÚµåÀÇ ÃÖ»óÀ§ ºñÆ®(ºñÆ® 7)°¡ 1ÀÌ¸é Up Code, 0ÀÌ¸é Down Code
+	if(bScanCode & 0x80){
+		bDown = FALSE;
+		bDownScanCode = bScanCode & 0x7F;
 
-  // ì¡°í•© í‚¤ ê²€ìƒ‰
-  // Shift í‚¤ì˜ ìŠ¤ìº” ì½”ë“œ(42 or 54)ì´ë©´ Shiftí‚¤ì˜ ìƒíƒœ ê°±ì‹ 
-  if( ( bDownScanCode == 42 ) || ( bDownScanCode == 54 ) )
-  {
-    gs_stKeyboardManager.bShiftDown = bDown;
-  }
-  // Caps Lock í‚¤
-  else if( ( bDownScanCode == 58 ) && ( bDown == TRUE ) )
-  {
-    gs_stKeyboardManager.bCapsLockOn ^= TRUE;
-    bLEDStatusChanged = TRUE;
-  }
-  // Num Lock
-  else if( ( bDownScanCode == 69 ) && ( bDown == TRUE ) )
-  {
-    gs_stKeyboardManager.bNumLockOn ^= TRUE;
-    bLEDStatusChanged = TRUE;
-  }
-  // Scroll Lock
-  else if( ( bDownScanCode == 70 ) && ( bDown == TRUE ) )
-  {
-    gs_stKeyboardManager.bScrollLockOn ^= TRUE;
-    bLEDStatusChanged = TRUE;
-  }
+	}else{
+		bDown = TRUE;
+		bDownScanCode = bScanCode;
 
-  // LED ìƒíƒœê°€ ë³€í–ˆìœ¼ë©´ í‚¤ë³´ë“œë¡œ ì»¤ë§¨ë“œë¥¼ ì „ì†¡í•˜ì—¬ LED ë³€ê²½
-  if( bLEDStatusChanged == TRUE )
-  {
-    kChangeKeyboardLED( gs_stKeyboardManager.bCapsLockOn,
-                        gs_stKeyboardManager.bNumLockOn,
-                        gs_stKeyboardManager.bScrollLockOn );
-  }
+	}
+
+	// [42:Left Shift] OR [54:Right Shift]ÀÎ °æ¿ì
+	if((bDownScanCode == 42) || (bDownScanCode == 54)){
+		gs_stKeyboardManager.bShiftDown = bDown;
+
+	// [58:Caps Lock] AND Down Code
+	}else if((bDownScanCode == 58) && (bDown == TRUE)){
+		gs_stKeyboardManager.bCapsLockOn ^= TRUE;
+		bLEDStatusChanged = TRUE;
+
+	// [69:Num Lock] AND Down Code
+	}else if((bDownScanCode == 69) && (bDown == TRUE)){
+		gs_stKeyboardManager.bNumLockOn ^= TRUE;
+		bLEDStatusChanged = TRUE;
+
+	// [70:Scroll Lock] AND Down Code
+	}else if((bDownScanCode == 70) && (bDown == TRUE)){
+		gs_stKeyboardManager.bScrollLockOn ^= TRUE;
+		bLEDStatusChanged = TRUE;
+	}
+
+	// Å°º¸µå LED »óÅÂ º¯°æ
+	if(bLEDStatusChanged == TRUE){
+		kChangeKeyboardLED(gs_stKeyboardManager.bCapsLockOn, gs_stKeyboardManager.bNumLockOn, gs_stKeyboardManager.bScrollLockOn);
+	}
 }
 
-// ìŠ¤ìº” ì½”ë“œë¥¼ ASCII ì½”ë“œë¡œ ë³€í™˜
-BOOL kConvertScanCodeToASCIICode( BYTE bScanCode, BYTE * pbASCIICode, BOOL * pbFlags )
-{
-  BOOL bUseCombinedKey;
+BOOL kConvertScanCodeToASCIICode(BYTE bScanCode, BYTE* pbASCIICode, BOOL* pbFlags){
+	BOOL bUseCombinedKey = FALSE;
 
-  // ì´ì „ì— Pause í‚¤ê°€ ìˆ˜ì‹ ë˜ì—ˆë‹¤ë©´, Pauseì˜ ë‚¨ì€ ìŠ¤ìº” ì½”ë“œë¥¼ ë¬´ì‹œ
-  if( gs_stKeyboardManager.iSkipCountForPause > 0 )
-  {
-    gs_stKeyboardManager.iSkipCountForPause--;
-    return FALSE;
-  }
+	if(gs_stKeyboardManager.iSkipCountForPause > 0){
+		gs_stKeyboardManager.iSkipCountForPause--;
+		return FALSE;
+	}
 
-  // Pause í‚¤ëŠ” íŠ¹ë³„íˆ ì²˜ë¦¬
-  if( bScanCode == 0xE1 )
-  {
-    *pbASCIICode = KEY_PAUSE;
-    *pbFlags = KEY_FLAGS_DOWN;
-    gs_stKeyboardManager.iSkipCountForPause = KEY_SKIPCOUNTFORPAUSE;
-    return TRUE;
-  }
-  // í™•ì¥ í‚¤ ì½”ë“œê°€ ë“¤ì–´ì™”ì„ ë•Œ, ì‹¤ì œ í‚¤ ê°’ì€ ë‹¤ìŒì— ë“¤ì–´ì˜¤ë¯€ë¡œ í”Œë˜ê·¸ ì„¤ì •ë§Œ í•˜ê³  ì¢…ë£Œ
-  else if( bScanCode == 0xE0 )
-  {
-    gs_stKeyboardManager.bExtendedCodeIn = TRUE;
-    return FALSE;
-  }
+	// [0xE1:PauseÅ°]ÀÎ °æ¿ì
+	if(bScanCode == 0xE1){
+		*pbASCIICode = KEY_PAUSE;
+		*pbFlags = KEY_FLAGS_DOWN;
+		gs_stKeyboardManager.iSkipCountForPause = KEY_SKIPCOUNTFORPAUSE;
+		return TRUE;
 
-  // ì¡°í•©ëœ í‚¤ë¥¼ ë°˜í™˜í•´ì•¼ í•˜ëŠ”ê°€
-  bUseCombinedKey = kIsUseCombinedCode( bScanCode );
+	// [0xE0:È®ÀåÅ°]ÀÎ °æ¿ì
+	}else if(bScanCode == 0xE0){
+		gs_stKeyboardManager.bExtendedCodeIn = TRUE;
+		return FALSE;
+	}
 
-  // í‚¤ ê°’ ì„¤ì •
-  if( bUseCombinedKey == TRUE )
-  {
-    *pbASCIICode = gs_vstKeyMappingTable[ bScanCode & 0x7F ].bCombinedCode;
-  }
-  else
-  {
-    *pbASCIICode = gs_vstKeyMappingTable[ bScanCode & 0x7F ].bNormalCode;
-  }
+	bUseCombinedKey = kIsUseCombinedCode(bScanCode);
 
-  // í™•ì¥ í‚¤ ìœ ë¬´ ì„¤ì •
-  if( gs_stKeyboardManager.bExtendedCodeIn == TRUE )
-  {
-    *pbFlags = KEY_FLAGS_EXTENDEDKEY;
-    gs_stKeyboardManager.bExtendedCodeIn = FALSE;
-  }
-  else
-  {
-    *pbFlags = 0;
-  }
+	if(bUseCombinedKey == TRUE){
+		*pbASCIICode = gs_vstKeyMappingTable[bScanCode & 0x7F].bCombinedCode;
 
-  // ëˆŒëŸ¬ì§, ë–¨ì–´ì§ ìœ ë¬´ ì„¤ì •
-  if( ( bScanCode & 0x80 ) == 0 )
-  {
-    *pbFlags |= KEY_FLAGS_DOWN;
-  }
+	}else{
+		*pbASCIICode = gs_vstKeyMappingTable[bScanCode & 0x7F].bNormalCode;
 
-  // ì¡°í•© í‚¤ ëˆŒë¦¼ì´ë‚˜ ë–¨ì–´ì§ ìƒíƒœë¥¼ ê°±ì‹ 
-  UpdateCombinationKeyStatusAndLED( bScanCode );
-  return TRUE;
+	}
+
+	if(gs_stKeyboardManager.bExtendedCodeIn == TRUE){
+		*pbFlags = KEY_FLAGS_EXTENDEDKEY;
+		gs_stKeyboardManager.bExtendedCodeIn = FALSE;
+
+	}else{
+		*pbFlags = 0;
+	}
+
+	if((bScanCode & 0x80) == 0){
+		*pbFlags |= KEY_FLAGS_DOWN;
+	}
+
+	kUpdateCombinationKeyStatusAndLED(bScanCode);
+
+	return TRUE;
 }
+

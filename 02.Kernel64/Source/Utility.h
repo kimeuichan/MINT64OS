@@ -3,9 +3,9 @@
 
 #include "Types.h"
 
-// 함수
-void kMemSet(void* pvDestination, BYTE bData, int iSize);
-int kMemCpy(void* pvDestination, const void* pvSource, int iSize);
-int kMemCmp(const void* pvDestination, const void* pvSource, int iSize);
+void kPrintString(int iX, int iY, const char* pcString);
+void kMemSet(void* pvDest, BYTE bData, int iSize);
+int kMemCpy(void* pvDest, const void* pvSrc, int iSize);
+int kMemCmp(const void* pvDest, const void* pvSrc, int iSize);
 
-#endif /* __UTILITY_H__ */
+#endif // __UTILITY_H__

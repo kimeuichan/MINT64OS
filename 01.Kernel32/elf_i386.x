@@ -1,44 +1,44 @@
 /* Default linker script, for normal executables */
+/* Copyright (C) 2014 Free Software Foundation, Inc.
+   Copying and distribution of this script, with or without modification,
+   are permitted in any medium without royalty provided the copyright
+   notice and this notice are preserved.  */
 OUTPUT_FORMAT("elf32-i386", "elf32-i386",
-        "elf32-i386")
+	      "elf32-i386")
 OUTPUT_ARCH(i386)
-ENTRY(_start)
-SEARCH_DIR("/opt/cross/x86_64-pc-linux/lib");
+ENTRY(Main)
+SEARCH_DIR("/usr/cross/x86_64-pc-linux/lib");
 SECTIONS
 {
   /* Read-only sections, merged into text segment: */
   PROVIDE (__executable_start = SEGMENT_START("text-segment", 0x08048000)); . = SEGMENT_START("text-segment", 0x08048000) + SIZEOF_HEADERS;
-  /************************************************************************************************************************/
-  /* 섹션 재배치로 인해 앞으로 이동된 부분 */
-  .text 0x10200   :
+  
+  /*====================[Section Relocation Start]====================*/
+  .text 0x10200          :
   {
-  *(.text.unlikely .text.*_unlikely .text.unlikely.*)
-    *(.text.exit .text.exit.*)
-    *(.text.startup .text.startup.*)
-    *(.text.hot .text.hot.*)
     *(.text .stub .text.* .gnu.linkonce.t.*)
     /* .gnu.warning sections are handled specially by elf32.em.  */
     *(.gnu.warning)
   } =0x90909090
-
-  .rodata     : { *(.rodata .rodata.* .gnu.linkonce.r.*) }
-  .rodata1      : { *(.rodata) }
-
-  /* 데이터 영역의 시작을 섹터 단위로 맞춤 */
-  .= ALIGN (512); /* 현재 위치를 512바이트 위치로 정렬. 바로 다음에 위치하는 .data 섹션은 512바이트로 정렬된 어드레스에 위치 */
   
-  .data       :
+  .rodata         : { *(.rodata .rodata.* .gnu.linkonce.r.*) }
+  .rodata1        : { *(.rodata1) }
+  
+  . = ALIGN (512);
+  
+  .data           :
   {
-  *(.data .data.* .gnu.linkonce.d.*)
-  SORT(CONSTRUCTORS)
+    *(.data .data.* .gnu.linkonce.d.*)
+    SORT(CONSTRUCTORS)
   }
-  .data1      : { *(.data1) }
+  .data1          : { *(.data1) }
+  
   __bss_start = .;
-  .bss        :
+  .bss            :
   {
-  *(.dynbss)
-  *(.bss .bss.* .gnu.linkonce.b.*)
-  *(COMMON)
+   *(.dynbss)
+   *(.bss .bss.* .gnu.linkonce.b.*)
+   *(COMMON)
    /* Align here to ensure that the .bss section occupies space up to
       _end.  Align after .bss to ensure correct alignment even if the
       .bss section disappears because there are no input sections.
@@ -47,10 +47,11 @@ SECTIONS
    . = ALIGN(. != 0 ? 32 / 8 : 1);
   }
   . = ALIGN(32 / 8);
+  . = SEGMENT_START("ldata-segment", .);
   . = ALIGN(32 / 8);
   _end = .; PROVIDE (end = .);
-  /************************************************************************************************************************/
-
+  /*====================[Section Relocation End]======================*/
+  
   .interp         : { *(.interp) }
   .note.gnu.build-id : { *(.note.gnu.build-id) }
   .hash           : { *(.hash) }
@@ -66,8 +67,8 @@ SECTIONS
   .rel.rodata     : { *(.rel.rodata .rel.rodata.* .rel.gnu.linkonce.r.*) }
   .rel.data.rel.ro   : { *(.rel.data.rel.ro .rel.data.rel.ro.* .rel.gnu.linkonce.d.rel.ro.*) }
   .rel.data       : { *(.rel.data .rel.data.* .rel.gnu.linkonce.d.*) }
-  .rel.tdata    : { *(.rel.tdata .rel.tdata.* .rel.gnu.linkonce.td.*) }
-  .rel.tbss   : { *(.rel.tbss .rel.tbss.* .rel.gnu.linkonce.tb.*) }
+  .rel.tdata	  : { *(.rel.tdata .rel.tdata.* .rel.gnu.linkonce.td.*) }
+  .rel.tbss	  : { *(.rel.tbss .rel.tbss.* .rel.gnu.linkonce.tb.*) }
   .rel.ctors      : { *(.rel.ctors) }
   .rel.dtors      : { *(.rel.dtors) }
   .rel.got        : { *(.rel.got) }
@@ -85,16 +86,6 @@ SECTIONS
     KEEP (*(SORT_NONE(.init)))
   }
   .plt            : { *(.plt) *(.iplt) }
-  .text           :
-  {
-    *(.text.unlikely .text.*_unlikely)
-    *(.text.exit .text.exit.*)
-    *(.text.startup .text.startup.*)
-    *(.text.hot .text.hot.*)
-    *(.text .stub .text.* .gnu.linkonce.t.*)
-    /* .gnu.warning sections are handled specially by elf32.em.  */
-    *(.gnu.warning)
-  }
   .fini           :
   {
     KEEP (*(SORT_NONE(.fini)))
@@ -122,14 +113,15 @@ SECTIONS
     KEEP (*(.fini_array ))
     PROVIDE_HIDDEN (__fini_array_end = .);
   }
-  /************************************************************************************************************************/
-  /* 섹션 재배치로 인해 앞으로 이동된 부분 */
+  
+  /*====================[Section Relocation Start]====================*/
   _edata = .; PROVIDE (edata = .);
-
+  
   /* Thread Local Storage sections  */
-  .tdata    : { *(.tdata .tdata.* .gnu.linkonce.td.*) }
-  .tbss     : { *(.tbss .tbss.* .gnu.linkonce.tb.*) *(.tcommon) }
-  /************************************************************************************************************************/
+  .tdata	  : { *(.tdata .tdata.* .gnu.linkonce.td.*) }
+  .tbss		  : { *(.tbss .tbss.* .gnu.linkonce.tb.*) *(.tcommon) }
+  /*====================[Section Relocation End]======================*/
+  
   .ctors          :
   {
     /* gcc uses crtbegin.o to find the start of
@@ -163,17 +155,29 @@ SECTIONS
   .data.rel.ro : { *(.data.rel.ro.local* .gnu.linkonce.d.rel.ro.local.*) *(.data.rel.ro .data.rel.ro.* .gnu.linkonce.d.rel.ro.*) }
   .dynamic        : { *(.dynamic) }
   .got            : { *(.got) *(.igot) }
+  /* Error : invalid assignment to location counter */
+  //. = DATA_SEGMENT_RELRO_END (SIZEOF (.got.plt) >= 12 ? 12 : 0, .);
   .got.plt        : { *(.got.plt)  *(.igot.plt) }
-  /************************************************************************************************************************/
-  /* 섹션 재배치로 인해 앞으로 이동된 부분 */
+  
+  /*====================[Section Relocation Start]====================*/
   .eh_frame_hdr : { *(.eh_frame_hdr) }
   .eh_frame       : ONLY_IF_RO { KEEP (*(.eh_frame)) }
+  .gcc_except_table   : ONLY_IF_RO { *(.gcc_except_table
+  .gcc_except_table.*) }
+  /* These sections are generated by the Sun/Oracle C++ compiler.  */
+  .exception_ranges   : ONLY_IF_RO { *(.exception_ranges
+  .exception_ranges*) }
+  /* Adjust the address for the data segment.  We want to adjust up to
+     the same address within the page on the next page up.  */
+  . = ALIGN (CONSTANT (MAXPAGESIZE)) - ((CONSTANT (MAXPAGESIZE) - .) & (CONSTANT (MAXPAGESIZE) - 1)); . = DATA_SEGMENT_ALIGN (CONSTANT (MAXPAGESIZE), CONSTANT (COMMONPAGESIZE));
   /* Exception handling  */
-  .gcc_except_table   : ONLY_IF_RW { *(.gcc_except_table .gcc_except_table.*) }
   .eh_frame       : ONLY_IF_RW { KEEP (*(.eh_frame)) }
-  .exception_ranges   : ONLY_IF_RW { *(.exception_ranges .exception_ranges*) }
-  /************************************************************************************************************************/
-
+  .gcc_except_table   : ONLY_IF_RW { *(.gcc_except_table .gcc_except_table.*) }
+  .exception_ranges   : ONLY_IF_RW { *(.exception_ranges .exception_ranges*) }  
+  /*====================[Section Relocation End]======================*/
+  
+  . = .;
+  . = DATA_SEGMENT_END (.);
   /* Stabs debugging sections.  */
   .stab          0 : { *(.stab) }
   .stabstr       0 : { *(.stabstr) }
@@ -197,7 +201,7 @@ SECTIONS
   /* DWARF 2 */
   .debug_info     0 : { *(.debug_info .gnu.linkonce.wi.*) }
   .debug_abbrev   0 : { *(.debug_abbrev) }
-  .debug_line     0 : { *(.debug_line) }
+  .debug_line     0 : { *(.debug_line .debug_line.* .debug_line_end ) }
   .debug_frame    0 : { *(.debug_frame) }
   .debug_str      0 : { *(.debug_str) }
   .debug_loc      0 : { *(.debug_loc) }

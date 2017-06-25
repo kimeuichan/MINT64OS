@@ -1,56 +1,94 @@
-[BITS 64]		; 이하의 코드는 64비트 코드로 설정
+[BITS 64]
 
-SECTION .text	; text 섹션(세그먼트)을 정의
+SECTION .text
 
-; C 언에서 호출할 수 있도록 이름을 노출함
-global kInPortByte, kOutPortByte, kLoadGDTR, kLoadTR, kLoadIDTR
+global kInPortByte, kOutPortByte
+global kLoadGDTR, kLoadTR, kLoadIDTR
+global kEnableInterrupt, kDisableInterrupt, kReadRFLAGS
 
-; 포트로부터 1바이트를 읽음
-;	PARAM: 포트 번호
+; **********[C���� ������� ��� �Լ� ȣ�� �Ծ� : IA-32e ���]**********
+; �Ķ���� ����     ���� Ÿ��        �Ǽ� Ÿ��
+;     1     RDI(1)   XMM0(11.1)
+;     2     RSI(2)   XMM1(12.2)
+;     3     RDX(3)   XMM2(13.3)
+;     4     RCX(4)   XMM3(14.4)
+;     5     R8(5)    XMM4(15.5)
+;     6     R9(6)    XMM5(16.6)
+;     7     ����(7)    XMM6(17.7)
+;     8     ����(8)    XMM7(18.8)
+;     9     ����(9)    ����(19.9)
+;     10    ����(10)   ����(20.0)
+;     ...   ...      ...
+;
+; ��ȯ�� ����        ���� Ÿ��        �Ǽ� Ÿ��
+;     -     RAX(1)   XMM0(1.1)
+;     -     RDX      XMM1
+; ******************************************************
+
+; PARAM  : WORD wPort(RDI)
+; RETURN : BYTE bData(RAX)
 kInPortByte:
-	push rdx		; 함수에서 임시로 사용하는 레지스터를 스택에 저장
-					; 함수의 마지막 부분에서 스택에 삽입된 값을 꺼내 복원
-	
-	mov rdx, rdi	; RDX 레지스터에 파라미터 1(포트 번호) 저장
-	mov rax, 0		; RAX 레지스터를 초기화
-	in al, dx		; DX 레지스터에 저장된 포트 어드레스에서 한 바이트를 읽어
-					; AL 레지스터에 저장, AL 레지스터는 함수의 반환 값으로 사용됨
+	push rdx
 
-	pop rdx			; 함수에서 사용이 끝난 레지스터를 복원
-	ret				; 함수를 호출한 다음 코드의 위치로 복귀
+	mov rdx, rdi ; wPort
+	mov rax, 0   ; bData(�ʱ�ȭ)
+	; DX�� ����� ��Ʈ ��ȣ(��Ʈ I/O ��巹��)���� 1Byte�� �о�, AL�� ����.(AL�� �Լ��� ��ȯ������ ����)
+	in al, dx
 
-; 포트에 1바이트를 씀
-;	PARAM: 포트 번호, 데이터
-kOutPortByte:
-	push rdx		; 함수에서 임시로 사용하는 레지스터를 스택에 저장
-	push rax		; 함수의 마지막 부분에서 스택에 삽입된 값을 꺼내 복원
-
-	mov rdx, rdi	; RDX 레지스터에 파라미터 1(포트 번호)를 저장
-	mov rax, rsi	; RAX 레지스터에 파라미터 2(데이터)를 저장
-	out dx, al		; DX 레지스터에 저장된 포트 어드레스에 AL 레지스터에 저장된
-					; 한 바이트를 씀
-
-	pop rax			; 함수에서 사용이 끝난 레지스터를 복원
 	pop rdx
-	ret				; 함수를 호출한 다음 코드의 위치로 복귀
+	ret
 
-; GDTR 레지스터에 GDT 테이블을 설정
-;	PARAM: GDT 테이블의 정보를 저장하는 자료구조의 어드레스
+; PARAM  : WORD wPort(RDI), BYTE bData(RSI)
+; RETURN : void
+kOutPortByte:
+	push rdx
+	push rax
+
+	mov rdx, rdi ; wPort
+	mov rax, rsi ; bData
+    ; DX�� ����� ��Ʈ ��ȣ(��Ʈ I/O ��巹��)�� AL�� ����� ��(1Byte)�� ��.
+	out dx, al
+
+	pop rax
+	pop rdx
+	ret
+
+; PARAM  : QWORD qwGDTRAddress(RDI)
+; RETURN : void
 kLoadGDTR:
-	lgdt [ rdi ]	; 파라미터 1(GDTR의 어드레스)를 프로세서에 로드하여
-					; GDT 테이블을 설정
+	; GDTR �ڷᱸ���� ��巹���� GDTR �������Ϳ� �����ϰ�, GDT ���̺��� ���μ����� �ε���
+	lgdt [rdi]
 	ret
 
-; TR 레지스터에 TSS 세그먼트 디스크립터 설정
-;	PARAM: TSS 세그먼트 디스크립터의 오프셋
+; PARAM  : WORD wTSSSegmentOffset(DI)
+; RETURN : void
 kLoadTR:
-	ltr di			; 파라미터 1(TSS 세그먼트 디스크립터의 오프셋)을 프로세서에
-					; 설정하여 TSS 세그먼트를 로드
+	; TSS ���׸�Ʈ ��ũ������ �������� TR �������Ϳ� �����ϰ�, TSS ���׸�Ʈ�� ���μ����� �ε���
+	ltr di
 	ret
 
-; IDTR 레지스터에 IDT 테이블을 설정
-;	PARAM: IDT 테이블의 정보를 저장하는 자료구조의 어드레스
+; PARAM  : QWORD qwIDTRAddress(RDI)
+; RETURN : void
 kLoadIDTR:
-    lidt [ rdi ]    ; 파라미터 1(IDTR의 어드레스)을 프로세서에 로드하여
-                    ; IDT 테이블을 설정
+	; IDTR �ڷᱸ���� ��巹���� IDTR ������Ʈ�� �����ϰ�, IDT ���̺��� ���μ����� �ε���
+	lidt [rdi]
+	ret
+
+; PARAM  : void
+; RETURN : void
+kEnableInterrupt:
+	sti ; ���μ����� ���ͷ�Ʈ�� Ȱ��ȭ
+	ret
+
+; PARAM  : void
+; RETURN : void
+kDisableInterrupt:
+	cli ; ���μ����� ���ͷ�Ʈ�� ��Ȱ��ȭ
+	ret
+
+; PARAM  : void
+; RETURN : QWORD qwData(RAX)
+kReadRFLAGS:
+	pushfq  ; RFLAGS ���������� ���� ���ÿ� ����
+	pop rax ; RFLAGS ���������� ���� ���ÿ��� ������ RAX �������Ϳ� ���� (RAX�� �Լ��� ��ȯ������ ����)
 	ret
