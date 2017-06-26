@@ -10,6 +10,7 @@ void Main(void){
 	BOOL bFlags = FALSE;
 	BYTE bTemp;
 	int i = 0;
+	KEYDATA stData;
 
 	// IA-32e 모드 C언어 커널 시작 메세지
 	kPrintString(0, 10, "Switch to IA-32e Mode Success~!!");
@@ -32,13 +33,12 @@ void Main(void){
 	kLoadIDTR(IDTR_STARTADDRESS);
 	kPrintString(45, 14, "Pass");
 
-	// 키보드 활성화
-	kPrintString(0, 15, "Keyboard Activate...........................[    ]");
-	if(kActivateKeyboard() == TRUE){
+	kPrintString(0, 15, "Key-Queue Initialize and Keyboard Activate..[    ]");
+	if(kInitializeKeyboard() == TRUE){
 		kPrintString(45, 15, "Pass");
 		kChangeKeyboardLED(FALSE, FALSE, FALSE);
-
-	}else{
+	}
+	else{
 		kPrintString(45, 15, "Fail");
 		while(1);
 	}
@@ -52,18 +52,13 @@ void Main(void){
 
 	// 콘솔 쉘
 	while(1){
-		if(kIsOutputBufferFull() == TRUE){
-			bTemp = kGetKeyboardScanCode();
+		if(kGetKeyFromKeyQueue(&stData) == TRUE){
+			if(stData.bFlags & KEY_FLAGS_DOWN){
+				vcTemp[0] = stData.bASCIICode;
+				kPrintString(i++, 17, vcTemp);
 
-			if(kConvertScanCodeToASCIICode(bTemp, &(vcTemp[0]), &bFlags) == TRUE){
-				if(bFlags & KEY_FLAGS_DOWN){
-					kPrintString(i++, 17, vcTemp);
-
-					if(vcTemp[0] == '0'){
-						// 벡터 0번 예외 발생
-						bTemp = bTemp / 0;
-					}
-				}
+				if(vcTemp[0] == '0')
+					bTemp = bTemp / 0;
 			}
 		}
 	}
