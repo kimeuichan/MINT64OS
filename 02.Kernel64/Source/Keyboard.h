@@ -3,14 +3,17 @@
 
 #include "Types.h"
 
+/***** 매크로 정의 *****/
 #define KEY_SKIPCOUNTFORPAUSE 2
 
+// 키 상태 플래그
 #define KEY_FLAGS_UP          0x00
 #define KEY_FLAGS_DOWN        0x01
 #define KEY_FLAGS_EXTENDEDKEY 0x02
 
 #define KEY_MAPPINGTABLEMAXCOUNT 89
 
+// 아스키 코드에 없는 키 값 (단, ENTER, TAB은 아스키 코드에 있음)
 #define KEY_NONE        0x00
 #define KEY_ENTER       '\n'
 #define KEY_TAB         '\t'
@@ -49,16 +52,16 @@
 #define KEY_F12         0x9F
 #define KEY_PAUSE       0xA0
 
+// 키 큐 관련 매크로
 #define KEY_MAXQUEUECOUNT 100
 
+/***** 구조체 정의 *****/
 #pragma pack(push, 1)
 
 typedef struct kKeyMappingEntryStruct{
-	BYTE bNormalCode;
-	BYTE bCombinedCode;
+	BYTE bNormalCode;   // 일반 키의 아스키 코드
+	BYTE bCombinedCode; // 조합 키의 아스키 코드
 } KEYMAPPINGENTRY;
-
-#pragma pack(pop)
 
 typedef struct kKerboardManagerStruct{
 	// 조합키 정보
@@ -73,15 +76,18 @@ typedef struct kKerboardManagerStruct{
 } KEYBOARDMANAGER;
 
 typedef struct kKeyDataStruct{
-	BYTE bScanCode;
-	BYTE bASCIICode;
-	BYTE bFlags;
+	BYTE bScanCode;  // 스캔 코드
+	BYTE bASCIICode; // 아스키 코드
+	BYTE bFlags;     // 키 상태 플래그 (UP, DOWN, EXTENDEDKEY)
 } KEYDATA;
 
+#pragma pack(pop)
+
+/***** 함수 정의 *****/
 BOOL kIsOutputBufferFull(void);
 BOOL kIsInputBufferFull(void);
 BOOL kActivateKeyboard(void);
-BYTE kGetKeyboardScanCode(void);
+BYTE kGetKeyboardScanCode(void); // 스캔 코드 취득
 BOOL kChangeKeyboardLED(BOOL bCapsLockOn, BOOL bNumLockOn, BOOL bScrollLockOn);
 void kEnableA20Gate(void);
 void kReboot(void);
@@ -90,9 +96,10 @@ BOOL kIsNumberOrSymbolScanCode(BYTE bDownScanCode);
 BOOL kIsNumberPadScanCode(BYTE bDownScanCode);
 BOOL kIsUseCombinedCode(BYTE bScanCode);
 void kUpdateCombinationKeyStatusAndLED(BYTE bScanCode);
-BOOL kConvertScanCodeToASCIICode(BYTE bScanCode, BYTE* pbASCIICode, BOOL* pbFlags);
-BOOL kInitializeKeyboard(void);
-BOOL kConvertScanCodeAndPutQueue(BYTE);
-BOOL kGetKeyFromKeyQueue(KEYDATA*);
+BOOL kConvertScanCodeToASCIICode(BYTE bScanCode, BYTE* pbASCIICode, BYTE* pbFlags);
+BOOL kInitializeKeyboard(void);                   // 키 큐 초기화 및 키보드 활성화
+BOOL kConvertScanCodeAndPutQueue(BYTE bScanCode); // 스캔 코드->아스키 코드 변환 및 키 큐에 데이터 삽입
+BOOL kGetKeyFromKeyQueue(KEYDATA* pstData);       // 키 큐에서 데이터 삭제
 BOOL kWaitForACKAndPutOtherScanCode(void);
+
 #endif // __KEYBOARD_H__

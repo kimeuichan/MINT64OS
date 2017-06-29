@@ -1,6 +1,7 @@
 #ifndef __TYPES_H__
 #define __TYPES_H__
 
+/***** 매크로 정의 *****/
 #define BYTE  unsigned char
 #define WORD  unsigned short
 #define DWORD unsigned int
@@ -11,6 +12,7 @@
 #define FALSE 0
 #define NULL  0
 
+/***** 구조체 정의 *****/
 #pragma pack(push, 1)
 
 typedef struct kCharacterStruct{

@@ -1,20 +1,23 @@
 #include "InterruptHandler.h"
 #include "PIC.h"
-// #include "Utility.h"
 #include "Keyboard.h"
+#include "Console.h"
+#include "Utility.h"
+#include "Task.h"
+#include "Descriptor.h"
 
 void kCommonExceptionHandler(int iVectorNumber, QWORD qwErrorCode){
 	char vcBuffer[3] = {0, };
 
-	// º¤ÅÍ ¹øÈ£ ¼³Á¤ (2ÀÚ¸® Á¤¼ö)
+	// ë²¡í„° ë²ˆí˜¸ ì„¤ì • (2ìë¦¬ ì •ìˆ˜)
 	vcBuffer[0] = '0' + iVectorNumber / 10;
 	vcBuffer[1] = '0' + iVectorNumber % 10;
 
-	kPrintString(0, 0, "==================================================");
-	kPrintString(0, 1, "               Exception Occur~!!                 ");
-	kPrintString(0, 2, "                  Vector:                         ");
-	kPrintString(27, 2, vcBuffer); // "Vector:" ¹®ÀÚ¿­ ¿·¿¡ Ãâ·Â
-	kPrintString(0, 3, "==================================================");
+	kPrintStringXY(0, 0, "==================================================");
+	kPrintStringXY(0, 1, "               Exception Occur~!!                 ");
+	kPrintStringXY(0, 2, "                  Vector: [  ]                    ");
+	kPrintStringXY(27, 2, vcBuffer); // "Vector:" ë¬¸ìì—´ ì˜†ì— ì¶œë ¥
+	kPrintStringXY(0, 3, "==================================================");
 
 	while(1);
 }
@@ -24,17 +27,17 @@ void kCommonInterruptHandler(int iVectorNumber){
 	static int g_iCommonInterruptCount = 0;
 
 	//====================================================================================================
-	// ÀÎÅÍ·´Æ®°¡ ¹ß»ıÇßÀ½À» ¾Ë¸®·Á°í ¸Ş¼¼Áö¸¦ Ãâ·ÂÇÏ´Â ºÎºĞ
-	// º¤ÅÍ ¹øÈ£ ¼³Á¤ (2ÀÚ¸® Á¤¼ö)
+	// ì¸í„°ëŸ½íŠ¸ê°€ ë°œìƒí–ˆìŒì„ ì•Œë¦¬ë ¤ê³  ë©”ì„¸ì§€ë¥¼ ì¶œë ¥í•˜ëŠ” ë¶€ë¶„
+	// ë²¡í„° ë²ˆí˜¸ ì„¤ì • (2ìë¦¬ ì •ìˆ˜)
 	vcBuffer[5] = '0' + iVectorNumber / 10;
 	vcBuffer[6] = '0' + iVectorNumber % 10;
 
-	// ¹ß»ı È½¼ö ¼³Á¤ (1ÀÚ¸® Á¤¼ö)
+	// ë°œìƒ íšŸìˆ˜ ì„¤ì • (1ìë¦¬ ì •ìˆ˜)
 	g_iCommonInterruptCount = (g_iCommonInterruptCount + 1) % 10;
 	vcBuffer[8] = '0' + g_iCommonInterruptCount;
 
-	// È­¸é ¿À¸¥ÂÊ À§¿¡ Ãâ·Â
-	kPrintString(70, 0, vcBuffer);
+	// í™”ë©´ ì˜¤ë¥¸ìª½ ìœ„ì˜ ì²«ë²ˆì§¸ í–‰ì— ì¶œë ¥
+	kPrintStringXY(70, 0, vcBuffer);
 	//====================================================================================================
 
 	kSendEOIToPIC(iVectorNumber - PIC_IRQSTARTVECTOR);
@@ -43,25 +46,55 @@ void kCommonInterruptHandler(int iVectorNumber){
 void kKeyboardHandler(int iVectorNumber){
 	char vcBuffer[] = "[INT:  , ]";
 	static int g_iKeyboardInterruptCount = 0;
-	BYTE bTemp;
+	BYTE bScanCode;
 
 	//====================================================================================================
-	// ÀÎÅÍ·´Æ®°¡ ¹ß»ıÇßÀ½À» ¾Ë¸®·Á°í ¸Ş¼¼Áö¸¦ Ãâ·ÂÇÏ´Â ºÎºĞ
-	// º¤ÅÍ ¹øÈ£ ¼³Á¤ (2ÀÚ¸® Á¤¼ö)
+	// ì¸í„°ëŸ½íŠ¸ê°€ ë°œìƒí–ˆìŒì„ ì•Œë¦¬ë ¤ê³  ë©”ì„¸ì§€ë¥¼ ì¶œë ¥í•˜ëŠ” ë¶€ë¶„
+	// ë²¡í„° ë²ˆí˜¸ ì„¤ì • (2ìë¦¬ ì •ìˆ˜)
 	vcBuffer[5] = '0' + iVectorNumber / 10;
 	vcBuffer[6] = '0' + iVectorNumber % 10;
 
-	// ¹ß»ı È½¼ö ¼³Á¤ (1ÀÚ¸® Á¤¼ö)
+	// ë°œìƒ íšŸìˆ˜ ì„¤ì • (1ìë¦¬ ì •ìˆ˜)
 	g_iKeyboardInterruptCount = (g_iKeyboardInterruptCount + 1) % 10;
 	vcBuffer[8] = '0' + g_iKeyboardInterruptCount;
 
-	// È­¸é ¿ŞÂÊ À§¿¡ Ãâ·Â
-	kPrintString(0, 0, vcBuffer);
+	// í™”ë©´ ì™¼ìª½ ìœ„ì˜ ì²«ë²ˆì§¸ í–‰ì— ì¶œë ¥
+	kPrintStringXY(0, 0, vcBuffer);
 	//====================================================================================================
 
 	if(kIsOutputBufferFull() == TRUE){
-		bTemp = kGetKeyboardScanCode();
-		kConvertScanCodeAndPutQueue(bTemp);
+		bScanCode = kGetKeyboardScanCode();
+		kConvertScanCodeAndPutQueue(bScanCode);
 	}
+
 	kSendEOIToPIC(iVectorNumber - PIC_IRQSTARTVECTOR);
+}
+
+void kTimerHandler(int iVectorNumber){
+	char vcBuffer[] = "[INT:  , ]";
+	static int g_iTimerInterruptCount = 0;
+
+	//====================================================================================================
+	// ì¸í„°ëŸ½íŠ¸ê°€ ë°œìƒí–ˆìŒì„ ì•Œë¦¬ë ¤ê³  ë©”ì„¸ì§€ë¥¼ ì¶œë ¥í•˜ëŠ” ë¶€ë¶„
+	// ë²¡í„° ë²ˆí˜¸ ì„¤ì • (2ìë¦¬ ì •ìˆ˜)
+	vcBuffer[5] = '0' + iVectorNumber / 10;
+	vcBuffer[6] = '0' + iVectorNumber % 10;
+
+	// ë°œìƒ íšŸìˆ˜ ì„¤ì • (1ìë¦¬ ì •ìˆ˜)
+	g_iTimerInterruptCount = (g_iTimerInterruptCount + 1) % 10;
+	vcBuffer[8] = '0' + g_iTimerInterruptCount;
+
+	// í™”ë©´ ì˜¤ë¥¸ìª½ ìœ„ì˜ ì²«ë²ˆì§¸ í–‰ì— ì¶œë ¥
+	kPrintStringXY(70, 0, vcBuffer);
+	//====================================================================================================
+
+	kSendEOIToPIC(iVectorNumber - PIC_IRQSTARTVECTOR);
+
+	g_qwTickCount++;
+
+	kDecreaseProcessorTime();
+
+	if(kIsProcessorTimeExpired() == TRUE){
+		kScheduleInInterrupt();
+	}
 }

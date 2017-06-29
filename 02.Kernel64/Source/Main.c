@@ -1,65 +1,79 @@
 #include "Types.h"
-#include "Utility.h"
 #include "Keyboard.h"
 #include "Descriptor.h"
 #include "AssemblyUtility.h"
 #include "PIC.h"
+#include "Console.h"
+#include "ConsoleShell.h"
+#include "Task.h"
+#include "PIT.h"
+#include "Utility.h"
 
 void Main(void){
-	char vcTemp[2] = {0, };
-	BOOL bFlags = FALSE;
-	BYTE bTemp;
-	int i = 0;
-	KEYDATA stData;
+	int iCursorX, iCursorY;
 
-	// IA-32e ��� C��� Ŀ�� ���� �޼���
-	kPrintString(0, 10, "Switch to IA-32e Mode Success~!!");
-	kPrintString(0, 11, "IA-32e Mode C Language Kernel Start.........[Pass]");
+	// 콘솔 초기화
+	kInitializeConsole(0, 10);
 
-	// GDT/TSS ���� �� GDT �ε�
-	kPrintString(0, 12, "GDT/TSS Initialize and GDT Load.............[    ]");
+	// IA-32e 모드 C언어 커널 시작 메세지
+	kPrintf("Switch to IA-32e Mode Success~!!\n");
+	kPrintf("IA-32e Mode C Language Kernel Start.........[Pass]\n");
+	kPrintf("Console Initialize..........................[Pass]\n");
+
+	// GDT/TSS 생성 및 GDT 로드
+	kGetCursor(&iCursorX, &iCursorY);
+	kPrintf("GDT/TSS Initialize and GDT Load.............[    ]");
 	kInitializeGDTTableAndTSS();
 	kLoadGDTR(GDTR_STARTADDRESS);
-	kPrintString(45, 12, "Pass");
+	kSetCursor(45, iCursorY++);
+	kPrintf("Pass\n");
 
-	// TSS �ε�
-	kPrintString(0, 13, "TSS Load....................................[    ]");
+	// TSS 로드
+	kPrintf("TSS Load....................................[    ]");
 	kLoadTR(GDT_TSSSEGMENT);
-	kPrintString(45, 13, "Pass");
+	kSetCursor(45, iCursorY++);
+	kPrintf("Pass\n");
 
-	// IDT ���� �� �ε�
-	kPrintString(0, 14, "IDT Initialize and Load.....................[    ]");
+	// IDT 생성 및 로드
+	kPrintf("IDT Initialize and Load.....................[    ]");
 	kInitializeIDTTable();
 	kLoadIDTR(IDTR_STARTADDRESS);
-	kPrintString(45, 14, "Pass");
+	kSetCursor(45, iCursorY++);
+	kPrintf("Pass\n");
 
-	kPrintString(0, 15, "Key-Queue Initialize and Keyboard Activate..[    ]");
+	// 총 RAM 크기 체크
+	kPrintf("Total RAM Size Check........................[    ]");
+	kCheckTotalRAMSize();
+	kSetCursor(45, iCursorY++);
+	kPrintf("Pass], Size = %d MB\n", kGetTotalRAMSize());
+
+	// TCB 풀 및 스케줄러 초기화
+	kPrintf("TCB Pool and Scheduler Initialize...........[Pass]\n");
+	iCursorY++;
+	kInitializeScheduler();
+	kInitializePIT(MSTOCOUNT(1), TRUE); // 1ms당 한 번씩(주기적으로) 타이머 인터럽트가 발생하도록 설정
+
+	// 키 큐 초기화 및 키보드 활성화
+	kPrintf("Key-Queue Initialize and Keyboard Activate..[    ]");
 	if(kInitializeKeyboard() == TRUE){
-		kPrintString(45, 15, "Pass");
+		kSetCursor(45, iCursorY++);
+		kPrintf("Pass\n");
 		kChangeKeyboardLED(FALSE, FALSE, FALSE);
-	}
-	else{
-		kPrintString(45, 15, "Fail");
+
+	}else{
+		kSetCursor(45, iCursorY++);
+		kPrintf("Fail\n");
 		while(1);
 	}
 
-	// PIC �ʱ�ȭ �� ���ͷ�Ʈ Ȱ��ȭ
-	kPrintString(0, 16, "PIC Initialize and Interrupt Activate.......[    ]");
+	// PIC 초기화 및 인터럽트 활성화
+	kPrintf("PIC Initialize and Interrupt Activate.......[    ]");
 	kInitializePIC();
 	kMaskPICInterrupt(0);
 	kEnableInterrupt();
-	kPrintString(45, 16, "Pass");
+	kSetCursor(45, iCursorY++);
+	kPrintf("Pass\n");
 
-	// �ܼ� ��
-	while(1){
-		if(kGetKeyFromKeyQueue(&stData) == TRUE){
-			if(stData.bFlags & KEY_FLAGS_DOWN){
-				vcTemp[0] = stData.bASCIICode;
-				kPrintString(i++, 17, vcTemp);
-
-				if(vcTemp[0] == '0')
-					bTemp = bTemp / 0;
-			}
-		}
-	}
+	// 콘솔 쉘 시작
+	kStartConsoleShell();
 }
