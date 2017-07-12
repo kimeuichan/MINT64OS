@@ -6,7 +6,7 @@ global kInPortByte, kOutPortByte
 global kLoadGDTR, kLoadTR, kLoadIDTR
 global kEnableInterrupt, kDisableInterrupt, kReadRFLAGS
 global kReadTSC
-global kSwitchContext
+global kSwitchContext, kHit, kTestAndSet
 
 ; **********[C¾ð¾î¿¡¼­ ¾î¼Àºí¸® ¾ð¾î ÇÔ¼ö È£Ãâ ±Ô¾à : IA-32e ¸ðµå]**********
 ; ÆÄ¶ó¹ÌÅÍ ¼ø¼­     Á¤¼ö Å¸ÀÔ        ½Ç¼ö Å¸ÀÔ
@@ -223,3 +223,28 @@ kSwitchContext:
 
 	; CONTEXT 자료구조(pstNextContext)에서 나머지 5개 레지스터를 복원하고, RIP가 가리키는 어드레스로 복귀
 	iretq
+
+
+; 프로세서를 쉬게함
+;	PARAM : 없음
+kHit:
+	hlt 		; 프로세서를 대기 상태로 진입시킴
+	hlt
+	ret
+
+; 테스트와 설정을 하나의 명령으로 처리
+; PARAM: 값을 저장할 어드레스(rdi), 비교할 값(rsi), 설정할 값(rdx)
+kTestAndSet:
+	mov rax, rsi
+
+
+	lock cmpxchg byte[rdi], dl
+	je .SUCCESS 			;zf 비트가 1이면 같다는 뜻이므로 .SUCESS 이동
+
+.NOTSAME:
+	mov rax, 0x00
+	ret
+
+.SUCCESS
+	mov rax, 0x01
+	ret

@@ -15,5 +15,7 @@ void kDisableInterrupt(void);
 QWORD kReadRFLAGS(void);
 QWORD kReadTSC(void);
 void kSwitchContext(CONTEXT* , CONTEXT* );
+void kHit(void);
+BOOL kTestAndSet(volatile BYTE* pbDestination, BYTE Compare, BYTE source);
 
 #endif // __ASSEMBLYUTILITY_H__

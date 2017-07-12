@@ -2,7 +2,7 @@
 #include "AssemblyUtility.h"
 #include "Keyboard.h"
 #include "Queue.h"
-#include "Utility.h"
+#include "Synchronization.h"
 
 /* @키보드 컨트롤러의 레지스터와 포트 I/O 함수
  *  1.컨트롤 레지스터 : kOutPortByte(0x64, bData)
@@ -477,12 +477,12 @@ BOOL kConvertScanCodeAndPutQueue(BYTE bScanCode){
 	// 스캔 코드->아스키 코드 변환
 	if(kConvertScanCodeToASCIICode(bScanCode, &(stData.bASCIICode), &(stData.bFlags)) == TRUE){
 
-		bPreviousInterrupt = kSetInterruptFlag(FALSE);
+		bPreviousInterrupt = kLockForSystemData();
 
 		// 키 큐에 데이터 삽입
 		bResult = kPutQueue(&gs_stKeyQueue, &stData);
 
-		kSetInterruptFlag(bPreviousInterrupt);
+		kUnlockForSystemData(bPreviousInterrupt);
 
 	}
 
@@ -492,17 +492,13 @@ BOOL kConvertScanCodeAndPutQueue(BYTE bScanCode){
 BOOL kGetKeyFromKeyQueue(KEYDATA* pstData){
 	BOOL bResult = FALSE;
 	BOOL bPreviousInterrupt;
-
-	if(kIsQueueEmpty(&gs_stKeyQueue) == TRUE){
-		return FALSE;
-	}
-
-	bPreviousInterrupt = kSetInterruptFlag(FALSE);
+	
+	bPreviousInterrupt = kLockForSystemData();
 
 	// 키 큐에서 데이터 삭제
 	bResult = kGetQueue(&gs_stKeyQueue, pstData);
 
-	kSetInterruptFlag(bPreviousInterrupt);
+	kUnlockForSystemData(bPreviousInterrupt);
 
 	return bResult;
 }

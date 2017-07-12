@@ -2,7 +2,7 @@
 
 SECTION .text
 
-extern Main
+extern Start64Kernel
 
 START:
 	mov ax, 0x10
@@ -14,6 +14,6 @@ START:
 	mov rsp, 0x6FFFF8
 	mov rbp, 0x6FFFF8
 
-	call Main
+	call Start64Kernel
 
 	jmp $

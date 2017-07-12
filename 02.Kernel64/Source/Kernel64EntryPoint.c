@@ -9,7 +9,7 @@
 #include "PIT.h"
 #include "Utility.h"
 
-void Main(void){
+void Start64Kernel(void){
 	int iCursorX, iCursorY;
 
 	// 콘솔 초기화
@@ -74,6 +74,7 @@ void Main(void){
 	kSetCursor(45, iCursorY++);
 	kPrintf("Pass\n");
 
-	// 콘솔 쉘 시작
+	// 유휴 태스크를 생성하고 콘솔 쉘 시작
+	kCreateTask(TASK_FLAGS_LOWEST | TASK_FLAGS_IDLE, (QWORD)kIdleTask);
 	kStartConsoleShell();
 }

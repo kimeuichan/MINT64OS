@@ -73,6 +73,7 @@ PRINT_MESSAGE:
 	cmp cl, 0
 	je .MESSAGE_END
 	mov byte [edi + 0xB8000], cl
+	mov byte [edi + 0xB8000+1], 0x07
 	add esi, 1
 	add edi, 2
 	jmp .MESSAGE_LOOP

@@ -49,6 +49,27 @@
 // 태스크가 최대로 쓸 수 있는 프로세서 시간(5ms)
 #define TASK_PROCESSORTIME	5
 
+// 준비 리스트의 수
+#define TASK_MAXREADYLISTCOUNT	5
+
+// 태스크의 우선순위
+#define TASK_FLAGS_HIGHEST	0
+#define TASK_FLAGS_HIGH	1
+#define TASK_FLAGS_MEDIUM	2
+#define TASK_FLAGS_LOW	3
+#define TASK_FLAGS_LOWEST	4
+#define TASK_FLAGS_WAIT	0xff
+
+// 태스크의 플래그
+#define TASK_FLAGS_ENDTASK		0x8000000000000000
+#define TASK_FLAGS_IDLE			0x0800000000000000
+
+// 함수 매크로
+#define GETPRIORITY(x)	((x)&0xff)
+#define SETPRIORITY(x, priority)	((x) = ((x)&0xffffffffffffff00) | \
+	(priority))
+#define GETTCBOFFSET(x) 		((x)&0xffffffff)
+
 // /***** 구조체 정의 *****/
 #pragma pack(push, 1)
 
@@ -81,27 +102,48 @@ typedef struct kSchedulerStruct{
 
 	int iProcessorTime;
 
-	LIST stReadyList;
+	LIST vstReadyList[TASK_MAXREADYLISTCOUNT];
+
+	LIST stWaitList;
+
+	int viExecuteCount[TASK_MAXREADYLISTCOUNT];
+
+	QWORD qwProcessorLoad;
+
+	QWORD qwSpendProcessorTimeInIdleTask;
 } SCHEDULER;
 
 #pragma pack(pop)
 
 /***** 함수 정의 *****/
-void kInitiailizeTCBPool(void);
-TCB* kAllocateTCB(void);
-void kFreeTCB(QWORD qwID);
+static void kInitiailizeTCBPool(void);
+static TCB* kAllocateTCB(void);
+static void kFreeTCB(QWORD qwID);
 TCB* kCreateTask(QWORD qwFlags, QWORD qwEntryPointAddress);
-void kSetUpTask(TCB* pstTCB, QWORD qwFlags, QWORD qwEntryPointAddress, void* pvStackAddress, QWORD qwStackSize);
+static void kSetUpTask(TCB* pstTCB, QWORD qwFlags, QWORD qwEntryPointAddress, void* pvStackAddress, QWORD qwStackSize);
 
 // 스캐줄러 관련
 void kInitializeScheduler(void);
 void kSetRunningTask(TCB* pstTask);
 TCB* kGetRunningTask(void);
-TCB* kGetNextTaskToRun(void);
-void kAddTaskToReadyList(TCB* pstTask);
+static TCB* kGetNextTaskToRun(void);
+static BOOL kAddTaskToReadyList(TCB* pstTask);
 void kSchedule(void);
 BOOL kScheduleInInterrupt(void);
 void kDecreaseProcessorTime(void);
 BOOL kIsProcessorTimeExpired(void);
+static TCB* kRemoveTaskFromReadyList(QWORD qwTaskID);
+BOOL kChangePriority(QWORD qwTaskID, BYTE bPriority);
+BOOL kEndTask(QWORD qwTaskID);
+void kExitTask(void);
+int kGetReadyTaskCount(void);
+int kGetTaskCount(void);
+TCB* kGetTCBInTCBPool(int iOffset);
+BOOL kIsTaskExist(QWORD qwID);
+QWORD kGetProcessorLoad(void);
+
+// 유휴 태스크 관련
+void kIdleTask(void);
+void kHaltProcessorByLoad(void);
 
 #endif // __TASK_H__

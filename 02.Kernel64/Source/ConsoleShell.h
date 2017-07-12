@@ -7,6 +7,7 @@
 #define CONSOLESHELL_MAXCOMMANDBUFFERCOUNT 300
 #define CONSOLESHELL_PROMPTMESSAGE         "MINT64>"
 
+
 /***** ￅﾸ￀ￔ ￁ﾤ￀ￇ *****/
 typedef void (*CommandFunction)(const char* pcParameter);
 
@@ -35,16 +36,20 @@ void kInitializeParameter(PARAMETERLIST* pstList, const char* pcParameterBuffer)
 int kGetNextParameter(PARAMETERLIST* pstList, char* pcParameter);
 
 // ￄ﾿ﾸￇﾵ￥ ￃﾳﾸﾮ ￇￔﾼ￶
-void kHelp(const char* pcParameterBuffer);
-void kCls(const char* pcParameterBuffer);
-void kShowTotalRAMSize(const char* pcParameterBuffer);
-void kStringToDecimalHexTest(const char* pcParameterBuffer);
-void kShutdown(const char* pcParameterBuffer);
-void kSetTimer(const char* pcParameterBuffer);
-void kWaitUsingPIT(const char* pcParameterBuffer);
-void kReadTimeStampCounter(const char* pcParameterBuffer);
-void kMeasureProcessorSpeed(const char* pcParameterBuffer);
-void kShowDateAndTime(const char* pcParameterBuffer);
-void kCreateTestTask(const char* pcParameterBuffer);
-
+static void kHelp(const char* pcParameterBuffer);
+static void kCls(const char* pcParameterBuffer);
+static void kShowTotalRAMSize(const char* pcParameterBuffer);
+static void kStringToDecimalHexTest(const char* pcParameterBuffer);
+static void kShutdown(const char* pcParameterBuffer);
+static void kSetTimer(const char* pcParameterBuffer);
+static void kWaitUsingPIT(const char* pcParameterBuffer);
+static void kReadTimeStampCounter(const char* pcParameterBuffer);
+static void kMeasureProcessorSpeed(const char* pcParameterBuffer);
+static void kShowDateAndTime(const char* pcParameterBuffer);
+static void kCreateTestTask(const char* pcParameterBuffer);
+static void kChangeTaskPriority(const char* pcParameterBuffer);
+static void kShowTaskList(const char* pcParameterBuffer);
+static void kKillTask(const char* pcParameterBuffer);
+static void kCPULoad(const char* pcParameterBuffer);
+static void kTestMutex(const char* pcParameterBuffer);
 #endif // __CONSOLE_SHELL_H__

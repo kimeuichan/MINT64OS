@@ -2,74 +2,76 @@
 #include "Page.h"
 #include "ModeSwitch.h"
 
-void kPrintString(int iX, int iY, const char* pcString);
+#define DEF_FONT_C 0x07
+
+void kPrintString(int iX, int iY, BYTE attr, const char* pcString);
 BOOL kIsMemoryEnough(void);
 BOOL kInitializeKernel64Area(void);
 void kCopyKernel64ImageTo2Mbyte(void);
 
-void Main(void){
+void Start32Kernel(void){
 	// 변수 선언
 	DWORD dwEAX, dwEBX, dwECX, dwEDX;
 	char vcVendorString[13] = {0, };
 
 	// BootLoader.asm 의 메세지를 여기서 출력(임시방편) : 부트로더에서는 메세지 위치와 USB 파티션 정보 위치가 중복될 수도 있는 관계로 제거 했음.
-	kPrintString(0, 0, "MINT64 OS Boot Loader Start~!!");
-	kPrintString(0, 1, "OS Image Loading... Complete~!!");
+	kPrintString(0, 0,  DEF_FONT_C, "MINT64 OS Boot Loader Start~!!");
+	kPrintString(0, 1,  DEF_FONT_C, "OS Image Loading... Complete~!!");
 
 	// 보호모드 C언어 커널 시작 메세지
-	kPrintString(0, 3, "Protected Mode C Language Kernel Start......[Pass]");
+	kPrintString(0, 3,  DEF_FONT_C, "Protected Mode C Language Kernel Start......[Pass]");
 
 	// 최소 메모리 크기 체크
-	kPrintString(0, 4, "Minimum Memory Size Check...................[    ]");
+	kPrintString(0, 4,  DEF_FONT_C, "Minimum Memory Size Check...................[    ]");
 	if(kIsMemoryEnough() == FALSE){
-		kPrintString(45, 4, "Fail");
-		kPrintString(0, 5, "Not Enough Memory~!! MINT64 OS Requires Over 64Mbytes Memory~!!");
+		kPrintString(45, 4, DEF_FONT_C,  "Fail");
+		kPrintString(0, 5,  DEF_FONT_C, "Not Enough Memory~!! MINT64 OS Requires Over 64Mbytes Memory~!!");
 		while(1);
 
 	}else{
-		kPrintString(45, 4, "Pass");
+		kPrintString(45, 4, DEF_FONT_C,  "Pass");
 	}
 
 	// IA-32e 모드 커널의 메모리 영역을 초기화
-	kPrintString(0, 5, "IA-32e Kernel Area Initialize...............[    ]");
+	kPrintString(0, 5,  DEF_FONT_C, "IA-32e Kernel Area Initialize...............[    ]");
 	if(kInitializeKernel64Area() == FALSE){
-		kPrintString(45, 5, "Fail");
-		kPrintString(0, 6, "Kernel Area Initialization Fail~!!");
+		kPrintString(45, 5, DEF_FONT_C,  "Fail");
+		kPrintString(0, 6,  DEF_FONT_C, "Kernel Area Initialization Fail~!!");
 		while(1);
 
 	}else{
-		kPrintString(45, 5, "Pass");
+		kPrintString(45, 5, DEF_FONT_C,  "Pass");
 	}
 
 	// IA-32e 모드 커널을 위한 페이지 테이블 생성
-	kPrintString(0, 6, "IA-32e Page Tables Initialize...............[    ]");
+	kPrintString(0, 6,  DEF_FONT_C, "IA-32e Page Tables Initialize...............[    ]");
 	kInitializePageTables();
-	kPrintString(45, 6, "Pass");
+	kPrintString(45, 6, DEF_FONT_C,  "Pass");
 
 	// 프로세서 제조사 이름 읽기
 	kReadCPUID(0x00000000, &dwEAX, &dwEBX, &dwECX, &dwEDX);
 	*((DWORD*)vcVendorString) = dwEBX;
 	*((DWORD*)vcVendorString + 1) = dwEDX;
 	*((DWORD*)vcVendorString + 2) = dwECX;
-	kPrintString(0, 7, "Processor Vendor String.....................[            ]");
-	kPrintString(45, 7, vcVendorString);
+	kPrintString(0, 7,  DEF_FONT_C, "Processor Vendor String.....................[            ]");
+	kPrintString(45, 7, DEF_FONT_C,  vcVendorString);
 
 	// 64비트 모드 지원 여부 확인
 	kReadCPUID(0x80000001, &dwEAX, &dwEBX, &dwECX, &dwEDX);
-	kPrintString(0, 8, "64bit Mode Support Check....................[    ]");
+	kPrintString(0, 8,  DEF_FONT_C, "64bit Mode Support Check....................[    ]");
 	if(dwEDX & (1 << 29)){
-		kPrintString(45, 8, "Pass");
+		kPrintString(45, 8, DEF_FONT_C,  "Pass");
 
 	}else{
-		kPrintString(45, 8, "Fail");
-		kPrintString(0, 9, "This processor does not support 64bit mode~!!");
+		kPrintString(45, 8, DEF_FONT_C,  "Fail");
+		kPrintString(0, 9,  DEF_FONT_C, "This processor does not support 64bit mode~!!");
 		while(1);
 	}
 
 	// IA-32e 모드 커널을 0x200000(2Mbyte) 어드레스로 복사
-	kPrintString(0, 9, "Copy IA-32e Kernel to 2MB Address...........[    ]");
+	kPrintString(0, 9,  DEF_FONT_C, "Copy IA-32e Kernel to 2MB Address...........[    ]");
 	kCopyKernel64ImageTo2Mbyte();
-	kPrintString(45, 9, "Pass");
+	kPrintString(45, 9, DEF_FONT_C,  "Pass");
 
 	// IA-32e 모드 전환
 	kSwitchAndExecute64bitKernel();
@@ -77,7 +79,7 @@ void Main(void){
 	while(1);
 }
 
-void kPrintString(int iX, int iY, const char* pcString){
+void kPrintString(int iX, int iY, BYTE attr, const char* pcString){
 	CHARACTER* pstScreen = (CHARACTER*)0xB8000;
 	int i;
 
@@ -85,6 +87,7 @@ void kPrintString(int iX, int iY, const char* pcString){
 
 	for(i = 0; pcString[i] != NULL; i++){
 		pstScreen[i].bCharacter = pcString[i];
+		pstScreen[i].bAttribute = attr;
 	}
 
 }
