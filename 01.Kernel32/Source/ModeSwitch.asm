@@ -46,7 +46,7 @@ kSwitchAndExecute64bitKernel:
 
 	; CR4 컨트롤 레지스터의 PAE(비트 5)=1 로 설정
 	mov eax, cr4
-	or eax, 0x20
+	or eax, 0x620
 	mov cr4, eax
 
 	; CR3 컨트롤 레지스터에 PML4 테이블의 기준 주소(0x100000, 1MB)를 설정
@@ -62,8 +62,8 @@ kSwitchAndExecute64bitKernel:
 
 	; CR0 컨트롤 레지스터의 PG(비트 31)=1, CD(비트 30)=0, NW(비트 29)=0:???Write Back 정책을 사용 할 거니까, 1이 맞는 것 같은데...
 	mov eax, cr0
-	or eax, 0xE0000000
-	xor eax, 0x60000000
+	or eax, 0xE000000e
+	xor eax, 0x60000004
 	mov cr0, eax
 
 	jmp 0x08:0x200000 ; CS 세그먼트 셀렉터에 IA-32e 모드용 코드 세그먼트 디스크립터를 설정하고, IA-32e 모드 커널의 메모리 어드레스(0x200000, 2MB)로 이동

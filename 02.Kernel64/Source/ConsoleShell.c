@@ -28,6 +28,9 @@ static SHELLCOMMANDENTRY gs_vstCommandTable[] = {
 		{"killtask", "End Task", kKillTask},
 		{"cpuload", "Show Processor Load", kCPULoad},
 		{"testmutex", "Test Mutex Function", kTestMutex},
+		{"testthread", "Test Thread And Process Function", kTestThread},
+		{"showmatrix", "Show Matrix Screen", kShowMatrix},
+		{"testpie", "Test Pie calculation", kTestPIE},
 };
 
 //====================================================================================================
@@ -427,14 +430,14 @@ static void kCreateTestTask(const char* pcParameterBuffer){
 	switch(kAToI(vcType, 10)){
 		case 1:
 			for(i=0; i<kAToI(vcCount, 10); i++){
-				if(kCreateTask(TASK_FLAGS_LOW, (QWORD)kTestTask1) == NULL)
+				if(kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_THREAD, 0, 0, (QWORD)kTestTask1) == NULL)
 					break;
 			}
 			kPrintf("Task1 %d Created\n", i);
 			break;
 		case 2:
 			for(i=0; i<kAToI(vcCount, 10); i++){
-				if(kCreateTask(TASK_FLAGS_LOW, (QWORD)kTestTask2) == NULL)
+				if(kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_THREAD, 0, 0, (QWORD)kTestTask2) == NULL)
 					break;
 			}
 			kPrintf("Task2 %d Created\n", i);
@@ -491,9 +494,11 @@ static void kShowTaskList(const char* pcParameterBuffer){
 				}
 				kPrintf("\n");
 			}
-			kPrintf("[%d] Task ID[0x%Q], Priority[%d], Flags[0x%Q]\n",
+			kPrintf("[%d] Task ID[0x%Q], Priority[%d], Flags[0x%Q], Thread[%d]\n",
 				1 + iCount++, pstTCB->stLink.qwID, GETPRIORITY(pstTCB->qwFlags),
-				pstTCB->qwFlags);
+				pstTCB->qwFlags, kGetListCount(&(pstTCB->stChildThreadList)));
+			kPrintf("    Parent PID[0x%Q], Memory Address[0x%Q], Size[0x%Q]\n", 
+				pstTCB->qwParentProcessID, pstTCB->pvMemoryAddress, pstTCB->qwMemorySize);
 		}
 	}
 }
@@ -515,19 +520,30 @@ static void kKillTask(const char* pcParameterBuffer){
 		qwID = kAToI(vcID, 10);
 
 	if(qwID != 0xffffffff){
-		kPrintf("Kill Task ID[0x%q]", qwID);
-		if(kEndTask(qwID) == TRUE)
-			kPrintf("Success\n");
-		else
-			kPrintf("Fail\n");
+		pstTCB = kGetTCBInTCBPool( GETTCBOFFSET(qwID));
+		qwID = pstTCB->stLink.qwID;
+
+		// 시스텝 테스크는 제외
+		if(((qwID >> 32) != 0) && ((pstTCB->qwFlags & TASK_FLAGS_SYSTEM) == 0x00)){
+			kPrintf("Kill Task ID[0x%q]", qwID);
+			if(kEndTask(qwID) == TRUE)
+				kPrintf("Success\n");
+			else
+				kPrintf("Fail\n");
+		}
+		else {
+			kPrintf("Task does not exist or task is system task\n");
+		}
 	}
+
 
 	// 콘솔 셸과 유휴 태스크 제외 모든 태스크 종료
 	else{
 		for(i=2; i<TASK_MAXCOUNT; i++){
 			pstTCB = kGetTCBInTCBPool(i);
 			qwID = pstTCB->stLink.qwID;
-			if( (qwID >> 32 ) != 0){
+			// 시스텝 테스크는 제외
+			if(((qwID >> 32) != 0) && ((pstTCB->qwFlags & TASK_FLAGS_SYSTEM) == 0x00)){
 				kPrintf("Kill Task ID[0x%q]", qwID);
 				if(kEndTask(qwID) == TRUE)
 					kPrintf("Success\n");
@@ -583,8 +599,158 @@ static void kTestMutex(const char* pcParameterBuffer){
 	kInitializeMutex(&gs_stMutex);
 
 	for(i=0; i<3; i++){
-		kCreateTask(TASK_FLAGS_LOW, (QWORD) kPrintNumberTask);
+		kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_THREAD, 0, 0, (QWORD) kPrintNumberTask);
 	}
 	kPrintf("Wait Util %d Task End..\n", i);
 	kGetCh();
+}
+
+// 태스크 2를 자신의 스레드로 생성하는 태스크
+static void kCreateThreadTask(void){
+	int i;
+	for(i=0; i<3; i++){
+		kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_THREAD, 0, 0, (QWORD)kTestTask2);
+	}
+	while(1){
+		kSleep(1);
+	}
+}
+
+// 스레드를 테스트하는 태스크 생성
+static void kTestThread(const char* pcParameterBuffer){
+	TCB* pstProcess;
+
+	pstProcess = kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_PROCESS, (void*)0xeeeeeeee, 0x1000, (QWORD)kCreateThreadTask);
+	if(pstProcess != NULL)
+		kPrintf("Process [0x%Q] Create Success\n", pstProcess->stLink.qwID);
+	else
+		kPrintf("Process create Fail\n");
+}
+
+// 난수 발생시키기 위한 변수
+static volatile QWORD gs_qwRandomValue = 0;
+
+// 임의의 난수를 반환
+QWORD kRandom(void){
+	gs_qwRandomValue = (gs_qwRandomValue * 412153 + 5571031) >> 16;
+	return gs_qwRandomValue;
+}
+
+static void kDraopCharactorThread(void){
+	int iX, iY;
+	int i;
+	char vcText[2] = {0,};
+
+	iX = kRandom() % CONSOLE_WIDTH;
+
+	while(1){
+		// 잠시 대기함
+		kSleep(kRandom() % 20);
+
+		if( (kRandom() %20) < 15){
+			vcText[0] = ' ';
+			for(i=0; i<CONSOLE_HEIGHT; i++){
+				kPrintStringXY(iX, i, vcText);
+				kSleep(50);
+			}
+		}
+		else {
+			for(i=0; i<CONSOLE_HEIGHT-1; i++){
+				vcText[0] = kRandom() + i;
+				kPrintStringXY(iX, i, vcText);
+				kSleep(50);
+			}
+		}
+	}
+}
+
+static void kMatrixProcess(void){
+	int i;
+
+	for(i=0; i<300; i++){
+		if(kCreateTask(TASK_FLAGS_THREAD | TASK_FLAGS_LOW, 0, 0, (QWORD)kDraopCharactorThread) == NULL){
+			break;
+		}
+		kSleep(kRandom()%5 +5);
+	}
+	kPrintf("%d Thread is created\n", i);
+
+	kGetCh();
+}
+
+static void kShowMatrix(const char* pcParameterBuffer){
+	TCB* pstProcess;
+
+	pstProcess = kCreateTask(TASK_FLAGS_PROCESS | TASK_FLAGS_LOW, (void*)0xe00000, 0xe00000, (QWORD)kMatrixProcess);
+	if(pstProcess != NULL){
+		kPrintf("Matrix Process [0x%q] Create Success\n", pstProcess->pvMemoryAddress);
+
+		// 태스크 종료가 될 때까지 대기
+		while( (pstProcess->stLink.qwID >> 32) != 0)
+			kSleep(100);
+	}
+	else
+		kPrintf("Matrix Create Fail\n");
+}
+
+// FPU를 테스트하는 태스크
+static void kFPUTestTask(void){
+	double dValue1;
+	double dValue2;
+	TCB* pstRunningTask;
+	QWORD qwCount = 0;
+	QWORD qwRandomValue;
+	int i;
+	int iOffset;
+	char vcData[] ={'-', '\\', '|', '/'};
+	CHARACTER* pstScreen = (CHARACTER*)CONSOLE_VIDEOMEMORYADDRESS;
+
+	pstRunningTask = kGetRunningTask();
+
+	// 자신의 ID를 얻어서 화면 오프셋으로 사용
+	iOffset = (pstRunningTask->stLink.qwID & 0xffffffff) * 2;
+	iOffset = CONSOLE_WIDTH * CONSOLE_HEIGHT - (iOffset % (CONSOLE_WIDTH * CONSOLE_HEIGHT));
+
+	while(1){
+		dValue1 = 1;
+		dValue2 = 1;
+
+		// 테스트를 위한 도일한 계산을 2번 반복해서 실행
+		for(i=0; i<10; i++){
+			qwRandomValue = kRandom();
+			dValue1 *= (double)qwRandomValue;
+			dValue2 *= (double)qwRandomValue;
+
+			kSleep(1);
+
+			qwRandomValue = kRandom();
+			dValue1 /= (double)qwRandomValue;
+			dValue2 /= (double)qwRandomValue;
+		}
+		if(dValue1 != dValue2){
+			kPrintf("Value is not same! [%f] != [%f]\n", dValue1, dValue2);
+			break;
+		}
+		qwCount++;
+
+		// 회전하는 바람개비를 표시
+		pstScreen[iOffset].bCharacter = vcData[qwCount % 4];
+
+		// 색깔 지정
+		pstScreen[iOffset].bAttribute = (iOffset % 15) + 1;
+	}
+}
+
+static void kTestPIE(const char* pcParameterBuffer){
+	double dResult;
+	int i;
+
+	kPrintf("PIE Cacluation Test\n");
+	kPrintf("Result: 355/ 113 = ");
+	dResult = (double)355/113;
+	kPrintf("%d.%d%d\n", (QWORD)dResult, ((QWORD)(dResult*10)%10), ((QWORD)(dResult*100)%10));
+
+	for(i=0; i<100; i++){
+		kCreateTask(TASK_FLAGS_THREAD | TASK_FLAGS_LOW, 0, 0, (QWORD)kFPUTestTask);
+	}
 }

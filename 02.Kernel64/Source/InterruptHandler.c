@@ -5,6 +5,7 @@
 #include "Utility.h"
 #include "Task.h"
 #include "Descriptor.h"
+#include "AssemblyUtility.h"
 
 void kCommonExceptionHandler(int iVectorNumber, QWORD qwErrorCode){
 	char vcBuffer[3] = {0, };
@@ -96,5 +97,42 @@ void kTimerHandler(int iVectorNumber){
 
 	if(kIsProcessorTimeExpired() == TRUE){
 		kScheduleInInterrupt();
+	}
+}
+
+// Device Not Available Handler
+void kDeviceNotAvailableHandler(int iVectorNumber){
+	TCB* pstFPUTask, *pstCurrentTask;
+	QWORD qwLastFPUTaskID;
+
+	// FPU 예외가 발생했음을 알리려고 메시지를 출력하는 부분
+	char vcBuffer[] = "[EXC:  , ]";
+	static int g_iFPUInterruptCount = 0;
+
+	// 예외 벡터를 화면 오른쪽 위에 2자리 정수로 출력
+	vcBuffer[5] = '0' + iVectorNumber/10;
+	vcBuffer[6] = '0' + iVectorNumber%10;
+
+	// 발생횟수 출력
+	vcBuffer[8] = '0' + g_iFPUInterruptCount;
+	g_iFPUInterruptCount = (g_iFPUInterruptCount+1) % 10;
+
+
+	// CR0 컨트롤 레지스터의 TS 비트 0 설정
+	kClearTS();
+
+	// 이전에 FPU 사용한 태스크가 있는지 확인 있다면 FPU 상태를 태스크에 저장
+	qwLastFPUTaskID = kGetLastFPUUsedTaskID();
+	pstCurrentTask = kGetRunningTask();
+
+	// 이전에 FPU 사용한 것이 자신이면 Nothing
+	if(qwLastFPUTaskID == pstCurrentTask->stLink.qwID)
+		return;
+
+	// FPU 사용한 태스크가 있으면 FPU 상태 저장
+	else if(qwLastFPUTaskID != TASK_INVALIDID){
+		pstFPUTask = kGetTCBInTCBPool(GETTCBOFFSET(qwLastFPUTaskID));
+		if( (pstFPUTask != NULL) && (pstFPUTask->stLink.qwID == qwLastFPUTaskID))
+			kSaveFPUContext(pstFPUTask->vqwFPUContext);
 	}
 }

@@ -7,6 +7,7 @@ global kLoadGDTR, kLoadTR, kLoadIDTR
 global kEnableInterrupt, kDisableInterrupt, kReadRFLAGS
 global kReadTSC
 global kSwitchContext, kHit, kTestAndSet
+global kInitializeFPU, kSaveFPUContext, kLoadFPUContext, kSetTS, kClearTS
 
 ; **********[C¾ð¾î¿¡¼­ ¾î¼Àºí¸® ¾ð¾î ÇÔ¼ö È£Ãâ ±Ô¾à : IA-32e ¸ðµå]**********
 ; ÆÄ¶ó¹ÌÅÍ ¼ø¼­     Á¤¼ö Å¸ÀÔ        ½Ç¼ö Å¸ÀÔ
@@ -247,4 +248,36 @@ kTestAndSet:
 
 .SUCCESS
 	mov rax, 0x01
+	ret
+
+; FPU 관련 함수
+; FPU 초기화 PARAM : 없음
+kInitializeFPU:
+	finit 					; FPU 초기화
+	ret
+
+; FPU 관련 레지스터를 콘텍스트 버퍼에 저장 PARAM : Buffer Address
+kSaveFPUContext:
+	fxsave [rdi]
+	ret
+
+; FPU 관련 레지스터를 콘텍스트 버퍼에서 복원 PARAM : Buffer Address
+kLoadFPUContext:
+	fxrstor [rdi] 			; 첫 번째 파라미터로 전달된 버퍼에서 FPU 레지스터를 복원
+	ret
+
+; CR0 컨트롤 레지스터의 TS 비트 1로 설정 PARAM : X
+kSetTS:
+	push rax
+
+	mov rax, cr0
+	or rax, 0x8 			; TS 비트 1로 설정
+	mov cr0, rax
+
+	pop rax
+	ret
+
+; CR0 컨트롤 레지스터의 TS 비트 0으로 설정
+kClearTS:
+	clts
 	ret

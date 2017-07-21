@@ -62,6 +62,9 @@
 
 // 태스크의 플래그
 #define TASK_FLAGS_ENDTASK		0x8000000000000000
+#define TASK_FLAGS_SYSTEM		0x4000000000000000
+#define TASK_FLAGS_PROCESS		0x2000000000000000
+#define TASK_FLAGS_THREAD		0x1000000000000000
 #define TASK_FLAGS_IDLE			0x0800000000000000
 
 // 함수 매크로
@@ -69,6 +72,9 @@
 #define SETPRIORITY(x, priority)	((x) = ((x)&0xffffffffffffff00) | \
 	(priority))
 #define GETTCBOFFSET(x) 		((x)&0xffffffff)
+// 자식 스레드 링크에 연결된 stThreadLink 정보에서 태스크 자료구조(TCB) 위치를
+// 계산하여 반환하는 매크로
+#define GETTCBFROMTHREADLINK(x)  (TCB*)((QWORD)(x) - offsetof(TCB, stThreadLink))
 
 // /***** 구조체 정의 *****/
 #pragma pack(push, 1)
@@ -77,15 +83,35 @@ typedef struct kContextStruct{
 	QWORD vqwRegister[TASK_REGISTERCOUNT];
 } CONTEXT;
 
+// 태스크(프로세스 및 스레드)의 상태를 관리하는 자료 구조
 typedef struct kTaskControlBlockStruct{
 	LISTLINK stLink;
 
 
-	CONTEXT stContext;
 	QWORD qwID;
 	QWORD qwFlags;
+
+	// 프로세스 메모리 영역의 시작과 크기
+	void* pvMemoryAddress;
+	QWORD qwMemorySize;
+
+	// 이하 스레드 정보
+	// 스레드 간의 연결
+	LISTLINK stThreadLink;
+	// 자식 스레드의 리스트
+	QWORD qwParentProcessID;
+
+	// FPU 콘텍스트는 16배수로 정렬되어야 하므로, 앞으로 추가할 데이터는 현재 라인 아래에 추가해야함
+	QWORD vqwFPUContext[512/8];
+
+	LIST stChildThreadList;
+
+
+	CONTEXT stContext;
+
 	void* pvStackAddress;
 	QWORD qwStackSize;
+	BOOL bFPUUsed;
 } TCB;
 
 typedef struct kTCBPOOLManagerStruct{
@@ -111,7 +137,12 @@ typedef struct kSchedulerStruct{
 	QWORD qwProcessorLoad;
 
 	QWORD qwSpendProcessorTimeInIdleTask;
+
+	QWORD qwLastFPUUsedTaskID;
+
+
 } SCHEDULER;
+
 
 #pragma pack(pop)
 
@@ -119,7 +150,7 @@ typedef struct kSchedulerStruct{
 static void kInitiailizeTCBPool(void);
 static TCB* kAllocateTCB(void);
 static void kFreeTCB(QWORD qwID);
-TCB* kCreateTask(QWORD qwFlags, QWORD qwEntryPointAddress);
+TCB* kCreateTask(QWORD qwFlags, void* pvMemoryAddress, QWORD qwMemorySize, QWORD qwEntryPointAddress);
 static void kSetUpTask(TCB* pstTCB, QWORD qwFlags, QWORD qwEntryPointAddress, void* pvStackAddress, QWORD qwStackSize);
 
 // 스캐줄러 관련
@@ -141,9 +172,14 @@ int kGetTaskCount(void);
 TCB* kGetTCBInTCBPool(int iOffset);
 BOOL kIsTaskExist(QWORD qwID);
 QWORD kGetProcessorLoad(void);
+static TCB* kGetProcessByThread(TCB* pstThread);
 
 // 유휴 태스크 관련
 void kIdleTask(void);
 void kHaltProcessorByLoad(void);
+
+// FPU 관련
+QWORD kGetLastFPUUsedTaskID(void);
+void kSetLastFPUUsedTaskID(QWORD qwTaskID);
 
 #endif // __TASK_H__

@@ -17,5 +17,10 @@ QWORD kReadTSC(void);
 void kSwitchContext(CONTEXT* , CONTEXT* );
 void kHit(void);
 BOOL kTestAndSet(volatile BYTE* pbDestination, BYTE Compare, BYTE source);
+void kInitializeFPU(void);
+void kSaveFPUContext(void* pvFPUContext);
+void kLoadFPUContext(void* pvFPUContext);
+void kSetTS(void);
+void kClearTS(void);
 
 #endif // __ASSEMBLYUTILITY_H__
