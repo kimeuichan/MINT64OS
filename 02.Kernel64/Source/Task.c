@@ -642,7 +642,6 @@ void kIdleTask(void){
 				qwTaskID = pstTask->stLink.qwID;
 				kFreeTCB(qwTaskID);
 				kUnlockForSystemData(bPreviousFlags);
-				kPrintf("IDLE: Task ID[0x%q] is completely end\n", qwTaskID);
 			}
 		}
 		kSchedule();

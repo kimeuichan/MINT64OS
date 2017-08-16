@@ -285,6 +285,7 @@ int kVSPrintf(char* pcBuffer, const char* pcFormatString, va_list ap){
 	char* pcCopyString;
 	QWORD qwValue;
 	int iValue;
+	double dValue;
 
 	iFormatLength = kStrLen(pcFormatString);
 
@@ -325,7 +326,7 @@ int kVSPrintf(char* pcBuffer, const char* pcFormatString, va_list ap){
 				break;
 
 			case 'f':
-				dValue = (QWORD)(va_arg(ap, double));
+				dValue = (double)(va_arg(ap, double));
 				// 셋째 자리에서 반올림 처리
 				dValue += 0.005;
 				// 소수 둘째 자리부터 차례로 저장하여 버퍼를 뒤집음

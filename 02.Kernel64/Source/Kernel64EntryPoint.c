@@ -8,6 +8,7 @@
 #include "Task.h"
 #include "PIT.h"
 #include "Utility.h"
+#include "DynamicMemory.h"
 
 void Start64Kernel(void){
 	int iCursorX, iCursorY;
@@ -51,7 +52,14 @@ void Start64Kernel(void){
 	kPrintf("TCB Pool and Scheduler Initialize...........[Pass]\n");
 	iCursorY++;
 	kInitializeScheduler();
-	kInitializePIT(MSTOCOUNT(1), TRUE); // 1ms당 한 번씩(주기적으로) 타이머 인터럽트가 발생하도록 설정
+
+	// 동적 메모리 초기화
+	kPrintf( "Dynamic Memory Initialize...................[Pass]\n" );
+    iCursorY++;
+    kInitializeDynamicMemory();
+
+ 	// 1ms당 한 번씩(주기적으로) 타이머 인터럽트가 발생하도록 설정
+	kInitializePIT(MSTOCOUNT(1), TRUE);
 
 	// 키 큐 초기화 및 키보드 활성화
 	kPrintf("Key-Queue Initialize and Keyboard Activate..[    ]");
