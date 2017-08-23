@@ -9,6 +9,7 @@
 #include "PIT.h"
 #include "Utility.h"
 #include "DynamicMemory.h"
+#include "HardDisk.h"
 
 void Start64Kernel(void){
 	int iCursorX, iCursorY;
@@ -81,6 +82,17 @@ void Start64Kernel(void){
 	kEnableInterrupt();
 	kSetCursor(45, iCursorY++);
 	kPrintf("Pass\n");
+
+	// 하드 디스크를 초기화
+	kPrintf("HDD Initialize..............................[    ]");
+	if(kInitializeHDD() == TRUE){
+		kSetCursor(45, iCursorY++);
+		kPrintf("Pass\n");
+	}
+	else {
+		kSetCursor(45, iCursorY++);
+		kPrintf("Fail\n");
+	}
 
 	// 유휴 태스크를 시스템 스레드로 생성하고 셸을 시작 
 	kCreateTask(TASK_FLAGS_LOWEST | TASK_FLAGS_IDLE | TASK_FLAGS_SYSTEM | TASK_FLAGS_THREAD, 0, 0, (QWORD)kIdleTask);

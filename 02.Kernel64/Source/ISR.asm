@@ -4,7 +4,7 @@ SECTION .text
 
 ; 핸들러 (3개)
 extern kCommonExceptionHandler, kCommonInterruptHandler, kKeyboardHandler
-extern kTimerHandler, kDeviceNotAvailableHandler
+extern kTimerHandler, kDeviceNotAvailableHandler, kHDDHandler
 
 ; 예외 처리용 ISR(21개)
 global kISRDivideError, kISRDebug, kISRNMI, kISRBreakPoint, kISROverflow
@@ -458,7 +458,7 @@ kISRHDD1:
 	KSAVECONTEXT                 ; 콘텍스트 저장 및 세그먼트 셀렉터 교체
 
 	mov rdi, 46                  ; 첫번째 파라미터에 벡터 번호를 설정
-	call kCommonInterruptHandler ; C언어 핸들러 함수 호출
+	call kHDDHandler ; C언어 핸들러 함수 호출
 
 	KLOADCONTEXT                 ; 콘텍스트 복원
 	iretq                        ; 프로세서가 저장한 콘텍스트를 복원하고, 실행중이던 코드로 복귀
@@ -468,7 +468,7 @@ kISRHDD2:
 	KSAVECONTEXT                 ; 콘텍스트 저장 및 세그먼트 셀렉터 교체
 
 	mov rdi, 47                  ; 첫번째 파라미터에 벡터 번호를 설정
-	call kCommonInterruptHandler ; C언어 핸들러 함수 호출
+	call kHDDHandler ; C언어 핸들러 함수 호출
 
 	KLOADCONTEXT                 ; 콘텍스트 복원
 	iretq                        ; 프로세서가 저장한 콘텍스트를 복원하고, 실행중이던 코드로 복귀

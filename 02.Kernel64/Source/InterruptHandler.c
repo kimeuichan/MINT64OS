@@ -6,6 +6,7 @@
 #include "Task.h"
 #include "Descriptor.h"
 #include "AssemblyUtility.h"
+#include "HardDisk.h"
 
 void kCommonExceptionHandler(int iVectorNumber, QWORD qwErrorCode){
 	char vcBuffer[3] = {0, };
@@ -135,4 +136,30 @@ void kDeviceNotAvailableHandler(int iVectorNumber){
 		if( (pstFPUTask != NULL) && (pstFPUTask->stLink.qwID == qwLastFPUTaskID))
 			kSaveFPUContext(pstFPUTask->vqwFPUContext);
 	}
+}
+
+// 하드 디스크에서 발생하는 인터럽트의 핸들러
+void kHDDHandler(int iVectorNumber){
+	char vcBuffer[] = "[INT: , ]";
+	static int g_iHDDinterruptCount = 0;
+	BYTE bTemp;
+
+	// 인터럽트가 발생했음을 알리려고 메시지를 출력하는 부분
+	// 인터럽트 벡터를 화면 왼쪽 위에 두 자리 정수로 출력
+	vcBuffer[5] = '0' + iVectorNumber / 10;
+	vcBuffer[6] = '0' + iVectorNumber % 10;
+	// 발생한 횟수 출력
+	vcBuffer[8] = '0' + g_iHDDinterruptCount;
+	g_iHDDinterruptCount = (g_iHDDinterruptCount + 1) % 10;
+	// 왼쪽 위에 있는 메시지와 겹치지 않도록 (10, 0)에 출력
+	kPrintStringXY(10, 0, vcBuffer);
+
+	// 첫번째 PATA 포트의 인터럽트 벡터(IRQ 14)
+	if(iVectorNumber - PIC_IRQSTARTVECTOR == 14)
+		kSetHDDInterruptFlag(TRUE, TRUE);
+	// 두번째 PATA 포트의 인터럽트 벡터(IRQ 15)
+	else
+		kSetHDDInterruptFlag(FALSE, TRUE);
+
+	kSendEOIToPIC(iVectorNumber - PIC_IRQSTARTVECTOR);
 }

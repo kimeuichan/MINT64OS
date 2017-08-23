@@ -8,6 +8,7 @@ global kEnableInterrupt, kDisableInterrupt, kReadRFLAGS
 global kReadTSC
 global kSwitchContext, kHit, kTestAndSet
 global kInitializeFPU, kSaveFPUContext, kLoadFPUContext, kSetTS, kClearTS
+global kInPortWord, kOutPortWord
 
 ; **********[C¾ð¾î¿¡¼­ ¾î¼Àºí¸® ¾ð¾î ÇÔ¼ö È£Ãâ ±Ô¾à : IA-32e ¸ðµå]**********
 ; ÆÄ¶ó¹ÌÅÍ ¼ø¼­     Á¤¼ö Å¸ÀÔ        ½Ç¼ö Å¸ÀÔ
@@ -280,4 +281,30 @@ kSetTS:
 ; CR0 컨트롤 레지스터의 TS 비트 0으로 설정
 kClearTS:
 	clts
+	ret
+
+; 포트로부터 2 바이트를 읽음
+;	PARAM : 포트 번호
+kInPortWord:
+	push rdx
+
+	mov rdx, rdi
+	mov rax, 0
+	in ax, dx
+
+	pop rdx
+	ret
+
+; 포트로부터 2바이트를 씀
+;	PARAM : 포트 번호, 데이터
+kOutPortWord:
+	push rdx
+	push rax
+
+	mov rdx, rdi
+	mov rax, rsi
+	out dx, ax
+
+	pop rax
+	pop rdx
 	ret
