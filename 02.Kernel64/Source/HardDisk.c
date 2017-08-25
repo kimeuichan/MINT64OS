@@ -88,9 +88,9 @@ static BOOL kWaitForHDDReady(BOOL bPrimary){
 // 인터럽트 발생 여부를 설정
 void kSetHDDInterruptFlag(BOOL bPrimary, BOOL bFlag){
 	if(bPrimary == TRUE)
-		gs_stHDDManager.bPrimaryInterruptOccur = TRUE;
+		gs_stHDDManager.bPrimaryInterruptOccur = bFlag;
 	else
-		gs_stHDDManager.bSecondaryInterruptOccur = TRUE;
+		gs_stHDDManager.bSecondaryInterruptOccur = bFlag;
 }
 
 // 인터럽트 발생할 때까지 대기
@@ -100,7 +100,7 @@ static BOOL kWaitForHDDInterrupt(BOOL bPrimary){
 	qwStartTickCount = kGetTickCount();
 
 	// 일정 시간동아 ㄴ하드 디스크의 인터럽트가 발생할 때까지 대기
-	while(kGetTickCount() - qwStartTickCount <= HDD_WAITTIME){
+	while((kGetTickCount() - qwStartTickCount) <= HDD_WAITTIME){
 		// 하드 디스크 자료구조에 인터럽트 발생 플래그를 확인
 		if( (bPrimary == TRUE) && (gs_stHDDManager.bPrimaryInterruptOccur == TRUE))
 			return TRUE;
@@ -169,7 +169,7 @@ BOOL kReadHDDInformation(BOOL bPrimary, BOOL bMaster, HDDINFORMATION* pstHDDInfo
 
 	// 데이터 수신
 	// 한 섹터를 읽음
-	for(i=0; i<512/2; i++){
+	for(i=0; i<(512/2); i++){
 		((WORD*)pstHDDInformation)[i] = kInPortWord(wPortBase + HDD_PORT_INDEX_DATA);
 	}
 
@@ -188,7 +188,7 @@ static void kSwapByteInWord(WORD* pwData, int iWordCount){
 
 	for(i=0; i<iWordCount; i++){
 		wTemp = pwData[i];
-		pwData[i] = (wTemp >> 8) || (wTemp << 8);
+		pwData[i] = (wTemp >> 8) | (wTemp << 8);
 	}
 }
 
@@ -260,7 +260,6 @@ int kReadHDDSector(BOOL bPrimary, BOOL bMaster, DWORD dwLBA, int iSectorCount, c
 		if( (bStatus & HDD_STATUS_ERROR) == HDD_STATUS_ERROR){
 			kPrintf("Error Occur\n");
 			kUnlock( &(gs_stHDDManager.stMutex));
-			return i;
 		}
 
 		// DATAREQUEST 비트가 설정되지 않았으면 데이터가 수신되기를 기다림
@@ -274,11 +273,10 @@ int kReadHDDSector(BOOL bPrimary, BOOL bMaster, DWORD dwLBA, int iSectorCount, c
 				return FALSE;
 			}
 		}
-		for(j=0; j<512/2; j++)
+		for(j=0; j<(512/2); j++)
 			((WORD*)pcBuffer)[lReadCount++] = kInPortWord(wPortBase + HDD_PORT_INDEX_DATA);
 	}
 	kUnlock( &(gs_stHDDManager.stMutex));
-	return i;
 }
 
 // 하드 디스크에 섹터를 씀
@@ -290,11 +288,11 @@ int kWriteHDDSector(BOOL bPrimary, BOOL bMaster, DWORD dwLBA, int iSectorCount, 
 	int i, j;
 	BYTE bDriveFlag;
 	BYTE bStatus;
-	long lReadCount;
+	long lWriteCount = 0;
 	BOOL bWaitResult;
 
 	// 범위 검사
-	if( (gs_stHDDManager.bHDDDetected == FALSE) || (iSectorCount <= 0) || (iSectorCount >256) || ((dwLBA + iSectorCount) >= gs_stHDDManager.stHDDInformation.dwTotalSectors))
+	if( (gs_stHDDManager.bCanWrite == FALSE) || (iSectorCount <= 0) || (iSectorCount >256) || ((dwLBA + iSectorCount) >= gs_stHDDManager.stHDDInformation.dwTotalSectors))
 		return 0;
 
 	// PATA 포트에 따라서 I/O 포트의 기본 어드레스를 설정
@@ -359,14 +357,13 @@ int kWriteHDDSector(BOOL bPrimary, BOOL bMaster, DWORD dwLBA, int iSectorCount, 
 	for(i=0; i<iSectorCount; i++){
 		// 인터럽트 플래그를 초기화하고 한 섹터를 씀
 		kSetHDDInterruptFlag(bPrimary, FALSE);
-		for(j=0; j<512/2; j++){
-			kOutPortWord(wPortBase + HDD_PORT_INDEX_DATA, ((WORD*)pcBuffer)[lReadCount++]);
+		for(j=0; j<(512/2); j++){
+			kOutPortWord(wPortBase + HDD_PORT_INDEX_DATA, ((WORD*)pcBuffer)[lWriteCount++]);
 		}
 		// 에러가 발생하면 종료
 		bStatus = kReadHDDStatus(bPrimary);
 		if( (bStatus & HDD_STATUS_ERROR) == HDD_STATUS_ERROR){
 			kUnlock( &(gs_stHDDManager.stMutex));
-			return i;
 		}
 
 		// DATAREQUEST 비트가 설정되지 않으면 데이터가 처리가 완료되길 기다림

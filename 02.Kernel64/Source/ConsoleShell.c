@@ -9,6 +9,7 @@
 #include "Synchronization.h"
 #include "DynamicMemory.h"
 #include "HardDisk.h"
+#include "FileSystem.h"
 
 /***** 전역 변수 정의 *****/
 // 커맨드 테이블
@@ -39,6 +40,12 @@ static SHELLCOMMANDENTRY gs_vstCommandTable[] = {
 		{"hddinfo", "Show Hdd Information", kShowHDDInformation},
 		{"readsector", "Read HDD Sector, ex)readsector 0(LBA) 10(count)", kReadSector},
 		{"writesector", "Write HDD sector, ex)writesector 0(LBA) 10(count)", kWriteSector},
+		{"mounthdd", "Mount HDD", kMountHDD},
+		{"formathdd", "Format HDD", kFormatHDD},
+		{"filesysteminfo", "Show File System Information", kShowFileSystemInformation},
+		{"createfile", "Create File ex)createfile a.txt", kCreateFileInRootDirectory},
+		{"deletefile", "Delete File ex)deletefile a.txt", kDeleteFileInRootDirectory},
+		{"dir", "Show Directory", kShowRootDirectory},
 
 };
 
@@ -906,7 +913,7 @@ static void kShowHDDInformation(const char* pcParameterBuffer){
 	char vcBuffer[100];
 
 	// 하드 디스크의 정보를 읽음
-	if( kReadHDDInformation(TRUE, TRUE, &stHDD)== FALSE){
+	if( kGetHDDInformation(&stHDD)== FALSE){
 		kPrintf("HDD Information Read Fail\n");
 		return ;
 	}
@@ -1052,4 +1059,202 @@ static void kWriteSector(const char* pcParameterBuffer){
 	}
 	kPrintf("\n");
 	kFreeMemory(pcBuffer);
+}
+
+// 하드 디스크를 연결
+static void kMountHDD(const char* pcParameterBuffer){
+	if(kMount() == FALSE){
+		kPrintf("HDD Mount Fail\n");
+		return;
+	}
+	kPrintf("HDD Mount Success\n");
+}
+
+// 하드 디스크에 파일 시스템 생성(포맷)
+static void kFormatHDD(const char* pcParameterBuffer){
+	if(kFormat() == FALSE){
+		kPrintf("HDD Format Fail\n");
+		return;
+	}
+	kPrintf("HDD Format Success\n");
+}
+
+// 파일 시스템 정보를 표시
+static void kShowFileSystemInformation(const char* pcParameterBuffer){
+	FILESYSTEMMANAGER stManager;
+
+	kGetFileSystemInformation(&stManager);
+	kPrintf("=========================== File System Information ===========================\n");
+	kPrintf("Mounted                          : %s\n",         (stManager.bMounted == TRUE) ? "true" : "false");
+	kPrintf("MBR Sector Count                 : %d sector\n",  (stManager.bMounted == TRUE) ? 1 : 0);
+	kPrintf("Reserved Sector Count            : %d sector\n",  stManager.dwReservedSectorCount);
+	kPrintf("Cluster Link Area Start Address  : %d sector\n",  stManager.dwClusterLinkAreaStartAddress);
+	kPrintf("Cluster Link Area Size           : %d sector\n",  stManager.dwClusterLinkAreaSize);
+	kPrintf("Data Area Start Address          : %d sector\n",  stManager.dwDataAreaStartAddress);
+	kPrintf("Total Cluster Count              : %d cluster\n", stManager.dwTotalClusterCount);
+	kPrintf("===============================================================================\n");
+}
+
+static void kCreateFileInRootDirectory(const char* pcParameterBuffer){
+	PARAMETERLIST stList;
+	char vcFileName[50];
+	int iLength;
+	DWORD dwCluster; 	// 빈 클러스터 링크의 인덱스
+	DIRECTORYENTRY stEntry;
+	int i;
+
+	// 파라미터 초기화
+	kInitializeParameter(&stList, pcParameterBuffer);
+	iLength = kGetNextParameter(&stList, vcFileName);
+	vcFileName[iLength] = '\0';
+
+	if(iLength > (sizeof(stEntry.vcFileName) -1 ) || (iLength == 0)){
+		kPrintf("Wrong Usage, ex) createfile a.txt\n");
+		return;
+	}
+
+	// 빈 클러스터 링크 찾아서 할단된 것으로 설정
+	dwCluster = kFindFreeCluster();
+	if( (dwCluster == FILESYSTEM_LASTCLUSTER) || (kSetClusterLinkData(dwCluster, FILESYSTEM_LASTCLUSTER) == FALSE)){
+		kPrintf("Cluster Allocation Fail\n");
+		return;
+	}
+
+	// 빈 디렉토리 엔트리 검색
+	i = kFindFreeDirectoryEntry();
+	if(i == -1){
+		// 실패한 경우, 할당 받은 클러스터 해제
+		kSetClusterLinkData(dwCluster, FILESYSTEM_FREECLUSTER);
+		kPrintf("Directory is full\n");
+		return;
+	}
+
+	// 디렉토리 엔트리 설정
+	kMemCpy(stEntry.vcFileName, vcFileName, iLength+1);
+	stEntry.dwFileSize = 0;
+	stEntry.dwStartClusterIndex = dwCluster;
+
+	// 디렉터리 엔트리 등록
+	if( kSetDirectoryEntryData(i, &stEntry) == FALSE){
+		kSetClusterLinkData(dwCluster, FILESYSTEM_FREECLUSTER);
+		kPrintf("Directory Allocation Fail\n");
+		return;
+	}
+	kPrintf("'%s' File Create Success\n", vcFileName);
+}
+
+static void kDeleteFileInRootDirectory(const char* pcParameterBuffer){
+	PARAMETERLIST stList;
+	char vcFileName[50];
+	int iLength;
+	DIRECTORYENTRY stEntry;
+	int iOffset;
+
+	kInitializeParameter(&stList, pcParameterBuffer);
+	iLength = kGetNextParameter(&stList, vcFileName);
+	vcFileName[iLength] = '\0';
+
+	if(iLength > (sizeof(stEntry.vcFileName) -1 ) || (iLength == 0)){
+		kPrintf("Wrong Usage, ex) deletefile a.txt\n");
+		return;
+	}
+
+	iOffset = kFindDirectoryEntry(vcFileName, &stEntry);
+	if(iOffset == -1){
+		kPrintf("'%s' File not found\n", vcFileName);
+		return;
+	}
+
+	if(kSetClusterLinkData(stEntry.dwStartClusterIndex, FILESYSTEM_FREECLUSTER) == FALSE){
+		kPrintf("Cluster free fail\n");
+		return;
+	}
+
+	kMemSet(&stEntry, 0, sizeof(DIRECTORYENTRY));
+	if(kSetDirectoryEntryData(iOffset, &stEntry) == FALSE){
+		kPrintf("Directory free fail\n");
+		return;
+	}
+
+	kPrintf("'%s' File delete Success\n", vcFileName);
+}
+
+// 루트 디렉토리 안 모든 파일 출력
+static void kShowRootDirectory(const char* pcParameterBuffer){
+	BYTE* pbClusterBuffer;
+	int i, iCount, iTotalCount;
+	DIRECTORYENTRY* pstEntry;
+	char vcBuffer[400];
+	char vcTempValue[50];
+	DWORD dwTotalByte;
+
+	// 1클러스터 크기 메모리 할당
+	pbClusterBuffer = (BYTE*)kAllocateMemory(FILESYSTEM_CLUSTERSIZE);
+
+	// 루트 디렉토리(클러스터0) 읽기
+	if(kReadCluster(0, pbClusterBuffer) == FALSE){
+		kPrintf("Root Direcotry read fail\n");
+		return;
+	}
+
+	// 루트 디렉토리 내의 총 파일 개수, 총 파일 크기를 구함
+	pstEntry = (DIRECTORYENTRY*)pbClusterBuffer;
+	iTotalCount = 0;
+	dwTotalByte = 0;
+	for(i=0; i<FILESYSTEM_MAXDIRECTORYENTRYCOUNT; i++){
+		if(pstEntry[i].dwStartClusterIndex == 0x00)
+			continue;
+
+		iTotalCount++;
+		dwTotalByte += pstEntry[i].dwFileSize;
+	}
+
+	pstEntry = (DIRECTORYENTRY*)pbClusterBuffer;
+	iCount = 0;
+	for(i = 0; i < FILESYSTEM_MAXDIRECTORYENTRYCOUNT; i++){
+
+		// 빈 디렉토리 엔트리인 경우, 스킵
+		if(pstEntry[i].dwStartClusterIndex == 0x00){
+			continue;
+		}
+
+		// 출력 버퍼를 공백으로 초기화
+		kMemSet(vcBuffer, ' ', sizeof(vcBuffer) - 1);
+		vcBuffer[sizeof(vcBuffer)-1] = '\0';
+
+		// 출력 버퍼에 파일 이름 설정
+		kMemCpy(vcBuffer, pstEntry[i].vcFileName, kStrLen(pstEntry[i].vcFileName));
+
+		// 출력 버퍼에 파일 크기 설정
+		kSPrintf(vcTempValue, "%d byte", pstEntry[i].dwFileSize);
+		kMemCpy(vcBuffer + 30, vcTempValue, kStrLen(vcTempValue));
+
+		// 출력 버퍼에 시작 클러스터 인덱스 설정
+		kSPrintf(vcTempValue, "0x%X cluster", pstEntry[i].dwStartClusterIndex);
+		kMemCpy(vcBuffer + 55, vcTempValue, kStrLen(vcTempValue) + 1);
+
+		// 파일 목록 출력
+		kPrintf("    %s\n", vcBuffer);
+
+		// 파일 목록을 20개 출력시마다 목록을 더 출력할지 여부를 확인
+		if((iCount != 0) && ((iCount % 20) == 0)){
+
+			kPrintf("Press any key to continue...('q' is exit):");
+
+			if(kGetCh() == 'q'){
+				kPrintf("\n");
+				break;
+			}
+
+			kPrintf("\n");
+		}
+
+		iCount++;
+	}
+
+	// 총 파일 개수, 총 파일 크기를 출력
+	kPrintf("\tTotal File Count : %d\tTotal File Size : %d byte\n", iTotalCount, dwTotalByte);
+
+	// 메모리 해제
+	kFreeMemory(pbClusterBuffer);
 }
