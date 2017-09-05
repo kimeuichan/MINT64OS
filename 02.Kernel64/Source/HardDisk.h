@@ -1,117 +1,118 @@
-#ifndef __HARDDISK_H__
-#define __HARDDISK_H__
+#ifndef __HARD_DISK_H__
+#define __HARD_DISK_H__
 
 #include "Types.h"
-#include "synchronization.h"
+#include "Synchronization.h"
 
-// ë§¤í¬ë¡œ
-// ì²«ë²ˆì§¸ PATA í¬íŠ¸ì™€ ë‘ë²ˆì§¸ PATA í¬íŠ¸
-#define HDD_PORT_PRIMARYBASE	0x1f0
-#define HDD_PORT_SECONDARYBASE	0x170
+/***** ¸ÅÅ©·Î Á¤ÀÇ *****/
+// ÇÏµå µğ½ºÅ© ÄÁÆ®·Ñ·¯ÀÇ I/O Æ÷Æ® ±âÁØ°ª
+#define HDD_PORT_PRIMARYBASE   0x1F0 // Ã¹¹øÂ° PATA Æ÷Æ® ±âÁØ°ª
+#define HDD_PORT_SECONDARYBASE 0x170 // µÎ¹øÂ° PATA Æ÷Æ® ±âÁØ°ª
 
-// í¬íŠ¸ ì¸ë±ìŠ¤ì— ê´€ë ¨ëœ ë§¤í¬ë¡œ
-#define HDD_PORT_INDEX_DATA			0x00
-#define HDD_PORT_INDEX_SECTORCOUNT	0x02
-#define HDD_PORT_INDEX_SECTORNUMBER	0x03
-#define HDD_PORT_INDEX_CYLINDERLSB	0x04
-#define HDD_PORT_INDEX_CYLINDERMSB	0x05
-#define HDD_PORT_INDEX_DRIVEANDHEAD	0x06
-#define HDD_PORT_INDEX_STATUS		0x07
-#define HDD_PORT_INDEX_COMMAND		0x07
-#define HDD_PORT_INDEX_DIGITALOUTPUT	0x206
+// ÇÏµå µğ½ºÅ© ÄÁÆ®·Ñ·¯ÀÇ I/O Æ÷Æ® ÀÎµ¦½º
+#define HDD_PORT_INDEX_DATA          0x00  // µ¥ÀÌÅÍ ·¹Áö½ºÅÍ(0x1F0, 0x170): ÀĞ±â/¾²±â, 2 byte Å©±â, ÇÏµå µğ½ºÅ©·ÎÀÇ ¼Û/¼ö½Å µ¥ÀÌÅÍ¸¦ ÀúÀå
+#define HDD_PORT_INDEX_SECTORCOUNT   0x02  // ¼½ÅÍ ¼ö ·¹Áö½ºÅÍ(0x1F2, 0x172): ÀĞ±â/¾²±â, 1 byte Å©±â, ¼½ÅÍ ¼ö¸¦ ÀúÀå(1~256¼½ÅÍ±îÁö °¡´É, 0À» ÀÔ·ÂÇÏ¸é 256À» ÀÇ¹Ì)
+#define HDD_PORT_INDEX_SECTORNUMBER  0x03  // ¼½ÅÍ ¹øÈ£ ·¹Áö½ºÅÍ(0x1F3, 0x173): ÀĞ±â/¾²±â, 1 byte Å©±â, ¼½ÅÍ ¹øÈ£¸¦ ÀúÀå
+#define HDD_PORT_INDEX_CYLINDERLSB   0x04  // ½Ç¸®´õ LSB ·¹Áö½ºÅÍ(0x1F4, 0x174): ÀĞ±â/¾²±â, 1 byte Å©±â, ½Ç¸°´õ ¹øÈ£ÀÇ ÇÏÀ§ 8ºñÆ®¸¦ ÀúÀå
+#define HDD_PORT_INDEX_CYLINDERMSB   0x05  // ½Ç¸®´õ MSB ·¹Áö½ºÅÍ(0x1F5, 0x175): ÀĞ±â/¾²±â, 1 byte Å©±â, ½Ç¸°´õ ¹øÈ£ÀÇ »óÀ§ 8ºñÆ®¸¦ ÀúÀå
+#define HDD_PORT_INDEX_DRIVEANDHEAD  0x06  // µå¶óÀÌ¹ö/Çìµå ·¹Áö½ºÅÍ(0x1F6, 0x176): ÀĞ±â/¾²±â, 1 byte Å©±â, µå¶óÀÌºê ¹øÈ£¿Í Çìµå ¹øÈ£¸¦ ÀúÀå
+#define HDD_PORT_INDEX_STATUS        0x07  // »óÅÂ ·¹Áö½ºÅÍ(0x1F7, 0x177): ÀĞ±â, 1 byte Å©±â, ÇÏµå µğ½ºÅ©ÀÇ »óÅÂ¸¦ ÀúÀå
+#define HDD_PORT_INDEX_COMMAND       0x07  // Ä¿¸Çµå ·¹Áö½ºÅÍ(0x1F7, 0x177): ¾²±â, 1 byte Å©±â, ÇÏµå µğ½ºÅ©·Î ¼Û½ÅÇÒ Ä¿¸Çµå¸¦ ÀúÀå
+#define HDD_PORT_INDEX_DIGITALOUTPUT 0x206 // µğÁöÅĞ Ãâ·Â ·¹Áö½ºÅÍ(0x3F6, 0x376): ÀĞ±â/¾²±â, 1 byte Å©±â, ÀÎÅÍ·´Æ® È°¼ºÈ­¿Í ÇÏµå µğ½ºÅ© ¸®¼ÂÀ» ´ã´ç
 
-// ì»¤ë§¨ë“œ ë ˆì§€ìŠ¤í„°ì— ê´€ë ¨ëœ ë§¤í¬ë¡œ
-#define HDD_COMMAND_READ		0x20
-#define HDD_COMMAND_WRITE		0x30
-#define HDD_COMMAND_IDENTIFY	0xec
+// Ä¿¸Çµå ·¹Áö½ºÅÍ(8ºñÆ®)ÀÇ Ä¿¸Çµå
+#define HDD_COMMAND_READ     0x20 // ¼½ÅÍ ÀĞ±â : ÇÊ¿äÇÑ ·¹Áö½ºÅÍ->¼½ÅÍ ¼ö ·¹Áö½ºÅÍ, ¼½ÅÍ ¹øÈ£ ·¹Áö½ºÅÍ, ½Ç¸®´õ LSB/MSB ·¹Áö½ºÅÍ, µå¶óÀÌ¹ö/Çìµå ·¹Áö½ºÅÍ
+#define HDD_COMMAND_WRITE    0x30 // ¼½ÅÍ ¾²±â : ÇÊ¿äÇÑ ·¹Áö½ºÅÍ->¼½ÅÍ ¼ö ·¹Áö½ºÅÍ, ¼½ÅÍ ¹øÈ£ ·¹Áö½ºÅÍ, ½Ç¸®´õ LSB/MSB ·¹Áö½ºÅÍ, µå¶óÀÌ¹ö/Çìµå ·¹Áö½ºÅÍ
+#define HDD_COMMAND_IDENTIFY 0xEC // µå¶óÀÌºê ÀÎ½Ä(ÇÏµå µğ½ºÅ© Á¤º¸ ÀĞ±â): ÇÊ¿äÇÑ ·¹Áö½ºÅÍ->µå¶óÀÌ¹ö/Çìµå ·¹Áö½ºÅÍ
 
-// ìƒíƒœ ë ˆì§€ìŠ¤í„°ì— ê´€ë ¨ëœ ë§¤í¬ë¡œ
-#define HDD_STATUS_ERROR			0x01
-#define HDD_STATUS_INDEX			0x02
-#define HDD_STATUS_CORRECTEDDATA	0x04
-#define HDD_STATUS_DATAREQUEST		0x08
-#define HDD_STATUS_SEEKCOMPLETE		0x10
-#define HDD_STATUS_WRITEFAULT		0x20
-#define HDD_STATUS_READY			0x40
-#define HDD_STATUS_BUSY				0x80
+// »óÅÂ ·¹Áö½ºÅÍ(8ºñÆ®)ÀÇ ÇÊµå
+#define HDD_STATUS_ERROR         0x01 // ERR(ºñÆ® 0): Error, ÀÌÀü¿¡ ¼öÇàÇß´ø Ä¿¸Çµå¿¡ ¿¡·¯°¡ ¹ß»ıÇßÀ½À» ÀÇ¹Ì
+#define HDD_STATUS_INDEX         0x02 // IDX(ºñÆ® 1): Index, µğ½ºÅ©ÀÇ ÀÎµ¦½º ¸¶Å©°¡ °ËÃâµÇ¾úÀ½À» ÀÇ¹Ì
+#define HDD_STATUS_CORRECTEDDATA 0x04 // CORR(ºñÆ® 2): Correctable Data Error, ÀÛ¾÷ µµÁß µ¥ÀÌÅÍ ¿¡·¯°¡ ¹ß»ıÇßÀ¸³ª ECC Á¤º¸·Î º¹±¸ÇßÀ½À» ÀÇ¹Ì
+#define HDD_STATUS_DATAREQUEST   0x08 // DRQ(ºñÆ® 3): Data Request, ÇÏµå µğ½ºÅ©°¡ µ¥ÀÌÅÍ¸¦ ¼Û/¼ö½Å °¡´ÉÇÑ »óÅÂ¸¦ ÀÇ¹Ì
+#define HDD_STATUS_SEEKCOMPLETE  0x10 // DSC(ºñÆ® 4): Device Seek Complete, ¾Ç¼¼½º ¾ÏÀÇ Çìµå°¡ ¿øÇÏ´Â À§Ä¡·Î ¿Å°ÜÁ³À½À» ÀÇ¹Ì
+#define HDD_STATUS_WRITEFAULT    0x20 // DF(ºñÆ® 5): Device Fault, ÀÛ¾÷ µµÁß ¹®Á¦°¡ ¹ß»ıÇßÀ½À» ÀÇ¹Ì
+#define HDD_STATUS_READY         0x40 // DRDY(ºñÆ® 6): Device Ready, ÇÏµå µğ½ºÅ©°¡ Ä¿¸Çµå¸¦ ¼ö½Å °¡´ÉÇÑ »óÅÂ¸¦ ÀÇ¹Ì
+#define HDD_STATUS_BUSY          0x80 // BSY(ºñÆ® 7): Busy, ÇÏµå µğ½ºÅ©°¡ Ä¿¸Çµå¸¦ ½ÇÇàÁßÀÎ »óÅÂ¸¦ ÀÇ¹Ì
 
-// ë””ë°”ì´ìŠ¤/í—¤ë“œ ë ˆì§€ìŠ¤í„°ì— ê´€ë ¨ëœ ë§¤í¬ë¡œ
-#define HDD_DRIVEANDHEAD_LBA		0xe0
-#define HDD_DRIVEANDHEAD_SLAVE		0x01
+// µå¶óÀÌ¹ö/Çìµå ·¹Áö½ºÅÍ(8ºñÆ®)ÀÇ ÇÊµå
+/* [Âü°í]
+ * LBA ¸ğµå(ºñÆ® 6)=0 : CHS ¸ğµå->¼½ÅÍ ¼ö ·¹Áö½ºÅÍ¿¡´Â ¼½ÅÍ ¼ö¸¦, ¼½ÅÍ ¹øÈ£ ·¹Áö½ºÅÍ¿¡´Â ¼½ÅÍ ¹øÈ£¸¦, ½Ç¸®´õ LSB/MSB ·¹Áö½ºÅÍ¿¡´Â ½Ç¸°´õ ¹øÈ£¸¦, µå¶óÀÌ¹ö/Çìµå ·¹Áö½ºÅÍÀÇ Çìµå ¹øÈ£ ÇÊµå¿¡´Â Çìµå ¹øÈ£¸¦ ÀúÀåÇÏ´Â ¹æ½Ä
+ * LBA ¸ğµå(ºñÆ® 6)=1 : LBA ¸ğµå->¼½ÅÍ ¼ö ·¹Áö½ºÅÍ¿¡´Â ¼½ÅÍ ¼ö¸¦ ÀúÀåÇÏ°í , ³ª¸ÓÁö ·¹Áö½ºÅÍ´Â LBA ¾îµå·¹½º·Î ÅëÇÕµÇ¾î
+ *                           LBA ¾îµå·¹½º(28ºñÆ®)ÀÇ [ºñÆ® 0~7:¼½ÅÍ ¹øÈ£ ·¹Áö½ºÅÍ], [ºñÆ® 8~15:½Ç¸®´õ LSB ·¹Áö½ºÅÍ], [ºñÆ® 16~23:½Ç¸®´õ MSB ·¹Áö½ºÅÍ], [ºñÆ® 24~27:µå¶óÀÌ¹ö/Çìµå ·¹Áö½ºÅÍÀÇ Çìµå ¹øÈ£ ÇÊµå]¸¦ ÀúÀåÇÏ´Â ¹æ½Ä
+ * µå¶óÀÌºê ¹øÈ£(ºñÆ® 4)=0 : ¸¶½ºÅÍ ÇÏµå µğ½ºÅ©¿Í ¼Û/¼ö½Å
+ * µå¶óÀÌºê ¹øÈ£(ºñÆ® 4)=1 : ½½·¹ÀÌºê ÇÏµå µğ½ºÅ©¿Í ¼Û/¼ö½Å
+ */
+#define HDD_DRIVEANDHEAD_LBA   0xE0 // 1110 0000 : °íÁ¤°ª(ºñÆ® 7)=1, LBA ¸ğµå(ºñÆ® 6)=1, °íÁ¤°ª(ºñÆ® 5)=1, µå¶óÀÌºê ¹øÈ£(ºñÆ® 4)=0, Çìµå ¹øÈ£(ºñÆ® 3~0)=0000
+#define HDD_DRIVEANDHEAD_SLAVE 0x10 // 0001 0000 : µå¶óÀÌºê ¹øÈ£(ºñÆ® 4)=1
 
-// ë””ì§€í„¸ ì¶œë ¥ ë ˆì§€ìŠ¤í„°ì— ê´€ë ¨ëœ ë§¤í¬ë¡œ
-#define HDD_DIGITALOUTPUT_RESET		0x04
-#define HDD_DIGITALOUTPUT_DISABLEINTERRUPT	0x01
+// ÇÏµå µğ½ºÅ©ÀÇ ÀÀ´äÀ» ´ë±âÇÏ´Â ½Ã°£(ms)
+#define HDD_WAITTIME 500
 
-// í•˜ë“œ ë””ìŠ¤í¬ì˜ ì‘ë‹µì„ ê¸°ë‹¤ë¦¬ëŠ” ì‹œê°„(ms)
-#define HDD_WAITTIME	500
-// í•œë²ˆì— HDD ì½ê±°ë‚˜ ì“¸ ìˆ˜ ìˆëŠ” ì„¹í„°ìˆ˜
-#define HDD_MAXBULKSECTORCOUNT		256
+// ÇÏµå µğ½ºÅ©¿¡ ÇÑ¹ø¿¡ ÀĞ°Å³ª ¾µ ¼ö ÀÖ´Â ÃÖ´ë ¼½ÅÍ ¼ö
+#define HDD_MAXBULKSECTORCOUNT 256
 
+/***** ±¸Á¶Ã¼ Á¤ÀÇ *****/
 #pragma pack(push, 1)
 
 typedef struct kHDDInformationStruct{
-	// ì„¤ì • ê°’
-	WORD wConfiguation;
+	// ¼³Á¤°ª
+	WORD wConfiguration;
 
-	// ì‹¤ë¦°ë” ìˆ˜
+	// ½Ç¸°´õ ¼ö(CHS ¸ğµå¿¡¼­ »ç¿ë)
 	WORD wNumberOfCylinder;
 	WORD wReserved1;
 
-	// í—¤ë“œ ìˆ˜
+	// Çìµå ¼ö(CHS ¸ğµå¿¡¼­ »ç¿ë)
 	WORD wNumberOfHead;
-	WORD wUnformattedBytesPerTrak;
+	WORD wUnformattedBytesPerTrack;
 	WORD wUnformattedBytesPerSector;
 
-	// ì‹¤ë¦°ë”ë‹¹ ì„¹í„° ìˆ˜
+	// ½Ç¸°´õ´ç ¼½ÅÍ ¼ö(CHS ¸ğµå¿¡¼­ »ç¿ë)
 	WORD wNumberOfSectorPerCylinder;
 	WORD wInterSectorGap;
 	WORD wBytesInPhaseLock;
 	WORD wNumberOfVendorUniqueStatusWord;
 
-	// í•˜ë“œ ë””ìŠ¤í¬ì˜ ì‹œë¦¬ì–¼ ë„˜ë²„
+	// ½Ã¸®¾ó ¹øÈ£
 	WORD vwSerialNumber[10];
 	WORD wControllerType;
 	WORD wBufferSize;
 	WORD wNumberOfECCBytes;
-	WORD vmFirmwareRevision[4];
+	WORD vwFirmwareRevision[4];
 
-	// í•˜ë“œ ë””ìŠ¤í¬ì˜ ëª¨ë¸ ë²ˆí˜¸
+	// ¸ğµ¨ ¹øÈ£
 	WORD vwModelNumber[20];
 	WORD vwReserved2[13];
 
-	// ë””ìŠ¤í¬ì˜ ì´ ì„¹í„°ìˆ˜
+	// ÃÑ ¼½ÅÍ ¼ö(LBA ¸ğµå¿¡¼­ »ç¿ë)
 	DWORD dwTotalSectors;
 	WORD vwReserved3[196];
 } HDDINFORMATION;
 
-#pragma pack(pop)
-
-// í•˜ë“œ ë””ìŠ¤í¬ë¥¼ ê´€ë¦¬í•˜ëŠ” êµ¬ì¡°ì²´
 typedef struct kHDDManagerStruct{
-	// HDD ì¡´ì¬ ì—¬ë¶€ì™€ ì“°ê¸°ë¥¼ ìˆ˜í–‰í•  ìˆ˜ ìˆëŠ”ì§€ ì—¬ë¶€
-	BOOL bHDDDetected;
-	BOOL bCanWrite;
-
-	// ì¸í„°ëŸ½íŠ¸ ë°œìƒ ì—¬ë¶€ì™€ ë™ê¸°í™” ê°ì²´
-	volatile BOOL bPrimaryInterruptOccur;
-	volatile BOOL bSecondaryInterruptOccur;
-	MUTEX stMutex;
-
-	// HDD ì •ë³´
-	HDDINFORMATION stHDDInformation;
+	BOOL bHDDDetected;                      // ÇÏµå µğ½ºÅ© Á¸Àç ¿©ºÎ
+	BOOL bCanWrite;                         // ¾²±â °¡´É ¿©ºÎ(ÇöÀç QEMU·Î ½ÇÇàÇßÀ» ¶§¸¸ ÇÏµå µğ½ºÅ©¿¡ ¾²±â °¡´É)
+	volatile BOOL bPrimaryInterruptOccur;   // Ã¹¹øÂ° ÀÎÅÍ·´Æ® ÇÃ·¡±×(ÀÎÅÍ·´Æ® ¹ß»ı ¿©ºÎ)
+	volatile BOOL bSecondaryInterruptOccur; // µÎ¹øÂ° ÀÎÅÍ·´Æ® ÇÃ·¡±×(ÀÎÅÍ·´Æ® ¹ß»ı ¿©ºÎ)
+	MUTEX stMutex;                          // ¹ÂÅØ½º µ¿±âÈ­ °´Ã¼
+	HDDINFORMATION stHDDInformation;        // ÇÏµå µğ½ºÅ© Á¤º¸
 } HDDMANAGER;
 
+#pragma pack(pop)
+
+/***** ÇÔ¼ö Á¤ÀÇ *****/
 BOOL kInitializeHDD(void);
-static BYTE kReadHDDStatus(BOOL bPrimary);
-static BOOL kWaitForHDDNoBusy(BOOL bPrimary);
-static BOOL kWaitForHDDReady(BOOL bPrimary);
-void kSetHDDInterruptFlag(BOOL bPrimary, BOOL bFlag);
-static BOOL kWaitForHDDInterrupt(BOOL bPrimary);
 BOOL kReadHDDInformation(BOOL bPrimary, BOOL bMaster, HDDINFORMATION* pstHDDInformation);
-static void kSwapByteInWord(WORD* pwData, int iWordCount);
 int kReadHDDSector(BOOL bPrimary, BOOL bMaster, DWORD dwLBA, int iSectorCount, char* pcBuffer);
 int kWriteHDDSector(BOOL bPrimary, BOOL bMaster, DWORD dwLBA, int iSectorCount, char* pcBuffer);
+void kSetHDDInterruptFlag(BOOL bPrimary, BOOL bFlag);
+static void kSwapByteInWord(WORD* pwData, int iWordCount);
+static BYTE kReadHDDStatus(BOOL bPrimary);
+static BOOL kIsHDDBusy(BOOL bPrimary);  // [ÁÖÀÇ]ÀÌ ÇÔ¼ö´Â Ã¥¿¡¼­ ±¸ÇöµÇ¾î ÀÖÁö ¾Ê¾Æ¼­, ³»°¡ Á÷Á¢ ±¸ÇöÇßÀ½
+static BOOL kIsHDDReady(BOOL bPrimary); // [ÁÖÀÇ]ÀÌ ÇÔ¼ö´Â Ã¥¿¡¼­ ±¸ÇöµÇ¾î ÀÖÁö ¾Ê¾Æ¼­, ³»°¡ Á÷Á¢ ±¸ÇöÇßÀ½
+static BOOL kWaitForHDDNoBusy(BOOL bPrimary);
+static BOOL kWaitForHDDReady(BOOL bPrimary);
+static BOOL kWaitForHDDInterrupt(BOOL bPrimary);
 
-
-#endif
+#endif // __HARD_DISK_H__

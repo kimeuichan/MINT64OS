@@ -1,65 +1,56 @@
 #include "RTC.h"
+#include "AssemblyUtility.h"
 
-// CMOS ë©”ëª¨ë¦¬ì—ì„œ RTC ì»¨íŠ¸ë¡¤ëŸ¬ê°€ ì €ìž¥í•œ í˜„ìž¬ ì‹œê°„ì„ ì½ìŒ
 void kReadRTCTime(BYTE* pbHour, BYTE* pbMinute, BYTE* pbSecond){
 	BYTE bData;
 
-	// CMOS ë©”ëª¨ë¦¬ ì–´ë“œë ˆìŠ¤ ë ˆì§€ìŠ¤í„°(0x70)ì— ì‹œê°„ì„ ì €ìž¥í•˜ëŠ” ë ˆì§€ìŠ¤í„° ì§€ì •
+	// CMOS ¸Þ¸ð¸® ¾îµå·¹½º ·¹Áö½ºÅÍ¿¡ Hours ·¹Áö½ºÅÍ¸¦ ¼³Á¤ÇÏ°í, CMOS ¸Þ¸ð¸® µ¥ÀÌÅÍ ·¹Áö½ºÅÍ¿¡¼­ ÇöÀç ½Ã°£À» ÀÐÀ½
 	kOutPortByte(RTC_CMOSADDRESS, RTC_ADDRESS_HOUR);
-	// CMOS ë°ì´í„° ë ˆì§€ìŠ¤í„°(0x71)ì—ì„œ ì‹œê°„ì„ ì½ìŒ
 	bData = kInPortByte(RTC_CMOSDATA);
 	*pbHour = RTC_BCDTOBINARY(bData);
 
-	// CMOS ë©”ëª¨ë¦¬ ì–´ë“œë ˆìŠ¤ ë ˆì§€ìŠ¤í„°(0x70)ì— ë¶„ì„ ì €ìž¥í•˜ëŠ” ë ˆì§€ìŠ¤í„° ì§€ì •
+	// CMOS ¸Þ¸ð¸® ¾îµå·¹½º ·¹Áö½ºÅÍ¿¡ Minutes ·¹Áö½ºÅÍ¸¦ ¼³Á¤ÇÏ°í, CMOS ¸Þ¸ð¸® µ¥ÀÌÅÍ ·¹Áö½ºÅÍ¿¡¼­ ÇöÀç ºÐÀ» ÀÐÀ½
 	kOutPortByte(RTC_CMOSADDRESS, RTC_ADDRESS_MINUTE);
-	// CMOS ë°ì´í„° ë ˆì§€ìŠ¤í„°(0x71)ì—ì„œ ì‹œê°„ì„ ì½ìŒ
 	bData = kInPortByte(RTC_CMOSDATA);
 	*pbMinute = RTC_BCDTOBINARY(bData);
 
-	// CMOS ë©”ëª¨ë¦¬ ì–´ë“œë ˆìŠ¤ ë ˆì§€ìŠ¤í„°(0x70)ì— ì‹œê°„ì„ ì €ìž¥í•˜ëŠ” ë ˆì§€ìŠ¤í„° ì§€ì •
+	// CMOS ¸Þ¸ð¸® ¾îµå·¹½º ·¹Áö½ºÅÍ¿¡ Seconds ·¹Áö½ºÅÍ¸¦ ¼³Á¤ÇÏ°í, CMOS ¸Þ¸ð¸® µ¥ÀÌÅÍ ·¹Áö½ºÅÍ¿¡¼­ ÇöÀç ÃÊÀ» ÀÐÀ½
 	kOutPortByte(RTC_CMOSADDRESS, RTC_ADDRESS_SECOND);
-	// CMOS ë°ì´í„° ë ˆì§€ìŠ¤í„°(0x71)ì—ì„œ ì‹œê°„ì„ ì½ìŒ
 	bData = kInPortByte(RTC_CMOSDATA);
 	*pbSecond = RTC_BCDTOBINARY(bData);
 }
 
-// CMOS ë©”ëª¨ë¦¬ì—ì„œ RTC ì»¨íŠ¸ë¡¤ëŸ¬ê°€ ì €ìž¥í•œ í˜„ìž¬ ì¼ìžë¥¼ ì½ìŒ
 void kReadRTCDate(WORD* pwYear, BYTE* pbMonth, BYTE* pbDayOfMonth, BYTE* pbDayOfWeek){
 	BYTE bData;
 
-	// CMOS ë©”ëª¨ë¦¬ ì–´ë“œë ˆìŠ¤ ë ˆì§€ìŠ¤í„°(0x70) ì—°ë„ë¥¼ ì €ìž¥í•˜ëŠ” ë ˆì§€ìŠ¤í„° ì§€ì •
+	// CMOS ¸Þ¸ð¸® ¾îµå·¹½º ·¹Áö½ºÅÍ¿¡ Year ·¹Áö½ºÅÍ¸¦ ¼³Á¤ÇÏ°í, CMOS ¸Þ¸ð¸® µ¥ÀÌÅÍ ·¹Áö½ºÅÍ¿¡¼­ ÇöÀç ¿¬À» ÀÐÀ½
 	kOutPortByte(RTC_CMOSADDRESS, RTC_ADDRESS_YEAR);
-	// CMOS ë°ì´í„° ë ˆì§€ìŠ¤í„°(0x71) ì—°ë„ë¥¼ ì½ìŒ
 	bData = kInPortByte(RTC_CMOSDATA);
-	*pwYear = RTC_BCDTOBINARY(bData);
-	*pwYear += 2000;
+	*pwYear = RTC_BCDTOBINARY(bData) + 2000;
 
-	// CMOS ë©”ëª¨ë¦¬ ì–´ë“œë ˆìŠ¤ ë ˆì§€ìŠ¤í„°(0x70) ì›”ì„ ì €ìž¥í•˜ëŠ” ë ˆì§€ìŠ¤í„° ì§€ì •
+	// CMOS ¸Þ¸ð¸® ¾îµå·¹½º ·¹Áö½ºÅÍ¿¡ Month ·¹Áö½ºÅÍ¸¦ ¼³Á¤ÇÏ°í, CMOS ¸Þ¸ð¸® µ¥ÀÌÅÍ ·¹Áö½ºÅÍ¿¡¼­ ÇöÀç ¿ùÀ» ÀÐÀ½
 	kOutPortByte(RTC_CMOSADDRESS, RTC_ADDRESS_MONTH);
-	// CMOS ë°ì´í„° ë ˆì§€ìŠ¤í„°(0x71) ì—°ë„ë¥¼ ì½ìŒ
 	bData = kInPortByte(RTC_CMOSDATA);
 	*pbMonth = RTC_BCDTOBINARY(bData);
 
-	// CMOS ë©”ëª¨ë¦¬ ì–´ë“œë ˆìŠ¤ ë ˆì§€ìŠ¤í„°(0x70) ì¼ì„ ì €ìž¥í•˜ëŠ” ë ˆì§€ìŠ¤í„° ì§€ì •
+	// CMOS ¸Þ¸ð¸® ¾îµå·¹½º ·¹Áö½ºÅÍ¿¡ Day Of Month ·¹Áö½ºÅÍ¸¦ ¼³Á¤ÇÏ°í, CMOS ¸Þ¸ð¸® µ¥ÀÌÅÍ ·¹Áö½ºÅÍ¿¡¼­ ÇöÀç ÀÏÀ» ÀÐÀ½
 	kOutPortByte(RTC_CMOSADDRESS, RTC_ADDRESS_DAYOFMONTH);
-	// CMOS ë°ì´í„° ë ˆì§€ìŠ¤í„°(0x71) ì¼ì„ ì½ìŒ
 	bData = kInPortByte(RTC_CMOSDATA);
 	*pbDayOfMonth = RTC_BCDTOBINARY(bData);
 
-	// CMOS ë©”ëª¨ë¦¬ ì–´ë“œë ˆìŠ¤ ë ˆì§€ìŠ¤í„°(0x70) ìš”ì¼ì„ ì €ìž¥í•˜ëŠ” ë ˆì§€ìŠ¤í„° ì§€ì •
+	// CMOS ¸Þ¸ð¸® ¾îµå·¹½º ·¹Áö½ºÅÍ¿¡ Day Of Week ·¹Áö½ºÅÍ¸¦ ¼³Á¤ÇÏ°í, CMOS ¸Þ¸ð¸® µ¥ÀÌÅÍ ·¹Áö½ºÅÍ¿¡¼­ ÇöÀç ¿äÀÏÀ» ÀÐÀ½
 	kOutPortByte(RTC_CMOSADDRESS, RTC_ADDRESS_DAYOFWEEK);
-	// CMOS ë°ì´í„° ë ˆì§€ìŠ¤í„°(0x71) ìš”ì¼ì„ ì½ìŒ
 	bData = kInPortByte(RTC_CMOSDATA);
 	*pbDayOfWeek = RTC_BCDTOBINARY(bData);
 }
 
-// ìš”ì¼ ê°’ì„ ì´ìš©í•´ì„œ í•´ë‹¹ ìš”ì¼ì˜ ë¬¸ìžì—´ì„ ë°˜í™˜
 char* kConvertDayOfWeekToString(BYTE bDayOfWeek){
-	static char* vpcDayOfWeekString[8] = {"Error", "Sunday", "Monday", 
-	"Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+	// bDayOfWeek=[1~7:ÀÏ-¿ù-È­-¼ö-¸ñ-±Ý-Åä]
+	static char* vpcDayOfWeekString[8] = {"Error", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
 
 	if(bDayOfWeek >= 8){
 		return vpcDayOfWeekString[0];
 	}
+
 	return vpcDayOfWeekString[bDayOfWeek];
 }

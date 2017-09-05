@@ -12,18 +12,18 @@
 #include "HardDisk.h"
 #include "FileSystem.h"
 
-void Start64Kernel(void){
+void Main(void){
 	int iCursorX, iCursorY;
 
-	// 콘솔 초기화
+	// ÄÜ¼Ö ÃÊ±âÈ­
 	kInitializeConsole(0, 10);
 
-	// IA-32e 모드 C언어 커널 시작 메세지
+	// IA-32e ¸ðµå C¾ð¾î Ä¿³Î ½ÃÀÛ ¸Þ¼¼Áö
 	kPrintf("Switch to IA-32e Mode Success~!!\n");
 	kPrintf("IA-32e Mode C Language Kernel Start.........[Pass]\n");
 	kPrintf("Console Initialize..........................[Pass]\n");
 
-	// GDT/TSS 생성 및 GDT 로드
+	// GDT/TSS »ý¼º ¹× GDT ·Îµå
 	kGetCursor(&iCursorX, &iCursorY);
 	kPrintf("GDT/TSS Initialize and GDT Load.............[    ]");
 	kInitializeGDTTableAndTSS();
@@ -31,39 +31,39 @@ void Start64Kernel(void){
 	kSetCursor(45, iCursorY++);
 	kPrintf("Pass\n");
 
-	// TSS 로드
+	// TSS ·Îµå
 	kPrintf("TSS Load....................................[    ]");
 	kLoadTR(GDT_TSSSEGMENT);
 	kSetCursor(45, iCursorY++);
 	kPrintf("Pass\n");
 
-	// IDT 생성 및 로드
+	// IDT »ý¼º ¹× ·Îµå
 	kPrintf("IDT Initialize and Load.....................[    ]");
 	kInitializeIDTTable();
 	kLoadIDTR(IDTR_STARTADDRESS);
 	kSetCursor(45, iCursorY++);
 	kPrintf("Pass\n");
 
-	// 총 RAM 크기 체크
+	// ÃÑ RAM Å©±â Ã¼Å©
 	kPrintf("Total RAM Size Check........................[    ]");
 	kCheckTotalRAMSize();
 	kSetCursor(45, iCursorY++);
 	kPrintf("Pass], Size = %d MB\n", kGetTotalRAMSize());
 
-	// TCB 풀 및 스케줄러 초기화
+	// TCB Ç® ¹× ½ºÄÉÁÙ·¯ ÃÊ±âÈ­
 	kPrintf("TCB Pool and Scheduler Initialize...........[Pass]\n");
 	iCursorY++;
 	kInitializeScheduler();
 
-	// 동적 메모리 초기화
-	kPrintf( "Dynamic Memory Initialize...................[Pass]\n" );
-    iCursorY++;
-    kInitializeDynamicMemory();
+	// µ¿Àû ¸Þ¸ð¸® ÃÊ±âÈ­
+	kPrintf("Dynamic Memory Initialize...................[Pass]\n");
+	iCursorY++;
+	kInitializeDynamicMemory();
 
- 	// 1ms당 한 번씩(주기적으로) 타이머 인터럽트가 발생하도록 설정
-	kInitializePIT(MSTOCOUNT(1), TRUE);
+	// PIT ÃÊ±âÈ­
+	kInitializePIT(MSTOCOUNT(1), TRUE); // 1ms´ç ÇÑ ¹ø¾¿(ÁÖ±âÀûÀ¸·Î) Å¸ÀÌ¸Ó ÀÎÅÍ·´Æ®°¡ ¹ß»ýÇÏµµ·Ï ¼³Á¤
 
-	// 키 큐 초기화 및 키보드 활성화
+	// Å° Å¥ ÃÊ±âÈ­ ¹× Å°º¸µå È°¼ºÈ­
 	kPrintf("Key-Queue Initialize and Keyboard Activate..[    ]");
 	if(kInitializeKeyboard() == TRUE){
 		kSetCursor(45, iCursorY++);
@@ -76,7 +76,7 @@ void Start64Kernel(void){
 		while(1);
 	}
 
-	// PIC 초기화 및 인터럽트 활성화
+	// PIC ÃÊ±âÈ­ ¹× ÀÎÅÍ·´Æ® È°¼ºÈ­
 	kPrintf("PIC Initialize and Interrupt Activate.......[    ]");
 	kInitializePIC();
 	kMaskPICInterrupt(0);
@@ -84,18 +84,7 @@ void Start64Kernel(void){
 	kSetCursor(45, iCursorY++);
 	kPrintf("Pass\n");
 
-	// 하드 디스크를 초기화
-	kPrintf("HDD Initialize..............................[    ]");
-	if(kInitializeHDD() == TRUE){
-		kSetCursor(45, iCursorY++);
-		kPrintf("Pass\n");
-	}
-	else {
-		kSetCursor(45, iCursorY++);
-		kPrintf("Fail\n");
-	}
-
-	// 파일 시스템 초기화
+	// ÆÄÀÏ ½Ã½ºÅÛ ÃÊ±âÈ­
 	kPrintf("File System Initialize......................[    ]");
 	if(kInitializeFileSystem() == TRUE){
 		kSetCursor(45, iCursorY++);
@@ -106,7 +95,7 @@ void Start64Kernel(void){
 		kPrintf("Fail\n");
 	}
 
-	// 유휴 태스크를 시스템 스레드로 생성하고 셸을 시작 
-	kCreateTask(TASK_FLAGS_LOWEST | TASK_FLAGS_IDLE | TASK_FLAGS_SYSTEM | TASK_FLAGS_THREAD, 0, 0, (QWORD)kIdleTask);
+	// À¯ÈÞ ÅÂ½ºÅ©¸¦ »ý¼ºÇÏ°í, ÄÜ¼Ö ½©À» ½ÃÀÛ
+	kCreateTask(TASK_FLAGS_LOWEST | TASK_FLAGS_THREAD | TASK_FLAGS_SYSTEM | TASK_FLAGS_IDLE, 0, 0, (QWORD)kIdleTask);
 	kStartConsoleShell();
 }

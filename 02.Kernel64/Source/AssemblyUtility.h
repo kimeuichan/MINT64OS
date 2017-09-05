@@ -4,9 +4,11 @@
 #include "Types.h"
 #include "Task.h"
 
-// 함수 정의
+/***** 함수 정의 *****/
 BYTE kInPortByte(WORD wPort);
 void kOutPortByte(WORD wPort, BYTE bData);
+WORD kInPortWord(WORD wPort);
+void kOutPortWord(WORD wPort, WORD wData);
 void kLoadGDTR(QWORD qwGDTRAddress);
 void kLoadTR(WORD wTSSSegmentOffset);
 void kLoadIDTR(QWORD qwIDTRAddress);
@@ -14,15 +16,13 @@ void kEnableInterrupt(void);
 void kDisableInterrupt(void);
 QWORD kReadRFLAGS(void);
 QWORD kReadTSC(void);
-void kSwitchContext(CONTEXT* , CONTEXT* );
-void kHit(void);
-BOOL kTestAndSet(volatile BYTE* pbDestination, BYTE Compare, BYTE source);
+void kSwitchContext(CONTEXT* pstCurrentContext, CONTEXT* pstNextContext);
+void kHlt(void);
+BOOL kTestAndSet(volatile BYTE* pbDest, BYTE bCmp, BYTE bSrc);
 void kInitializeFPU(void);
 void kSaveFPUContext(void* pvFPUContext);
 void kLoadFPUContext(void* pvFPUContext);
 void kSetTS(void);
 void kClearTS(void);
-WORD kInPortWord(WORD wPort);
-WORD kOutPortWord(WORD wPort, WORD wData);
 
 #endif // __ASSEMBLYUTILITY_H__

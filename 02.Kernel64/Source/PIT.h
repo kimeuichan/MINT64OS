@@ -3,38 +3,37 @@
 
 #include "Types.h"
 
-#define PIT_FREQUENCY 1193182
-#define MSTOCOUNT(x) (PIT_FREQUENCY*(x)/1000)
-#define USTOCOUNT(x) (PIT_FREQUENCY*(x)/1000000)
+/**** ╦ее╘╥н а╓юг *****/
+// PIT ╟Э╥ц ╦ее╘╥н
+#define PIT_FREQUENCY 1193182                    // 1.193182 Mhz
+#define MSTOCOUNT(x) (PIT_FREQUENCY*(x)/1000)    // MilliSecond to Count
+#define USTOCOUNT(x) (PIT_FREQUENCY*(x)/1000000) // MicroSecond to Count
 
+// PIT I/O фВф╝
+#define PIT_PORT_CONTROL  0x43 // даф╝╥я ╥╧аЖ╫╨ем (1byte)
+#define PIT_PORT_COUNTER0 0x40 // д╚©Нем0 ╥╧аЖ╫╨ем (2byte)
+#define PIT_PORT_COUNTER1 0x41 // д╚©Нем1 ╥╧аЖ╫╨ем (2byte)
+#define PIT_PORT_COUNTER2 0x42 // д╚©Нем2 ╥╧аЖ╫╨ем (2byte)
 
-// I/O М▐╛М┼╦
-#define PIT_PORT_CONTROL	0x43
-#define PIT_PORT_COUNTER0	0x40
-#define PIT_PORT_COUNTER1	0x41
-#define PIT_PORT_COUNTER2	0x42
+// PIT даф╝╥я ╥╧аЖ╫╨ем(1byte)юг гй╣Е
+#define PIT_CONTROL_COUNTER0      0x00 // SC(╨Яф╝ 7,6)=[00:д╚©Нем0]
+#define PIT_CONTROL_COUNTER1      0x40 // SC(╨Яф╝ 7,6)=[01:д╚©Нем1]
+#define PIT_CONTROL_COUNTER2      0x80 // SC(╨Яф╝ 7,6)=[10:д╚©Нем2]
+#define PIT_CONTROL_LSBMSBRW      0x30 // RW(╨Яф╝ 5,4)=[11:д╚©Немюг гою╖ ╧ыюлф╝©║╪╜ ╩Сю╖ ╧ыюлф╝ ╪Ью╦╥н ©╛╪сгь╪╜ I/OфВф╝╦╕ юп╟еЁ╙ ╬╦, 2╧ыюлф╝ юЭ╪ш]
+#define PIT_CONTROL_LATCH         0x00 // RW(╨Яф╝ 5,4)=[00:д╚©Немюг гЖюГ ╟╙ю╩ юпю╫, 2╧ыюлф╝ юЭ╪ш(╨Яф╝ 00ю╦╥н ╪Ёа╓гр ╟Ф©Л, ╨Яф╝ 3~0ю╨ ╦П╣н 0ю╦╥н ╪Ёа╓го╟М гою╖ ╧ыюлф╝©║╪╜ ╩Сю╖ ╧ыюлф╝ ╪Ью╦╥н ©╛╪сгь╪╜ I/O фВф╝╦╕ юп╬Н╬ъ гя╢ы.)]
+#define PIT_CONTROL_MODE0         0x00 // Mode(╨Яф╝ 3,2,1)=[000:╦П╣Е 0(Interrupt during counting, гя ╧Ь╦╦ ╫ехё ╧ъ╩Щ)]
+#define PIT_CONTROL_MODE2         0x04 // Mode(╨Яф╝ 3,2,1)=[010:╦П╣Е 2(Clock rate generator, аж╠БюШю╦╥н ╫ехё ╧ъ╩Щ)]
+#define PIT_CONTROL_BINARYCOUNTER 0x00 // BCD(╨Яф╝ 0)=[0:д╚©Нем ╟╙ю╩ ╧ыюлЁй╦╝ фВ╦кю╦╥н ╪Ёа╓]
+#define PIT_CONTROL_BSDCOUNTER    0x01 // BCD(╨Яф╝ 1)=[0:д╚©Нем ╟╙ю╩ BSD фВ╦кю╦╥н ╪Ёа╓]
 
-// К╙╗К⌠°
-#define PIT_CONTROL_COUNTER0	0x00
-#define PIT_CONTROL_COUNTER1	0x40
-#define PIT_CONTROL_COUNTER2	0x80
-#define PIT_CONTROL_LSBMSBRW	0x30
-#define PIT_CONTROL_LATCH		0x00
-#define PIT_CONTROL_MODE0		0x00
-#define PIT_CONTROL_MODE2		0x04
-
-// Binary or BCD
-
-#define PIT_CONTROL_BINARYCOUNTER	0x00
-#define PIT_CONTROL_BCDCOUNTER		0x01
-
-#define PIT_COUNTER0_ONCE (PIT_CONTROL_COUNTER0 | PIT_CONTROL_LSBMSBRW | PIT_CONTROL_MODE0 | PIT_CONTROL_BINARYCOUNTER)
+// юзаж ╩Г©Кгр ╦ее╘╥н
+#define PIT_COUNTER0_ONCE     (PIT_CONTROL_COUNTER0 | PIT_CONTROL_LSBMSBRW | PIT_CONTROL_MODE0 | PIT_CONTROL_BINARYCOUNTER)
 #define PIT_COUNTER0_PERIODIC (PIT_CONTROL_COUNTER0 | PIT_CONTROL_LSBMSBRW | PIT_CONTROL_MODE2 | PIT_CONTROL_BINARYCOUNTER)
-#define PIT_COUNTER0_LATCH	(PIT_CONTROL_COUNTER0 | PIT_CONTROL_LATCH)
+#define PIT_COUNTER0_LATCH    (PIT_CONTROL_COUNTER0 | PIT_CONTROL_LATCH)
 
+/***** гт╪Ж ╪╠╬П *****/
 void kInitializePIT(WORD wCount, BOOL bPeriodic);
 WORD kReadCounter0(void);
 void kWaitUsingDirectPIT(WORD wCount);
 
-
-#endif
+#endif // __PIT_H__

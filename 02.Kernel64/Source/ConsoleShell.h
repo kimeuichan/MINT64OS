@@ -3,15 +3,14 @@
 
 #include "Types.h"
 
-/***** ï¾¸ï¿…ï¿…ï¾©ï¾·ï¿ ï¿ï¾¤ï¿€ï¿‡ *****/
+/***** ¸ÅÅ©·Î Á¤ÀÇ *****/
 #define CONSOLESHELL_MAXCOMMANDBUFFERCOUNT 300
 #define CONSOLESHELL_PROMPTMESSAGE         "MINT64>"
 
-
-/***** ï¿…ï¾¸ï¿€ï¿” ï¿ï¾¤ï¿€ï¿‡ *****/
+/***** Å¸ÀÔ Á¤ÀÇ *****/
 typedef void (*CommandFunction)(const char* pcParameter);
 
-/***** ï¾±ï¾¸ï¿ï¾¶ï¿ƒï¾¼ ï¿ï¾¤ï¿€ï¿‡ *****/
+/***** ±¸Á¶Ã¼ Á¤ÀÇ *****/
 #pragma pack(push, 1)
 
 typedef struct kShellCommandEntryStruct{
@@ -21,21 +20,21 @@ typedef struct kShellCommandEntryStruct{
 } SHELLCOMMANDENTRY;
 
 typedef struct kParameterListStruct{
-	const char* pcBuffer; // ï¿†ï¿„ï¾¶ï¿³ï¾¹ï¿Œï¿…ï¿ ï¾¸ï¾®ï¾½ï¾ºï¿†ï¾® ï¾¹ï¿¶ï¿†ï¿›
-	int iLength;          // ï¿†ï¿„ï¾¶ï¿³ï¾¹ï¿Œï¿…ï¿ ï¾¸ï¾®ï¾½ï¾ºï¿†ï¾® ï¾¹ï¿¶ï¿†ï¿› ï¾±ï¿¦ï¿€ï¿Œ
-	int iCurrentPosition; // ï¿‡ï¿¶ï¿€ï¿§ ï¿†ï¿„ï¾¶ï¿³ï¾¹ï¿Œï¿…ï¿ ï¿€ï¾§ï¿„ï¾¡
+	const char* pcBuffer; // ÆÄ¶ó¹ÌÅÍ ¸®½ºÆ® ¹öÆÛ
+	int iLength;          // ÆÄ¶ó¹ÌÅÍ ¸®½ºÆ® ¹öÆÛ ±æÀÌ
+	int iCurrentPosition; // ÇöÀç ÆÄ¶ó¹ÌÅÍ À§Ä¡
 }PARAMETERLIST;
 
 #pragma pack(pop)
 
-/***** ï¿‡ï¿”ï¾¼ï¿¶ ï¿ï¾¤ï¿€ï¿‡ *****/
-// ï¾½ï¾© ï¿„ï¿šï¾µï¿¥ ï¿‡ï¿”ï¾¼ï¿¶
+/***** ÇÔ¼ö Á¤ÀÇ *****/
+// ½© ÄÚµå ÇÔ¼ö
 void kStartConsoleShell(void);
 void kExecuteCommand(const char* pcCommandBuffer);
 void kInitializeParameter(PARAMETERLIST* pstList, const char* pcParameterBuffer);
 int kGetNextParameter(PARAMETERLIST* pstList, char* pcParameter);
 
-// ï¿„ï¾¿ï¾¸ï¿‡ï¾µï¿¥ ï¿ƒï¾³ï¾¸ï¾® ï¿‡ï¿”ï¾¼ï¿¶
+// Ä¿¸Çµå Ã³¸® ÇÔ¼ö
 static void kHelp(const char* pcParameterBuffer);
 static void kCls(const char* pcParameterBuffer);
 static void kShowTotalRAMSize(const char* pcParameterBuffer);
@@ -46,15 +45,22 @@ static void kWaitUsingPIT(const char* pcParameterBuffer);
 static void kReadTimeStampCounter(const char* pcParameterBuffer);
 static void kMeasureProcessorSpeed(const char* pcParameterBuffer);
 static void kShowDateAndTime(const char* pcParameterBuffer);
+static void kTestTask1(void);
+static void kTestTask2(void);
 static void kCreateTestTask(const char* pcParameterBuffer);
 static void kChangeTaskPriority(const char* pcParameterBuffer);
 static void kShowTaskList(const char* pcParameterBuffer);
 static void kKillTask(const char* pcParameterBuffer);
 static void kCPULoad(const char* pcParameterBuffer);
+static void kPrintNumberTask(const char* pcParameterBuffer);
 static void kTestMutex(const char* pcParameterBuffer);
 static void kCreateThreadTask(void);
 static void kTestThread(const char* pcParameterBuffer);
+QWORD kRandom(void);
+static void kDropCharacterThread(void);
+static void kMatrixProcess(void);
 static void kShowMatrix(const char* pcParameterBuffer);
+static void kFPUTestTask(void);
 static void kTestPIE(const char* pcParameterBuffer);
 static void kShowDynamicMemoryInformation(const char* pcParameterBuffer);
 static void kTestSequentialAllocation(const char* pcParameterBuffer);
@@ -72,4 +78,7 @@ static void kShowRootDirectory(const char* pcParameterBuffer);
 static void kWriteDataToFile(const char* pcParameterBuffer);
 static void kReadDataFromFile(const char* pcParameterBuffer);
 static void kTestFileIO(const char* pcParameterBuffer);
+static void kTestPerformance(const char* pcParameterBuffer);
+static void kFlushCache(const char* pcParameterBuffer);
+
 #endif // __CONSOLE_SHELL_H__

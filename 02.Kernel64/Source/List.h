@@ -3,7 +3,7 @@
 
 #include "Types.h"
 
-/***** êµ¬ì¡°ì²´ ì •ì˜ *****/
+/***** ±¸Á¶Ã¼ Á¤ÀÇ *****/
 #pragma pack(push, 1)
 
 typedef struct kListLinkStruct{
@@ -12,12 +12,12 @@ typedef struct kListLinkStruct{
 } LISTLINK;
 
 /*
-// ë¦¬ìŠ¤íŠ¸ ì•„ì´í…œ ì •ì˜ ì˜ˆì‹œ
+// ¸®½ºÆ® ¾ÆÀÌÅÛ Á¤ÀÇ ¿¹½Ã
 typedef struct kListItemExampleStruct{
-	LISTLINK stLink; // LISTLINKê°€ ë°˜ë“œì‹œ ë§¨ ì•ì— ìœ„ì¹˜í•´ì•¼ í•¨
+	LISTLINK stLink; // LISTLINK°¡ ¹İµå½Ã ±¸Á¶Ã¼ÀÇ ¸Ç ¾Õ¿¡ À§Ä¡ÇØ¾ß ÇÔ
 	int iData1;
 	char cData2;
-} LISTITEM; // LISTNODEì— í•´ë‹¹
+} LISTITEM; // LISTNODE¿¡ ÇØ´ç
 */
 
 typedef struct kListManagerStruct{
@@ -28,7 +28,7 @@ typedef struct kListManagerStruct{
 
 #pragma pack(pop)
 
-/***** í•¨ìˆ˜ ì •ì˜ *****/
+/***** ÇÔ¼ö Á¤ÀÇ *****/
 void kInitializeList(LIST* pstList);
 int kGetListCount(const LIST* pstList);
 void kAddListToTail(LIST* pstList, void* pvItem);

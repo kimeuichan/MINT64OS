@@ -1,53 +1,54 @@
-#ifndef __DYNAMICMEMORY_H__
-#define __DYNAMICMEMORY_H__
+#ifndef __DYNAMIC_MEMORY_H__
+#define __DYNAMIC_MEMORY_H__
 
 #include "Types.h"
 #include "Task.h"
 
+/***** ¸ÅÅ©·Î Á¤ÀÇ *****/
+// µ¿Àû ¸Ş¸ğ¸® ¿µ¿ª ½ÃÀÛ ¾îµå·¹½º(0x1100000, 17MB): 1MB ´ÜÀ§·Î Á¤·Ä(1MBÀÇ ¹è¼ö·Î ¼³Á¤, ¿Ã¸² Ã³¸®), TCB ÀÚ·á±¸Á¶ÀÇ Å©±â°¡ 1KBÀÌÇÏ¶ó´Â Á¶°ÇÇÏ¿¡¼­ 17MB°¡ µÊ
 #define DYNAMICMEMORY_START_ADDRESS ((TASK_STACKPOOLADDRESS + (TASK_STACKSIZE * TASK_MAXCOUNT) + 0xfffff) & 0xfffffffffff00000)
 
+// ÃÖ¼Ò ºí·Ï Å©±â(1KB)
+#define DYNAMICMEMORY_MIN_SIZE (1 * 1024)
 
-#define DYNAMICMEMORY_MIN_SIZE				(1*1024)
+// ºñÆ®¸Ê ÇÃ·¡±×
+#define DYNAMICMEMORY_EXIST 0x01 // ºí·Ï Á¸Àç(ºí·ÏÀÌ ÇÒ´ç °¡´ÉÇÑ »óÅÂ)
+#define DYNAMICMEMORY_EMPTY 0x00 // ºí·Ï ºÎÀç(ºí·ÏÀÌ ÇÒ´ç µÇ¾ú°Å³ª °áÇÕµÇ¾î ÇÒ´ç ºÒ°¡´ÉÇÑ »óÅÂ)
 
-#define DYNAMICMEMORY_EXIST					0x01
-#define DYNAMICMEMORY_EMPTY					0x00
+/***** ±¸Á¶Ã¼ Á¤ÀÇ *****/
+#pragma pack(push, 1)
 
-
-// ë¹„íŠ¸ë§µì„ ê´€ë¦¬í•˜ëŠ” ìë£Œêµ¬ì¡°
 typedef struct kBitmapStruct{
-	BYTE* pbBitmap;
-	QWORD qwExistBitCount;
+	BYTE* pbBitmap;        // ½ÇÁ¦ ºñÆ®¸ÊÀÇ ¾îµå·¹½º
+	QWORD qwExistBitCount; // Á¸ÀçÇÏ´Â ºñÆ®¼ö(ÇØ´ç ºñÆ®¸Ê¿¡¼­ 1ÀÎ ºñÆ®ÀÇ °³¼ö)
 } BITMAP;
 
-
-// ë²„ë”” ë¸”ë¡ì„ ê´€ë¦¬í•˜ëŠ” ìë£Œêµ¬ì¡°
 typedef struct kDynamicMemoryManagerStruct{
-	// ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ì˜ ì´ ê°œìˆ˜ì™€ í¬ê¸°ê°€ ê°€ì¥ ì‘ì€ ë¸”ë¡ì˜ ê°œìˆ˜, ê·¸ë¦¬ê³  í• ë‹¹ëœ ë©”ëª¨ë¦¬ í¬ê¸°
-	int iMaxLevelCount;
-	int iBlockCountOfSmallestBlock;
-	QWORD qwUsedSize;
-
-	// ë¸”ë¡ í’€ì˜ ì‹œì‘ ì–´ë“œë ˆìŠ¤ì™€ ë§ˆì§€ë§‰ ì–´ë“œë ˆìŠ¤
-	QWORD qwStartAddress;
-	QWORD qwEndAddress;
-
-	// í• ë‹¹ëœ ë©”ëª¨ë¦¬ê°€ ì†í•œ ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ì˜ ì¸ë±ìŠ¤ë¥¼ ì €ì¥í•˜ëŠ” ì˜ì—­ê³¼ ë¹„íŠ¸ë§µ ìë£Œêµ¬ì¡°ì˜ ì–´ë“œë ˆìŠ¤
-	BYTE* pbAllocatedBlockListIndex;
-	BITMAP* pstBitmapOfLevel;
+	int iMaxLevelCount;              // ºí·Ï ¸®½ºÆ® °³¼ö(·¹º§ °³¼ö)
+	int iBlockCountOfSmallestBlock;  // ÃÖ¼Ò ºí·Ï °³¼ö
+	QWORD qwUsedSize;                // ÇÒ´çµÈ ¸Ş¸ğ¸® Å©±â(»ç¿ëµÈ ¸Ş¸ğ¸® Å©±â)
+	QWORD qwStartAddress;            // ºí·Ï Ç® ½ÃÀÛ ¾îµå·¹½º
+	QWORD qwEndAddredss;             // ºí·Ï Ç® ³¡ ¾îµå·¹½º
+	BYTE* pbAllocatedBlockListIndex; // ÀÎµ¦½º ¿µ¿ªÀÇ ¾îµå·¹½º(ÇÒ´çµÈ ºí·ÏÀÇ ºí·Ï ¸®½ºÆ® ÀÎµ¦½º¸¦ ÀúÀåÇÏ´Â ¿µ¿ªÀÇ ¾îµå·¹½º)
+	BITMAP* pstBitmapOfLevel;        // ºñÆ®¸Ê ÀÚ·á±¸Á¶ÀÇ ¾îµå·¹½º
 } DYNAMICMEMORY;
 
+#pragma pack(pop)
+
+/***** ÇÔ¼ö Á¤ÀÇ *****/
 void kInitializeDynamicMemory(void);
+void* kAllocateMemory(QWORD qwSize);
+BOOL kFreeMemory(void* pvAddress);
+void kGetDynamicMemoryInformation(QWORD* pqwDynamicMemoryStartAddress, QWORD* pqwDynamicMemoryTotalSize, QWORD* pqwMetaDataSize, QWORD* pqwUsedMemorySize);
+DYNAMICMEMORY* kGetDynamicMemoryManager(void);
 static QWORD kCalculateDynamicMemorySize(void);
 static int kCalculateMetaBlockCount(QWORD qwDynamicRAMSize);
-void* kAllocateMemory(QWORD qwSize);
-static QWORD kGetBuddyBlockSize(QWORD qwSize);
 static int kAllocateBuddyBlock(QWORD qwAlignedSize);
+static QWORD kGetBuddyBlockSize(QWORD qwSize);
 static int kGetBlockListIndexOfMatchSize(QWORD qwAlignedSize);
 static int kFindFreeBlockInBitmap(int iBlockListIndex);
 static void kSetFlagInBitmap(int iBlockListIndex, int iOffset, BYTE bFlag);
-BOOL kFreeMemory(void* pvAddress);
 static BOOL kFreeBuddyBlock(int iBlockListIndex, int iBlockOffset);
 static BYTE kGetFlagInBitmap(int iBlockListIndex, int iOffset);
-void kGetDynamicMemoryInformation(QWORD* pqwDynamicMemoryStartAddress, QWORD* pqwDynamicMemoryTotalSize, QWORD* pqwMetaDataSize, QWORD* pqwUsedMemorySize);
-DYNAMICMEMORY* kGetDynamicMemoryManager(void);
-#endif
+
+#endif // __DYNAMIC_MEMORY_H__

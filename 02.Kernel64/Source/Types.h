@@ -1,7 +1,7 @@
 #ifndef __TYPES_H__
 #define __TYPES_H__
 
-/***** Â¸Ã…Ã…Â©Â·Ã ÃÂ¤Ã€Ã‡ *****/
+/***** ¸ÅÅ©·Î Á¤ÀÇ *****/
 #define BYTE  unsigned char
 #define WORD  unsigned short
 #define DWORD unsigned int
@@ -12,10 +12,10 @@
 #define FALSE 0
 #define NULL  0
 
-// stddef.h í—¤ë”ì— í¬í•¨ëœ offsetof() ë§¤í¬ë¡œ ì‚¬ìš©
+// ¿ø·¡ stddef.h ¿¡ Æ÷ÇÔµÈ offsetof() ¸ÅÅ©·Î ÇÔ¼ö¸¦ Å¸ÀÔ Áßº¹À» ÇÇÇÏ±â À§ÇØ Á÷Á¢ ÀÛ¼º
 #define offsetof(TYPE, MEMBER) __builtin_offsetof(TYPE, MEMBER)
 
-/***** Â±Â¸ÃÂ¶ÃƒÂ¼ ÃÂ¤Ã€Ã‡ *****/
+/***** ±¸Á¶Ã¼ Á¤ÀÇ *****/
 #pragma pack(push, 1)
 
 typedef struct kCharacterStruct{

@@ -13,17 +13,17 @@ int kGetListCount(const LIST* pstList){
 void kAddListToTail(LIST* pstList, void* pvItem){
 	LISTLINK* pstLink;
 
-	// ì›ëž˜ëŒ€ë¡œë¼ë©´, pvItem->stLink->pvNext = NULL;
-	// ìœ„ì™€ ê°™ì€ ë¡œì§ì´ì§€ë§Œ, LISTITEMì´ ë²”ìš©ì´ê¸° ë•Œë¬¸ì— ì•„ëž˜ì™€ ê°™ì€ ë¡œì§ì´ ë˜ì—ˆìŒ
-	pstLink = (LISTLINK*)pvItem; // pvItemì´ ê°€ë¦¬í‚¤ëŠ” LISTITEMì—ì„œ LISTLINK ì •ë³´ë¥¼ ì¶”ì¶œ (LISTLINKê°€ ë§¨ ì•žì— ìœ„ì¹˜í•œë‹¤ëŠ” ì•½ì†ë•Œë¬¸ì— ê°€ëŠ¥)
+	// ¿ø·¡´ë·Î¶ó¸é, pvItem->stLink->pvNext = NULL;
+	// À§¿Í °°Àº ·ÎÁ÷ÀÌÁö¸¸, LISTITEMÀÌ ¹ü¿ëÀÌ±â ¶§¹®¿¡ ¾Æ·¡¿Í °°Àº ·ÎÁ÷ÀÌ µÇ¾úÀ½
+	pstLink = (LISTLINK*)pvItem; // pvItemÀÌ °¡¸®Å°´Â LISTITEM¿¡¼­ LISTLINK Á¤º¸¸¦ ÃßÃâ (LISTLINK°¡ ¸Ç ¾Õ¿¡ À§Ä¡ÇÑ´Ù´Â ¾à¼Ó¶§¹®¿¡ °¡´É)
 	pstLink->pvNext = NULL;
 
-	// ë¦¬ìŠ¤íŠ¸ ì•„ì´í…œì´ 0ê°œ ìžˆì„ ê²½ìš° (ë¦¬ìŠ¤íŠ¸ê°€ ë¹„ì–´ ìžˆì„ ê²½ìš°)
+	// ¸®½ºÆ® ¾ÆÀÌÅÛÀÌ 0°³ ÀÖÀ» °æ¿ì (¸®½ºÆ®°¡ ºñ¾î ÀÖÀ» °æ¿ì)
 	if(pstList->pvHead == NULL){
 		pstList->pvHead = pvItem;
 		pstList->pvTail = pvItem;
 
-	// ë¦¬ìŠ¤íŠ¸ ì•„ì´í…œì´ 1ê°œ ì´ìƒ ìžˆì„ ê²½ìš°
+	// ¸®½ºÆ® ¾ÆÀÌÅÛÀÌ 1°³ ÀÌ»ó ÀÖÀ» °æ¿ì
 	}else{
 		pstLink = (LISTLINK*)pstList->pvTail;
 		pstLink->pvNext = pvItem;
@@ -39,12 +39,12 @@ void kAddListToHead(LIST* pstList, void* pvItem){
 	pstLink = (LISTLINK*)pvItem;
 	pstLink->pvNext = pstList->pvHead;
 
-	// ë¦¬ìŠ¤íŠ¸ ì•„ì´í…œì´ 0ê°œ ìžˆì„ ê²½ìš° (ë¦¬ìŠ¤íŠ¸ê°€ ë¹„ì–´ ìžˆì„ ê²½ìš°)
+	// ¸®½ºÆ® ¾ÆÀÌÅÛÀÌ 0°³ ÀÖÀ» °æ¿ì (¸®½ºÆ®°¡ ºñ¾î ÀÖÀ» °æ¿ì)
 	if(pstList->pvHead == NULL){
 		pstList->pvHead = pvItem;
 		pstList->pvTail = pvItem;
 
-	// ë¦¬ìŠ¤íŠ¸ ì•„ì´í…œì´ 1ê°œ ì´ìƒ ìžˆì„ ê²½ìš°
+	// ¸®½ºÆ® ¾ÆÀÌÅÛÀÌ 1°³ ÀÌ»ó ÀÖÀ» °æ¿ì
 	}else{
 		pstList->pvHead = pvItem;
 	}
@@ -60,20 +60,20 @@ void* kRemoveList(LIST* pstList, QWORD qwID){
 	for(pstLink = pstPrevLink; pstLink != NULL; pstLink = pstLink->pvNext){
 		if(pstLink->qwID == qwID){
 
-			// ë¦¬ìŠ¤íŠ¸ ì•„ì´í…œì´ 1ê°œ ìžˆì„ ê²½ìš°
+			// ¸®½ºÆ® ¾ÆÀÌÅÛÀÌ 1°³ ÀÖÀ» °æ¿ì
 			if((pstLink == pstList->pvHead) && (pstLink == pstList->pvTail)){
 				pstList->pvHead = NULL;
 				pstList->pvTail = NULL;
 
-			// ë¦¬ìŠ¤íŠ¸ ì•„ì´í…œì´ 2ê°œ ì´ìƒ ìžˆê³ , ì²«ë²ˆì§¸ ì•„ì´í…œì¼ ê²½ìš°
+			// ¸®½ºÆ® ¾ÆÀÌÅÛÀÌ 2°³ ÀÌ»ó ÀÖ°í, Ã¹¹øÂ° ¾ÆÀÌÅÛÀÏ °æ¿ì
 			}else if(pstLink == pstList->pvHead){
 				pstList->pvHead = pstLink->pvNext;
 
-			// ë¦¬ìŠ¤íŠ¸ ì•„ì´í…œì´ 2ê°œ ì´ìƒ ìžˆê³ , ë§ˆì§€ë§‰ ì•„ì´í…œì¼ ê²½ìš°
+			// ¸®½ºÆ® ¾ÆÀÌÅÛÀÌ 2°³ ÀÌ»ó ÀÖ°í, ¸¶Áö¸· ¾ÆÀÌÅÛÀÏ °æ¿ì
 			}else if(pstLink == pstList->pvTail){
 				pstList->pvTail = pstPrevLink;
 
-			// ë¦¬ìŠ¤íŠ¸ ì•„ì´í…œì´ 3ê°œ ì´ìƒ ìžˆê³ , ê°€ìš´ë° ì•„ì´í…œì¼ ê²½ìš°
+			// ¸®½ºÆ® ¾ÆÀÌÅÛÀÌ 3°³ ÀÌ»ó ÀÖ°í, °¡¿îµ¥ ¾ÆÀÌÅÛÀÏ °æ¿ì
 			}else{
 				pstPrevLink->pvNext = pstLink->pvNext;
 			}
@@ -90,7 +90,7 @@ void* kRemoveList(LIST* pstList, QWORD qwID){
 void* kRemoveListFromHead(LIST* pstList){
 	LISTLINK* pstLink;
 
-	// ë¦¬ìŠ¤íŠ¸ ì•„ì´í…œì´ 0ê°œ ìžˆì„ ê²½ìš° (ë¦¬ìŠ¤íŠ¸ê°€ ë¹„ì–´ ìžˆì„ ê²½ìš°)
+	// ¸®½ºÆ® ¾ÆÀÌÅÛÀÌ 0°³ ÀÖÀ» °æ¿ì (¸®½ºÆ®°¡ ºñ¾î ÀÖÀ» °æ¿ì)
 	if(pstList->iItemCount == 0){
 		return NULL;
 	}
@@ -102,7 +102,7 @@ void* kRemoveListFromHead(LIST* pstList){
 void* kRemoveListFromTail(LIST* pstList){
 	LISTLINK* pstLink;
 
-	// ë¦¬ìŠ¤íŠ¸ ì•„ì´í…œì´ 0ê°œ ìžˆì„ ê²½ìš° (ë¦¬ìŠ¤íŠ¸ê°€ ë¹„ì–´ ìžˆì„ ê²½ìš°)
+	// ¸®½ºÆ® ¾ÆÀÌÅÛÀÌ 0°³ ÀÖÀ» °æ¿ì (¸®½ºÆ®°¡ ºñ¾î ÀÖÀ» °æ¿ì)
 	if(pstList->iItemCount == 0){
 		return NULL;
 	}

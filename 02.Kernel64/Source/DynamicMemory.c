@@ -1,350 +1,400 @@
 #include "DynamicMemory.h"
-#include "Utility.h"
-#include "Task.h"
 
+/***** Àü¿ª º¯¼ö Á¤ÀÇ *****/
 static DYNAMICMEMORY gs_stDynamicMemory;
 
-// ë™ì  ì˜ì—­ ì´ˆê¸°í™”
 void kInitializeDynamicMemory(void){
 	QWORD qwDynamicMemorySize;
-	int i,j;
+	int i, j;
 	BYTE* pbCurrentBitmapPosition;
 	int iBlockCountOfLevel, iMetaBlockCount;
 
-	// ë™ì  ë©”ëª¨ë¦¬ ì˜ì—­ìœ¼ë¡œ ì‚¬ìš©í•  ë©”ëª¨ë¦¬ í¬ê¸°ë¥¼ ì´ìš©í•˜ì—¬ ë¸”ë¡ì„ ê´€ë¦¬í•˜ëŠ”ë°
-	// í•„ìš”í•œ ë©”ëª¨ë¦¬ í¬ê¸°ë¥¼ ìµœì†Œ ë¸”ë¡ ë‹¨ìœ„ë¡œ ê³„ì‚°
 	qwDynamicMemorySize = kCalculateDynamicMemorySize();
 	iMetaBlockCount = kCalculateMetaBlockCount(qwDynamicMemorySize);
 
-	// ì „ì²´ ë¸”ë¡ ê°œìˆ˜ì—ì„œ ê´€ë¦¬ì— í•„ìš”í•œ ë©”íƒ€ë¸”ë¡ì˜ ê°œìˆ˜ë¥¼ ì œì™¸í•œ ë‚˜ë¨¸ì§€ ì˜ì—­ì— ëŒ€í•´ì„œ
-	// ë©”íƒ€ ì •ë³´ë¥¼ êµ¬ì„±
+	// ÃÖ¼Ò ºí·Ï °³¼ö ¼³Á¤
 	gs_stDynamicMemory.iBlockCountOfSmallestBlock = (qwDynamicMemorySize / DYNAMICMEMORY_MIN_SIZE) - iMetaBlockCount;
 
-	// ìµœëŒ€ ëª‡ê°œì˜ ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ë¡œ êµ¬ì„±ë˜ëŠ”ì§€ë¥¼ ê³„ì‚°
-	for(i=0; (gs_stDynamicMemory.iBlockCountOfSmallestBlock >> i) > 0; i++){
+	// ÃÖ¼Ò ºí·Ï °³¼ö¸¦ 2^iÀ¸·Î Á¡ÁøÀûÀ¸·Î ³ª´©¾î °¨À¸·Î½á, ºí·Ï ¸®½ºÆ® °³¼ö¸¦ ±¸ÇÔ
+	for(i = 0; (gs_stDynamicMemory.iBlockCountOfSmallestBlock >> i) > 0; i++){
 		;
 	}
 	gs_stDynamicMemory.iMaxLevelCount = i;
 
-	// í• ë‹¹ëœ ë©”ëª¨ë¦¬ê°€ ì†í•œ ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ì˜ ì¸ë±ìŠ¤ë¥¼ ì €ì¥í•˜ëŠ” ì˜ì—­ì„ ì´ˆê¸°í™”í•¨
+	//----------------------------------------------------------------------------------------------------
+	// ÀÎµ¦½º ¿µ¿ª ÃÊ±âÈ­
+	//----------------------------------------------------------------------------------------------------
 	gs_stDynamicMemory.pbAllocatedBlockListIndex = (BYTE*)DYNAMICMEMORY_START_ADDRESS;
-	for(i=0; i<gs_stDynamicMemory.iBlockCountOfSmallestBlock; i++){
-		gs_stDynamicMemory.pbAllocatedBlockListIndex[i] = 0xff;
+	for(i = 0; i < gs_stDynamicMemory.iBlockCountOfSmallestBlock; i++){
+		gs_stDynamicMemory.pbAllocatedBlockListIndex[i] = 0xFF;
 	}
 
-	// ë¹„íŠ¸ë§µ ìë£Œêµ¬ì¡°ì˜ ì‹œì‘ ì–´ë“œë ˆìŠ¤ ì§€ì •
-	gs_stDynamicMemory.pstBitmapOfLevel = ( BITMAP* ) ( DYNAMICMEMORY_START_ADDRESS + ( sizeof( BYTE ) * gs_stDynamicMemory.iBlockCountOfSmallestBlock ) );
-	
-	// ì‹¤ì œ ë¹„íŠ¸ë§µì˜ ì–´ë“œë ˆìŠ¤ë¥¼ ì§€ì •
+	// ºñÆ®¸Ê ÀÚ·á±¸Á¶ÀÇ ¾îµå·¹½º ¼³Á¤
+	gs_stDynamicMemory.pstBitmapOfLevel = (BITMAP*)(DYNAMICMEMORY_START_ADDRESS + (sizeof(BYTE) * gs_stDynamicMemory.iBlockCountOfSmallestBlock));
+
+	// ½ÇÁ¦ ºñÆ®¸ÊÀÇ ¾îµå·¹½º ¼³Á¤
 	pbCurrentBitmapPosition = ((BYTE*)gs_stDynamicMemory.pstBitmapOfLevel) + (sizeof(BITMAP) * gs_stDynamicMemory.iMaxLevelCount);
 
-	// ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ ë³„ë¡œ ë£¨í”„ë¥¼ ëŒë©´ì„œ ë¹„íŠ¸ë§µ ìƒì„±
-	// ì´ˆê¸° ìƒíƒœëŠ” ê°€ì¥ í° ë¸”ë¡ê³¼ ìíˆ¬ë¦¬ ë¸”ë¡ë§Œ ì¡´ì¬í•˜ë¯€ë¡œ ë‚˜ë¨¸ì§€ëŠ” ë¹„ì–´ ìˆëŠ” ê²ƒìœ¼ë¡œ ì„¤ì •
-	for(j=0;j <gs_stDynamicMemory.iMaxLevelCount; j++){
+	// ºí·Ï ¸®½ºÆ®º°·Î ·çÇÁ¸¦ µ¹¸é¼­ ºñÆ®¸ÊÀ» ÃÊ±âÈ­ (ÃÊ±â »óÅÂ´Â °¡Àå Å« ºí·Ï°ú ÀÚÅõ¸® ºí·Ï¸¸ Á¸ÀçÇÏ¹Ç·Î ³ª¸ÓÁö´Â ºÎÀç »óÅÂ·Î ¼³Á¤)
+	for(j = 0; j < gs_stDynamicMemory.iMaxLevelCount; j++){
+
+		//----------------------------------------------------------------------------------------------------
+		// ºñÆ®¸Ê ÀÚ·á±¸Á¶ ÃÊ±âÈ­
+		//----------------------------------------------------------------------------------------------------
 		gs_stDynamicMemory.pstBitmapOfLevel[j].pbBitmap = pbCurrentBitmapPosition;
 		gs_stDynamicMemory.pstBitmapOfLevel[j].qwExistBitCount = 0;
+
+		//----------------------------------------------------------------------------------------------------
+		// ½ÇÁ¦ ºñÆ®¸Ê ÃÊ±âÈ­
+		//----------------------------------------------------------------------------------------------------
 		iBlockCountOfLevel = gs_stDynamicMemory.iBlockCountOfSmallestBlock >> j;
 
-		// 8ê°œ ì´ìƒ ë‚¨ì•˜ìœ¼ë©´ ìƒìœ„ ë¸”ë¡ìœ¼ë¡œ ëª¨ë‘ ê²°í•©í•  ìˆ˜ ìˆìœ¼ë¯€ë¡œ, ëª¨ë‘ ë¹„ì–´ ìˆëŠ” ê²ƒìœ¼ë¡œ ì„¤ì •
-		for(i=0; i<iBlockCountOfLevel/8; i++){
-			*pbCurrentBitmapPosition = 0x00;
+		// ºí·Ï °³¼ö°¡ 8°³ ÀÌ»óÀÎ °æ¿ì, »óÀ§ ºí·ÏÀ¸·Î °áÇÕµÉ ¼ö ÀÖÀ¸¹Ç·Î ºÎÀç »óÅÂ·Î ¼³Á¤
+		for(i = 0; i < (iBlockCountOfLevel / 8); i++){
+			*pbCurrentBitmapPosition = DYNAMICMEMORY_EMPTY;
 			pbCurrentBitmapPosition++;
 		}
 
-		// 8ë¡œ ë‚˜ëˆ„ì–´ ë–¨ì–´ì§€ì§€ ì•ŠëŠ” ë‚˜ë¨¸ì§€ ë¸”ë¡ë“¤ì— ëŒ€í•œ ì²˜ë¦¬
+		// ºí·Ï °³¼ö°¡ 8·Î ³ª´©¾î ¶³¾îÁöÁö ¾Ê´Â ³ª¸ÓÁö ºí·Ïµé¿¡ ´ëÇÑ Ã³¸®
 		if((iBlockCountOfLevel % 8) != 0){
-			*pbCurrentBitmapPosition = 0x00;
-			// ë‚¨ì€ ë¸”ë¡ì´ í™€ìˆ˜ë¼ë©´ ë§ˆì§€ë§‰ í•œ ë¸”ë¡ì€ ê²°í•©ë˜ì–´ ìƒìœ„ ë¸”ë¡ìœ¼ë¡œ ì´ë™í•˜ì§€ ëª»í•¨
-			// ë”°ë¼ì„œ ë§ˆì§€ë§‰ ë¸”ë¡ì€ í˜„ì¬ ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ì— ì¡´ì¬í•˜ëŠ” ìíˆ¬ë¦¬ ë¸”ë¡ìœ¼ë¡œ ì„¤ì •
+			*pbCurrentBitmapPosition = DYNAMICMEMORY_EMPTY;
+
+			// ³ª¸ÓÁö ºí·Ï °³¼ö°¡ È¦¼ö°³¶ó¸é ¸¶Áö¸· ÇÑ ºí·ÏÀº »óÀ§ ºí·ÏÀ¸·Î °áÇÕµÇÁö ¸ø ÇÔ. µû¶ó¼­, ¸¶Áö¸· ÇÑ ºí·ÏÀ» ÇöÀç ºí·Ï ¸®½ºÆ®¿¡ Á¸ÀçÇÏ´Â ÀÚÅõ¸® ºí·ÏÀ¸·Î ¼³Á¤
 			i = iBlockCountOfLevel % 8;
-			if((i%2)== 1){
-				*pbCurrentBitmapPosition |= (DYNAMICMEMORY_EXIST << (i-1));
+			if((i % 2) == 1){
+				*pbCurrentBitmapPosition |= (DYNAMICMEMORY_EXIST << (i - 1));
 				gs_stDynamicMemory.pstBitmapOfLevel[j].qwExistBitCount = 1;
 			}
+
 			pbCurrentBitmapPosition++;
 		}
 	}
 
-	// ë¸”ë¡ í’€ì˜ ì–´ë“œë ˆìŠ¤ì™€ ì‚¬ìš©ëœ ë©”ëª¨ë¦¬ í¬ê¸°ë¡œ ì„¤ì •
-	gs_stDynamicMemory.qwStartAddress = DYNAMICMEMORY_START_ADDRESS + iMetaBlockCount * DYNAMICMEMORY_MIN_SIZE;
-	gs_stDynamicMemory.qwEndAddress = kCalculateDynamicMemorySize() + DYNAMICMEMORY_START_ADDRESS;
+	// ºí·Ï Ç®  ¾îµå·¹½º¿Í ÇÒ´çµÈ ¸Ş¸ğ¸® Å©±â ¼³Á¤
+	gs_stDynamicMemory.qwStartAddress = DYNAMICMEMORY_START_ADDRESS + (iMetaBlockCount * DYNAMICMEMORY_MIN_SIZE);
+	gs_stDynamicMemory.qwEndAddredss = DYNAMICMEMORY_START_ADDRESS + kCalculateDynamicMemorySize();
 	gs_stDynamicMemory.qwUsedSize = 0;
 }
 
-// ë™ì  ë©”ëª¨ë¦¬ ì˜ì—­ì˜ í¬ê¸°ë¥¼ ê³„ì‚°
 static QWORD kCalculateDynamicMemorySize(void){
 	QWORD qwRAMSize;
 
-	// 3GB ì´ìƒì˜ ë©”ëª¨ë¦¬ì—ëŠ” ë¹„ë””ì˜¤ ë©”ëª¨ë¦¬ì™€ í”„ë¡œì„¸ì„œê°€ ì‚¬ìš©í•˜ëŠ” ë ˆì§€ìŠ¤í„°ê°€ ì¡´ì¬í•˜ë¯€ë¡œ ìµœëŒ€ 3GB ê¹Œì§€ ì‚¬ìš© ê°€ëŠ¥
 	qwRAMSize = (kGetTotalRAMSize() * 1024 * 1024);
-	if(qwRAMSize > ((QWORD)3*1024*1024*1024))
-		qwRAMSize = ((QWORD)3*1024*1024*1024);
+
+	// 3GBÀÌ»óÀÇ ¸Ş¸ğ¸®¿¡´Â ±×·¡ÇÈ ºñµğ¿À ¸Ş¸ğ¸®¿Í ÇÁ·Î¼¼¼­°¡ »ç¿ëÇÏ´Â ·¹Áö½ºÅÍ°¡ Á¸ÀçÇÏ¹Ç·Î, ÃÖ´ë 3GB±îÁö¸¸ µ¿Àû ¸Ş¸ğ¸® ¿µ¿ªÀ¸·Î »ç¿ë
+	if(qwRAMSize > ((QWORD)3 * 1024 * 1024 * 1024)){
+		qwRAMSize = ((QWORD)3 * 1024 * 1024 * 1024);
+	}
 
 	return qwRAMSize - DYNAMICMEMORY_START_ADDRESS;
 }
 
-// ë™ì  ë©”ëª¨ë¦¬ ì˜ì—­ì„ ê´€ë¦¬í•˜ëŠ”ë° í•„ìš”í•œ ì •ë³´ê°€ ì°¨ì§€í•˜ëŠ” ê³µê°„ì„ ê³„ì‚°
 static int kCalculateMetaBlockCount(QWORD qwDynamicRAMSize){
 	long lBlockCountOfSmallestBlock;
 	DWORD dwSizeOfAllocatedBlockListIndex;
 	DWORD dwSizeOfBitmap;
 	long i;
 
-	// ê°€ì¥ í¬ê¸°ê°€ ì‘ì€ ë¸”ë¡ì˜ ê°œìˆ˜ë¥¼ ê³„ì‚°í•˜ì—¬ ì´ë¥¼ ê¸°ì¤€ìœ¼ë¡œ ë¹„íŠ¸ë§µ ì˜ì—­ê³¼ í• ë‹¹ëœ í¬ê¸°ë¥¼ ì €ì¥í•˜ëŠ” ì˜ì—­ì„ ê³„ì‚°
 	lBlockCountOfSmallestBlock = qwDynamicRAMSize / DYNAMICMEMORY_MIN_SIZE;
 
-	// í• ë‹¹ëœ ë¸”ë¡ì´ ì†í•œ ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ì˜ ì¸ë±ìŠ¤ë¥¼ ì €ì¥í•˜ëŠ”ë° í•„ìš”í•œ ì˜ì—­ì„ ê³„ì‚°
+	// ÀÎµ¦½º ¿µ¿ªÀÇ Å©±â °è»ê
 	dwSizeOfAllocatedBlockListIndex = lBlockCountOfSmallestBlock * sizeof(BYTE);
 
-	// ë¹„íŠ¸ë§µì„ ì €ì¥í•˜ëŠ”ë° í•„ìš”í•œ ê³µê°„ ê³„ì‚°
 	dwSizeOfBitmap = 0;
-	for(i=0; (lBlockCountOfSmallestBlock >> i) >0 ;i++){
-		// ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ì˜ ë¹„íŠ¸ë§µ í¬ì¸í„°ë¥¼ ìœ„í•œ ê³µê°„
+	for(i = 0; (lBlockCountOfSmallestBlock >> i) > 0; i++){
+		// ºñÆ®¸Ê ÀÚ·á±¸Á¶ ¿µ¿ªÀÇ Å©±â °è»ê
 		dwSizeOfBitmap += sizeof(BITMAP);
-		// ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ì˜ ë¹„íŠ¸ë§µ í¬ê¸°, ë°”ì´íŠ¸ ë‹¨ìœ„ë¡œ ì˜¬ë¦¼ ì²˜ë¦¬
-		dwSizeOfBitmap += ((lBlockCountOfSmallestBlock >> i)+7)/8;
+
+		// ½ÇÁ¦ ºñÆ®¸Ê ¿µ¿ªÀÇ Å©±â °è»ê(¹ÙÀÌÆ® ´ÜÀ§·Î Á¤·Ä, ¿Ã¸² Ã³¸®)
+		dwSizeOfBitmap += ((lBlockCountOfSmallestBlock >> i) + 7) / 8;
 	}
 
-	// ì‚¬ìš©í•œ ë©”ëª¨ë¦¬ ì˜ì—­ì˜ í¬ê¸°ë¥¼ ìµœì†Œ ë¸”ë¡ í¬ê¸°ë¡œ ì˜¬ë¦¼í•´ì„œ ë°˜í™˜
-	return (dwSizeOfAllocatedBlockListIndex + dwSizeOfBitmap + DYNAMICMEMORY_MIN_SIZE - 1) / DYNAMICMEMORY_MIN_SIZE;
+	// ¸ŞÅ¸ ºí·Ï ¿µ¿ªÀÇ Å©±â¸¦ ÃÖ¼Ò ºí·Ï °³¼ö ´ÜÀ§·Î Á¤·Ä(¿Ã¸² Ã³¸®)
+	return (dwSizeOfAllocatedBlockListIndex + dwSizeOfBitmap + (DYNAMICMEMORY_MIN_SIZE - 1)) / DYNAMICMEMORY_MIN_SIZE;
 }
 
-// ë©”ëª¨ë¦¬ë¥¼ í• ë‹¹
 void* kAllocateMemory(QWORD qwSize){
-	QWORD qwAlignedSize;
-	QWORD qwRelativeAddress;
-	long lOffset;
-	int iSizeArrayOffset;
-	int iIndexOfBlockList;
+	QWORD qwAlignedSize;     // ¹öµğ ºí·Ï Å©±â ´ÜÀ§·Î Á¤·ÄµÈ Å©±â
+	QWORD qwRelativeAddress; // ºí·Ï Ç® ½ÃÀÛ ¾îµå·¹½º¸¦ ±âÁØÀ¸·Î ÇÑ »ó´ë ÁÖ¼Ò
+	long lOffset;            // ÇÒ´çµÈ ºí·ÏÀÇ ºñÆ®¸Ê ¿ÀÇÁ¼Â
+	int iSizeArrayOffset;    // ÇÒ´çµÈ ºí·ÏÀÇ ¹ÙÀÌÆ® ´ÜÀ§ ¿ÀÇÁ¼Â
+	int iIndexOfBlockList;   // ºí·Ï Å©±â°¡ ÀÏÄ¡ÇÏ´Â ºí·Ï ¸®½ºÆ® ÀÎµ¦½º(·¹º§)
 
-	// ë©”ëª¨ë¦¬ í¬ê¸°ë¥¼ ë²„ë”” ë¸”ë¡ì˜ í¬ê¸°ë¡œ ë§ì¶¤
+	// ÇÒ´ç¹ŞÀ» ¸Ş¸ğ¸® Å©±â¿¡ °¡Àå °¡±î¿î ¹öµğ ºí·Ï Å©±â¸¦ °Ë»ö
 	qwAlignedSize = kGetBuddyBlockSize(qwSize);
-	if(qwAlignedSize == 0)
+	if(qwAlignedSize == 0){
 		return NULL;
+	}
 
-	// ë§Œì•½ ì—¬ìœ  ê³µê°„ì´ ì¶©ë¶„í•˜ì§€ ì•Šìœ¼ë©´ ì‹¤íŒ¨
-	if((gs_stDynamicMemory.qwStartAddress + gs_stDynamicMemory.qwUsedSize + qwAlignedSize) > gs_stDynamicMemory.qwEndAddress)
+	// ³²Àº ¸Ş¸ğ¸®°¡ ÃæºĞÇÏÁö ¾Ê´Â °æ¿ì, ½ÇÆĞ
+	if((gs_stDynamicMemory.qwStartAddress + gs_stDynamicMemory.qwUsedSize + qwAlignedSize) > gs_stDynamicMemory.qwEndAddredss){
 		return NULL;
+	}
 
-	// ë²„ë”” ë¸”ë¡ í• ë‹¹í•˜ê³  í• ë‹¹ëœ ë¸”ë¡ì´ ì†í•œ ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ì˜ ì¸ë±ìŠ¤ë¥¼ ë°˜í•œ
+	// ¹öµğ ºí·ÏÀ» ÇÒ´çÇÏ°í, ÇÒ´çµÈ ºí·ÏÀÌ ¼ÓÇÑ ºí·Ï ¸®½ºÆ®ÀÇ ºñÆ®¸Ê ¿ÀÇÁ¼Â¸¦ ¹İÈ¯
 	lOffset = kAllocateBuddyBlock(qwAlignedSize);
-	if(lOffset == -1)
+	if(lOffset == -1){
 		return NULL;
+	}
 
+	// ºí·Ï Å©±â°¡ ÀÏÄ¡ÇÏ´Â ºí·Ï ¸®½ºÆ®ÀÇ ÀÎµ¦½º¸¦ °Ë»ö
 	iIndexOfBlockList = kGetBlockListIndexOfMatchSize(qwAlignedSize);
 
-	// ë¸”ë¡ í¬ê¸°ë¥¼ ì €ì¥í•˜ëŠ” ì˜ì—­ì— ì‹¤ì œë¡œ í• ë‹¹ëœ ë²„ë”” ë¸”ë¡ì´ ì†í•œ ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ì˜ ì¸ë±ìŠ¤ë¥¼ ì €ì¥
-	// ë©”ëª¨ë¦¬ë¥¼ í•´ì²´í•  ë•Œ ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ì˜ ì¸ë±ìŠ¤ë¥¼ ì‚¬ìš©
+	// ÀÎµ¦½º ¿µ¿ªÀÇ ÇÒ´çµÈ ºí·ÏÀÇ ¹ÙÀÌÆ® ´ÜÀ§ ¿ÀÇÁ¼Â À§Ä¡¿¡ ºí·Ï ¸®½ºÆ® ÀÎµ¦½º¸¦ ÀúÀå (¸Ş¸ğ¸®¸¦ ÇØÁ¦ÇÒ ¶§, ºí·Ï ¸®½ºÆ® ÀÎµ¦½º¸¦ »ç¿ëÇÏ¿© ÇÒ´çµÈ ¸Ş¸ğ¸®ÀÇ Å©±â¸¦ ±¸ÇÔ)
 	qwRelativeAddress = qwAlignedSize * lOffset;
 	iSizeArrayOffset = qwRelativeAddress / DYNAMICMEMORY_MIN_SIZE;
-
 	gs_stDynamicMemory.pbAllocatedBlockListIndex[iSizeArrayOffset] = (BYTE)iIndexOfBlockList;
+
+	// ÇÒ´çµÈ ¸Ş¸ğ¸® Å©±â¸¦ Áõ°¡
 	gs_stDynamicMemory.qwUsedSize += qwAlignedSize;
 
-	return (void*)(qwRelativeAddress + gs_stDynamicMemory.qwStartAddress);
+	// ÇÒ´çµÈ ¸Ş¸ğ¸®ÀÇ Àı´ë ÁÖ¼Ò ¹İÈ¯(Àı´ë ÁÖ¼Ò=ºí·Ï Ç® ½ÃÀÛ ¾îµå·¹½º+»ó´ë ÁÖ¼Ò)
+	return (void*)(gs_stDynamicMemory.qwStartAddress + qwRelativeAddress);
 }
 
-// ê°€ì¥ ê°€ê¹Œìš´ ë²„ë”” ë¸”ë¡ì˜ í¬ê¸°ë¡œ ì •ë ¬ëœ í¬ê¸°ë¥¼ ë°˜í™˜
 static QWORD kGetBuddyBlockSize(QWORD qwSize){
 	long i;
-	for(i=0; i<gs_stDynamicMemory.iMaxLevelCount; i++){
-		if(qwSize <= (DYNAMICMEMORY_MIN_SIZE << i))
+
+	// ÆÄ¶ó¹ÌÅÍ ¸Ş¸ğ¸® Å©±â¿¡ °¡Àå °¡±î¿î ¹öµğ ºí·Ï Å©±â¸¦ °Ë»ö
+	for(i = 0; i < gs_stDynamicMemory.iMaxLevelCount; i++){
+		if(qwSize <= (DYNAMICMEMORY_MIN_SIZE << i)){
 			return (DYNAMICMEMORY_MIN_SIZE << i);
+		}
 	}
+
 	return 0;
 }
 
-// ë²„ë”” ë¸”ë¡ ì•Œê³ ë¦¬ì¦˜ìœ¼ë¡œ ë©”ëª¨ë¦¬ ë¸”ë¡ì„ í• ë‹¹
-//	ë©”ëª¨ë¦¬ í¬ê¸°ëŠ” ë²„ë”” ë¸”ë¡ì˜ í¬ê¸°ë¡œ ìš”ì²­í•´ì•¼í•¨
 static int kAllocateBuddyBlock(QWORD qwAlignedSize){
-	int iBlockListIndex, iFreeOffset;
+	int iBlockListIndex; // ºí·Ï Å©±â°¡ ÀÏÄ¡ÇÏ´Â ºí·Ï ¸®½ºÆ® ÀÎµ¦½º(·¹º§)
+	int iFreeOffset;     // Á¸ÀçÇÏ´Â ºí·ÏÀÇ ºñÆ®¸Ê ¿ÀÇÁ¼Â
 	int i;
 	BOOL bPreviousInterruptFlag;
 
-	// ë¸”ë¡ í¬ê¸°ë¥¼ ë§Œì¡±í•˜ëŠ” ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ì˜ ì¸ë±ìŠ¤ë¥¼ ê²€ìƒ‰
+	// ºí·Ï Å©±â°¡ ÀÏÄ¡ÇÏ´Â ºí·Ï ¸®½ºÆ®ÀÇ ÀÎµ¦½º¸¦ °Ë»ö
 	iBlockListIndex = kGetBlockListIndexOfMatchSize(qwAlignedSize);
-	if(iBlockListIndex == -1)
+	if(iBlockListIndex == -1){
 		return -1;
-
-	// ë™ê¸°í™” ì²˜ë¦¬
-	bPreviousInterruptFlag = kLockForSystemData();
-
-	// ë§Œì¡±í•˜ëŠ” ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ë¶€í„° ìµœìƒìœ„ ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ê¹Œì§€ ê²€ìƒ‰í•˜ì—¬ ë¸”ë¡ì„ ì„ íƒ
-	for(i=iBlockListIndex; i<gs_stDynamicMemory.iMaxLevelCount; i++){
-		iFreeOffset = kFindFreeBlockInBitmap(i);
-		if(iFreeOffset != -1)
-			break;
 	}
 
-	// ë§ˆì§€ë§‰ ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ê¹Œì§€ ê²€ìƒ‰í–ˆëŠ”ë°ë„ ì—†ìœ¼ë©´ ì‹¤íŒ¨
+	bPreviousInterruptFlag = kLockForSystemData();
+
+	// ÀÏÄ¡ÇÏ´Â ºí·Ï ¸®½ºÆ®ºÎÅÍ ÃÖ»óÀ§ ºí·Ï ¸®½ºÆ®±îÁö ·¹º§À» ¿Ã¶ó°¡¸é¼­, Á¸Àç »óÅÂÀÇ ºí·ÏÀ» Ã£À½
+	for(i = iBlockListIndex; i < gs_stDynamicMemory.iMaxLevelCount; i++){
+
+		// ºí·Ï ¸®½ºÆ®ÀÇ ºñÆ®¸ÊÀ» È®ÀÎÇÏ¿©, Á¸Àç »óÅÂÀÇ ºí·ÏÀ» Ã£À½
+		iFreeOffset = kFindFreeBlockInBitmap(i);
+		if(iFreeOffset != -1){
+			break;
+		}
+	}
+
+	// ÃÖ»óÀ§ ºí·Ï ¸®½ºÆ®±îÁö °Ë»öÇß´Âµ¥µµ, Á¸Àç »óÅÂÀÇ ºí·ÏÀÌ ¾øÀ¸¸é ½ÇÆĞ
 	if(iFreeOffset == -1){
 		kUnlockForSystemData(bPreviousInterruptFlag);
 		return -1;
 	}
 
-	// ë¸”ë¡ì„ ì°¾ì•˜ìœ¼ë‹ˆ ë¹ˆ ê²ƒìœ¼ë¡œ í‘œì‹œ
+	// Ã£Àº ºí·ÏÀ» ºÎÀç »óÅÂ·Î ¼³Á¤
 	kSetFlagInBitmap(i, iFreeOffset, DYNAMICMEMORY_EMPTY);
 
-	// ìƒìœ„ ë¸”ë¡ì—ì„œ ë¸”ë¡ì„ ì°¾ì•˜ë‹¤ë©´ ìƒìœ„ ë¸”ë¡ì„ ë¶„í• 
-	if(i>iBlockListIndex){
-		// ê²€ìƒ‰ëœ ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ì—ì„œ ê²€ìƒ‰ì„ ì‹œì‘í•œ ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ê¹Œì§€ ë‚´ë ¤ê°€ë©´ì„œ ì™¼ìª½ ë¸”ë¡ì€
-		// ë¹ˆ ê²ƒìœ¼ë¡œ í‘œì‹œí•˜ê³  ì˜¤ë¥¸ìª½ ë¸”ë¡ì€ ì¡´ì¬í•˜ëŠ” ê²ƒìœ¼ë¡œ í‘œì‹œí•¨
-		for(i=i-1; i>=iBlockListIndex; i--){
-			// ì™¼ìª½ ë¸”ë¡ì€ ë¹ˆê²ƒìœ¼ë¡œ í‘œì‹œ
-			kSetFlagInBitmap(i, iFreeOffset *2, DYNAMICMEMORY_EMPTY);
-			// ì˜¤ë¥¸ìª½ ë¸”ë¡ì€ ì¡´ì¬í•˜ëŠ” ê²ƒìœ¼ë¡œ í‘œì‹œ
-			kSetFlagInBitmap(i, iFreeOffset *2+1, DYNAMICMEMORY_EXIST);
-			// ì™¼ìª½ ë¸”ë¡ì„ ë‹¤ì‹œ ë¶„í• 
-			iFreeOffset = iFreeOffset*2;
+	// »óÀ§ ºí·Ï ¸®½ºÆ®¿¡¼­ ºí·ÏÀº Ã£Àº °æ¿ì, »óÀ§ ºí·ÏÀ» ºĞÇÒ
+	if(i > iBlockListIndex){
+
+		// Ã£Àº ºí·Ï ¸®½ºÆ®ºÎÅÍ ÀÏÄ¡ÇÏ´Â ºí·Ï ¸®½ºÆ®±îÁö ·¹º§À» ³»·Á°¡¸é¼­, ºí·ÏÀ» ºĞÇÒ
+		for(i = i - 1; i >= iBlockListIndex; i--){
+			// ¿ŞÂÊ ºí·ÏÀ» ºÎÀç »óÅÂ·Î ¼³Á¤
+			kSetFlagInBitmap(i, iFreeOffset * 2, DYNAMICMEMORY_EMPTY);
+
+			// ¿À¸¥ÂÊ ºí·ÏÀ» Á¸Àç »óÅÂ·Î ¼³Á¤
+			kSetFlagInBitmap(i, iFreeOffset * 2 + 1, DYNAMICMEMORY_EXIST);
+
+			// ¿ŞÂÊ ºí·ÏÀ» ´Ù½Ã ºĞÇÒ
+			iFreeOffset = iFreeOffset * 2;
 		}
 	}
+
 	kUnlockForSystemData(bPreviousInterruptFlag);
+
 	return iFreeOffset;
 }
 
-// ì „ë‹¬ëœ í¬ê¸°ì™€ ê°€ì¥ ê·¼ì ‘í•œ ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ì˜ ì¸ë±ìŠ¤ë¥¼ ë°˜í™˜
 static int kGetBlockListIndexOfMatchSize(QWORD qwAlignedSize){
 	int i;
-	for(i=0; i<gs_stDynamicMemory.iMaxLevelCount; i++){
-		if(qwAlignedSize <= (DYNAMICMEMORY_MIN_SIZE << i))
+
+	// ºí·Ï Å©±â°¡ ÀÏÄ¡ÇÏ´Â ºí·Ï ¸®½ºÆ®ÀÇ ÀÎµ¦½º¸¦ °Ë»ö(ºí·Ï ¸®½ºÆ® ÀÎµ¦½º=·¹º§)
+	for(i = 0; i < gs_stDynamicMemory.iMaxLevelCount; i++){
+		if(qwAlignedSize <= (DYNAMICMEMORY_MIN_SIZE << i)){
 			return i;
+		}
 	}
+
 	return -1;
 }
 
-// ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ì˜ ë¹„íŠ¸ë§µì„ ê²€ìƒ‰í•œ í›„ ë¸”ë¡ì´ ì¡´ì¬í•˜ë©´ ë¸”ë¡ì˜ ì˜¤í”„ì…‹ì„ ë°˜í™˜
 static int kFindFreeBlockInBitmap(int iBlockListIndex){
 	int i, iMaxCount;
 	BYTE* pbBitmap;
 	QWORD* pqwBitmap;
 
-	// ë¹„íŠ¸ë§µì— ë°ì´í„°ê°€ ì¡´ì¬í•˜ì§€ ì•ŠëŠ”ë‹¤ë©´ ì‹¤íŒ¨
-	if(gs_stDynamicMemory.pstBitmapOfLevel[iBlockListIndex].qwExistBitCount == 0)
+	// ºñÆ®¸Ê¿¡ Á¸ÀçÇÏ´Â ºñÆ®¼ö(1ÀÎ ºñÆ®¼ö)°¡ 0°³ÀÎ °æ¿ì, ½ÇÆĞ
+	if(gs_stDynamicMemory.pstBitmapOfLevel[iBlockListIndex].qwExistBitCount == 0){
 		return -1;
+	}
 
-	// ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ì— ì¡´ì¬í•˜ëŠ” ì´ ë¸”ë¡ì˜ ìˆ˜ë¥¼ êµ¬í•œ í›„, ê·¸ ê°œìˆ˜ë§Œí¼ ë¹„íŠ¸ë§µì„ ê²€ìƒ‰
+	// ºí·Ï ¸®½ºÆ®ÀÇ ºí·Ï °³¼ö¸¦ ±¸ÇÑ ÈÄ, ±× °³¼ö¸¸Å­ ºñÆ®¸ÊÀ» °Ë»ö
 	iMaxCount = gs_stDynamicMemory.iBlockCountOfSmallestBlock >> iBlockListIndex;
 	pbBitmap = gs_stDynamicMemory.pstBitmapOfLevel[iBlockListIndex].pbBitmap;
-	for(i=0; i<iMaxCount;){
-		// QWORD 8*8=>64ë¹„íŠ¸ì´ë¯€ë¡œ, 64ë¹„íŠ¸ë¥¼ í•œë²ˆì— ê²€ì‚¬í•´ì„œ 1ì¸ ë¹„íŠ¸ê°€ ìˆëŠ”ì§€ í™•ì¸
-		if( ((iMaxCount - i)/64) > 0){
-			pqwBitmap = (QWORD*) &(pbBitmap[i/8]);
-			// ë§Œì•½ 8ë°”ì´íŠ¸ê°€ ëª¨ë‘ 0ì´ë©´ 8ë°”ì´íŠ¸ ëª¨ë‘ ì œì™¸
+
+	for(i = 0; i < iMaxCount;){
+
+		// ºí·Ï °³¼ö°¡ 64°³ ÀÌ»óÀÎ °æ¿ì, 64ºñÆ®(QWORD)¸¦ ÇÑ²¨¹ø¿¡ °Ë»çÇØ¼­ 1ÀÎ ºñÆ®°¡ ÀÖ´ÂÁö È®ÀÎ
+		if(((iMaxCount - i) / 64) > 0){
+
+			pqwBitmap = (QWORD*)&(pbBitmap[i/8]);
+
+			// 64ºñÆ®°¡ ¸ğµÎ 0ÀÎ °æ¿ì, ¸ğµÎ Á¦¿Ü
 			if(*pqwBitmap == 0){
 				i += 64;
 				continue;
 			}
 		}
 
-		if( (pbBitmap[i/8] & (DYNAMICMEMORY_EXIST << (i % 8))) != 0)
+		// ºñÆ®¸ÊÀÇ ¿ÀÇÁ¼Â À§Ä¡ÀÇ ºñÆ®°¡ 1ÀÎ °æ¿ì, ÇØ´ç ¿ÀÇÁ¼ÂÀ» ¹İÈ¯(Á¸ÀçÇÏ´Â ºí·ÏÀÇ ºñÆ®¸Ê ¿ÀÇÁ¼ÂÀ» ¹İÈ¯)
+		if((pbBitmap[i/8] & (DYNAMICMEMORY_EXIST << (i % 8))) != 0){
 			return i;
+		}
+
 		i++;
 	}
+
 	return -1;
 }
 
-// ë¹„íŠ¸ë§µì— í”ŒëŸ¬ê·¸ë¥¼ ì„¤ì •
 static void kSetFlagInBitmap(int iBlockListIndex, int iOffset, BYTE bFlag){
 	BYTE* pbBitmap;
+
 	pbBitmap = gs_stDynamicMemory.pstBitmapOfLevel[iBlockListIndex].pbBitmap;
+
+	// ºí·Ï Á¸Àç ¼³Á¤
 	if(bFlag == DYNAMICMEMORY_EXIST){
-		// í˜„ë‹¹ ìœ„ì¹˜ì— ë°ì´í„°ê°€ ë¹„ì–´ ìˆë‹¤ë©´ ê°œìˆ˜ ì¦ê°€
-		if((pbBitmap[iOffset/8] & (0x01 << (iOffset % 8))) == 0)
+		// ºñÆ®¸ÊÀÇ ¿ÀÇÁ¼Â À§Ä¡ÀÇ ºñÆ®°¡ 0->1(ºí·Ï ºÎÀç->ºí·Ï Á¸Àç)·Î º¯°æµÇ´Â °æ¿ì, Á¸ÀçÇÏ´Â ºñÆ®¼ö¸¦ Áõ°¡
+		if((pbBitmap[iOffset/8] & (0x01 << (iOffset % 8))) == 0){
 			gs_stDynamicMemory.pstBitmapOfLevel[iBlockListIndex].qwExistBitCount++;
+		}
+
+		// ºñÆ®¸ÊÀÇ ¿ÀÇÁ¼Â À§Ä¡ÀÇ ºñÆ®¸¦ 1(ºí·Ï Á¸Àç)·Î ¼³Á¤
 		pbBitmap[iOffset/8] |= (0x01 << (iOffset % 8));
-	}
-	else {
-		// í•´ë‹¹ ìœ„ì¹˜ì— ë°ì´í„°ê°€ ì¡´ì¬í•œë‹¤ë©´ ê°œìˆ˜ ê°ì†Œ
-		if( (pbBitmap[iOffset/8] & (0x01 <<(iOffset % 8))) != 0)
+
+	// ºí·Ï ºÎÀç ¼³Á¤
+	}else{
+		// ºñÆ®¸ÊÀÇ ¿ÀÇÁ¼Â À§Ä¡ÀÇ ºñÆ®°¡ 1->0(ºí·Ï Á¸Àç->ºí·Ï ºÎÀç)À¸·Î º¯°æµÇ´Â °æ¿ì, Á¸ÀçÇÏ´Â ºñÆ®¼ö¸¦ °¨¼Ò
+		if((pbBitmap[iOffset/8] & (0x01 << (iOffset % 8))) != 0){
 			gs_stDynamicMemory.pstBitmapOfLevel[iBlockListIndex].qwExistBitCount--;
-		pbBitmap[iOffset/8] &= ~(0x01 <<(iOffset % 8));
+		}
+
+		// ºñÆ®¸ÊÀÇ ¿ÀÇÁ¼Â À§Ä¡ÀÇ ºñÆ®¸¦ 0(ºí·Ï ºÎÀç)À¸·Î ¼³Á¤
+		pbBitmap[iOffset/8] &= ~(0x01 << (iOffset % 8));
 	}
 }
 
-// í• ë‹¹ ë°›ì€ ë©”ëª¨ë¦¬ë¥¼ í•´ì œ
 BOOL kFreeMemory(void* pvAddress){
-	QWORD qwRelativeAddress;
-	int iSizeArrayOffset;
-	QWORD qwBlockSize;
-	int iBlockListIndex;
-	int iBitmapOffset;
+	QWORD qwRelativeAddress; // ÇØÁ¦ÇÒ ºí·ÏÀÇ »ó´ë ÁÖ¼Ò(ºí·Ï Ç® ½ÃÀÛ ¾îµå·¹½º¸¦ ±âÁØÀ¸·Î ÇÑ »ó´ë ÁÖ¼Ò)
+	int iSizeArrayOffset;    // ÇØÁ¦ÇÒ ºí·ÏÀÇ ¹ÙÀÌÆ® ´ÜÀ§ ¿ÀÇÁ¼Â
+	QWORD qwBlockSize;       // ÇØÁ¦ÇÒ ºí·ÏÀÇ Å©±â
+	int iBlockListIndex;     // ÇØÁ¦ÇÒ ºí·ÏÀÇ ºí·Ï ¸®½ºÆ® ÀÎµ¦½º
+	int iBitmapOffset;       // ÇØÁ¦ÇÒ ºí·ÏÀÇ ºñÆ®¸Ê ¿ÀÇÁ¼Â
 
-	if(pvAddress == NULL)
+	if(pvAddress == NULL){
 		return FALSE;
+	}
 
-	// ë„˜ê²¨ ë°›ì€ ì–´ë“œë ˆìŠ¤ë¥¼ ë¸”ë¡ í’€ì„ ê¸°ì¤€ìœ¼ë¡œ í•˜ëŠ” ì–´ë“œë ˆìŠ¤ë¡œ ë³€í™˜í•˜ì—¬ í• ë‹¹í–ˆë˜ ë¸”ë¡ í¬ê¸°ë¥¼ ê²€ìƒ‰
+	// ÇØÁ¦ÇÒ ºí·ÏÀÇ »ó´ë ÁÖ¼Ò, ÇØÁ¦ÇÒ ºí·ÏÀÇ ¹ÙÀÌÆ® ´ÜÀ§ ¿ÀÇÁ¼ÂÀ» °è»ê
 	qwRelativeAddress = ((QWORD)pvAddress) - gs_stDynamicMemory.qwStartAddress;
 	iSizeArrayOffset = qwRelativeAddress / DYNAMICMEMORY_MIN_SIZE;
 
-	// í• ë‹¹ë˜ì–´ ìˆì§€ ì•Šìœ¼ë©´ ë°˜í™˜ ì•ˆ í•¨
-	if(gs_stDynamicMemory.pbAllocatedBlockListIndex[iSizeArrayOffset] == 0xff)
+	// ÇÒ´çµÈ »óÅÂ°¡ ¾Æ´Ñ °æ¿ì, ½ÇÆĞ
+	if(gs_stDynamicMemory.pbAllocatedBlockListIndex[iSizeArrayOffset] == 0xFF){
 		return FALSE;
+	}
 
-	// í• ë‹¹ëœ ë¸”ë¡ì´ ì†í•œ ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ì˜ ì¸ë±ìŠ¤ê°€ ì €ì¥ëœ ê³³ì„ ì´ˆê¸°í™”í•˜ê³ , í• ë‹¹ëœ ë¸”ë¡ì´ í¬í•¨ëœ ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ë¥¼ ê²€ìƒ‰
+	// ÇØÁ¦ÇÒ ºí·ÏÀÇ ºí·Ï ¸®½ºÆ® ÀÎµ¦½º¸¦ ÃßÃâÇÑ ÈÄ, ÃÊ±âÈ­
 	iBlockListIndex = (int)gs_stDynamicMemory.pbAllocatedBlockListIndex[iSizeArrayOffset];
-	gs_stDynamicMemory.pbAllocatedBlockListIndex[iSizeArrayOffset] = 0xff;
-	// ë²„ë”” ë¸”ë¡ì˜ ìµœì†Œ í¬ê¸°ë¥¼ ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ ì¸ë±ìŠ¤ë¡œ ì‹œí”„íŠ¸í•˜ì—¬ í• ë‹¹ëœ ë¸”ë¡ì˜ í¬ê¸° ê³„ì‚°
+	gs_stDynamicMemory.pbAllocatedBlockListIndex[iSizeArrayOffset] = 0xFF;
+
+	// ÇØÁ¦ÇÒ ºí·ÏÀÇ Å©±â¸¦ °è»ê
 	qwBlockSize = DYNAMICMEMORY_MIN_SIZE << iBlockListIndex;
 
-	// ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ ë‚´ì˜ ë¸”ë¡ ì˜¤í”„ì…‹ì„ êµ¬í•´ì„œ ë¸”ë¡ í•´ì œ
+	// ÇØÁ¦ÇÒ ºí·ÏÀÇ ºí·Ï ¸®½ºÆ® ÀÎµ¦½º¿Í ºñÆ®¸Ê ¿ÀÇÁ¼ÂÀ» ÀÌ¿ëÇØ¼­, ¹öµğ ºí·Ï ÇØÁ¦
 	iBitmapOffset = qwRelativeAddress / qwBlockSize;
 	if(kFreeBuddyBlock(iBlockListIndex, iBitmapOffset) == TRUE){
+
+		// ÇÒ´çµÈ ¸Ş¸ğ¸® Å©±â¸¦ °¨¼Ò
 		gs_stDynamicMemory.qwUsedSize -= qwBlockSize;
 		return TRUE;
 	}
+
 	return FALSE;
 }
 
-// ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ì˜ ë²„ë”” ë¸”ë¡ì„ í•´ì œ
+// PARAM1 : iBlockListIndex      -> ÇØÁ¦ÇÒ ºí·ÏÀÇ ºí·Ï ¸®½ºÆ® ÀÎµ¦½º
+// PARAM2 : iBlockOffset         -> ÇØÁ¦ÇÒ ºí·ÏÀÇ ºí·Ï ¿ÀÇÁ¼Â(ºñÆ®¸Ê ¿ÀÇÁ¼Â)
 static BOOL kFreeBuddyBlock(int iBlockListIndex, int iBlockOffset){
-	int iBuddyBlockOffset;
-	int i;
-	BOOL bFlag;
-	BOOL bPreviousInterruptFlag;
+	int iBuddyBlockOffset;       // ÀÎÁ¢ ºí·Ï ¿ÀÇÁ¼Â
+	int i;                       // ÀÎµ¦½º
+	BYTE bFlag;                  // ÀÎÁ¢ ºí·Ï »óÅÂ ÇÃ·¡±×
+	BOOL bPreviousInterruptFlag; // ÀÌÀü ÀÎÅÍ·´Æ® ÇÃ·¡±×
 
-	// ë™ê¸°í™” ì²˜ë¦¬
 	bPreviousInterruptFlag = kLockForSystemData();
 
-	// ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ì˜ ëê¹Œì§€ ì¸ì ‘í•œ ë¸”ë¡ì„ ê²€ì‚¬í•˜ì—¬ ê²°í•©í•  ìˆ˜ ì—†ì„ ë•Œ ê¹Œì§€ ë°˜ë³µ
-	for(i=iBlockListIndex; i<gs_stDynamicMemory.iMaxLevelCount; i++){
-		// í˜„ì¬ ë¸”ë¡ì€ ì¡´ì¬í•˜ëŠ” ìƒíƒœë¡œ ì„¤ì •
+	// ÇØÁ¦ÇÒ ºí·Ï ¸®½ºÆ®ºÎÅÍ ÃÖ»óÀ§ ºí·Ï ¸®½ºÆ®±îÁö ·¹º§À» ¿Ã¶ó°¡¸é¼­, ºí·ÏÀ» °áÇÕ
+	for(i = iBlockListIndex; i < gs_stDynamicMemory.iMaxLevelCount; i++){
+
+		// ÇöÀç ºí·ÏÀ» Á¸Àç »óÅÂ·Î ¼³Á¤
 		kSetFlagInBitmap(i, iBlockOffset, DYNAMICMEMORY_EXIST);
 
-		// ë¸”ë¡ì˜ ì˜¤í”„ì…‹ì´ ì§ìˆ˜ë©´ í™€ìˆ˜ë¥¼ ê²€ì‚¬, í™€ìˆ˜ë©´ ì§ìˆ˜ì˜ ë¹„íŠ¸ë§µì„ ê²€ì‚¬í•˜ì—¬ ì¸ì ‘í•œ ë¸”ë¡ì´ ì¡´ì¬í•œë‹¤ë©´ ê²°í•©
-		if( (iBlockOffset % 2) ==0)
+		// ºí·Ï ¿ÀÇÁ¼ÂÀÌ Â¦¼ö(¿ŞÂÊ)¸é È¦¼ö(¿À¸¥ÂÊ)¸¦ °Ë»çÇÏ°í, È¦¼ö(¿À¸¥ÂÊ)¸é Â¦¼ö(¿ŞÂÊ)¸¦ °Ë»çÇÏ¿©, ÀÎÁ¢ÇÑ ºí·ÏÀÌ Á¸ÀçÇÑ´Ù¸é °áÇÕ
+		if((iBlockOffset % 2) == 0){
 			iBuddyBlockOffset = iBlockOffset + 1;
-		else
+
+		}else{
 			iBuddyBlockOffset = iBlockOffset - 1;
+		}
+
+		// ÀÎÁ¢ ºí·ÏÀÇ »óÅÂ ÇÃ·¡±× Ãëµæ
 		bFlag = kGetFlagInBitmap(i, iBuddyBlockOffset);
 
-		// ë¸”ë¡ì´ ë¹„ì–´ ìˆìœ¼ë©´ ì¢…ë£Œ
-		if(bFlag == DYNAMICMEMORY_EMPTY)
+		// ÀÎÁ¢ ºí·ÏÀÌ ºÎÀç »óÅÂÀÎ °æ¿ì, Á¾·á
+		if(bFlag == DYNAMICMEMORY_EMPTY){
 			break;
+		}
 
-		// ì—¬ê¸°ê¹Œì§€ ì™”ë‹¤ë©´ ì¸ì ‘í•œ ë¸”ë¡ì´ ì¡´ì¬í•˜ë¯€ë¡œ, ë¸”ë¡ì„ ê²°í•©
-		// ë¸”ë¡ì„ ëª¨ë‘ ë¹ˆê²ƒìœ¼ë¡œ ë§Œë“¤ê³  ìƒìœ„ ë¸”ë¡ìœ¼ë¡œ ì´ë™
+		// ÀÎÁ¢ÇÑ ºí·ÏÀÌ Á¸Àç »óÅÂÀÎ °æ¿ì, ºí·ÏÀ» °áÇÕ(ÇöÀç ºí·Ï°ú ÀÎÁ¢ ºí·ÏÀ» ¸ğµÎ ºÎÀç »óÅÂ·Î ¼³Á¤ÇÏ°í, »óÀ§ ºí·Ï ¸®½ºÆ®·Î ÀÌµ¿)
 		kSetFlagInBitmap(i, iBuddyBlockOffset, DYNAMICMEMORY_EMPTY);
 		kSetFlagInBitmap(i, iBlockOffset, DYNAMICMEMORY_EMPTY);
 
-		// ìƒìœ„ ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ì˜ ë¸”ë¡ ì˜¤í”„ì…‹ìœ¼ë¡œ ë³€ê²½í•˜ê³ , ìœ„ì˜ ê³¼ì •ì„ ìƒìœ„ ë¸”ë¡ì—ì„œ ë‹¤ì‹œ ë°˜ë³µ
+		// »óÀ§ ºí·Ï ¸®½ºÆ®ÀÇ ºí·Ï ¿ÀÇÁ¼ÂÀ» º¯°æÇÏ°í, À§ÀÇ °úÁ¤À» »óÀ§ ºí·Ï ¸®½ºÆ®¿¡¼­ ´Ù½Ã ¹İº¹
 		iBlockOffset = iBlockOffset / 2;
 	}
+
 	kUnlockForSystemData(bPreviousInterruptFlag);
 	return TRUE;
 }
 
-// ë¸”ë¡ ë¦¬ìŠ¤íŠ¸ì˜ í•´ë‹¹ ìœ„ì¹˜ì— ë¹„íŠ¸ë§µì„ ë°˜í™˜
 static BYTE kGetFlagInBitmap(int iBlockListIndex, int iOffset){
 	BYTE* pbBitmap;
 
 	pbBitmap = gs_stDynamicMemory.pstBitmapOfLevel[iBlockListIndex].pbBitmap;
-	if((pbBitmap[iOffset/8] & (0x01 << (iOffset % 8))) != 0x00)
-		return DYNAMICMEMORY_EXIST;
 
+	// ºñÆ®¸ÊÀÇ ¿ÀÇÁ¼Â À§Ä¡ÀÇ ºñÆ®°¡ 1ÀÎ °æ¿ì, ºí·Ï Á¸Àç »óÅÂ ¹İÈ¯
+	if((pbBitmap[iOffset/8] & (0x01 << (iOffset % 8))) != 0){
+		return DYNAMICMEMORY_EXIST;
+	}
+
+	// ºñÆ®¸ÊÀÇ ¿ÀÇÁ¼Â À§Ä¡ÀÇ ºñÆ®°¡ 0ÀÎ °æ¿ì, ºí·Ï ºÎÀç »óÅÂ ¹İÈ¯
 	return DYNAMICMEMORY_EMPTY;
 }
 
-// ë™ì  ë©”ëª¨ë¦¬ ì˜ì—­ì˜ ì •ë³´ë¥¼ ë°˜í™˜
 void kGetDynamicMemoryInformation(QWORD* pqwDynamicMemoryStartAddress, QWORD* pqwDynamicMemoryTotalSize, QWORD* pqwMetaDataSize, QWORD* pqwUsedMemorySize){
 	*pqwDynamicMemoryStartAddress = DYNAMICMEMORY_START_ADDRESS;
 	*pqwDynamicMemoryTotalSize = kCalculateDynamicMemorySize();
@@ -352,7 +402,7 @@ void kGetDynamicMemoryInformation(QWORD* pqwDynamicMemoryStartAddress, QWORD* pq
 	*pqwUsedMemorySize = gs_stDynamicMemory.qwUsedSize;
 }
 
-// ë™ì  ë©”ëª¨ë¦¬ ì˜ì—­ì„ ê´€ë¦¬í•˜ëŠ” ìë£Œêµ¬ì¡°ë¥¼ ë°˜í™˜
 DYNAMICMEMORY* kGetDynamicMemoryManager(void){
 	return &gs_stDynamicMemory;
 }
+

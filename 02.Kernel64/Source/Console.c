@@ -2,8 +2,10 @@
 #include "Console.h"
 #include "Keyboard.h"
 #include "Utility.h"
+#include "Task.h"
+#include "AssemblyUtility.h"
 
-/***** ì „ì—­ ë³€ìˆ˜ ì •ì˜ *****/
+/***** Àü¿ª º¯¼ö Á¤ÀÇ *****/
 static CONSOLEMANAGER gs_stConsoleManager = {0, };
 
 void kInitializeConsole(int iX, int iY){
@@ -16,16 +18,16 @@ void kSetCursor(int iX, int iY){
 
 	iLinearValue = iY * CONSOLE_WIDTH + iX;
 
-	// CRTC ì»¨íŠ¸ë¡¤ ì–´ë“œë ˆìŠ¤ ë ˆì§€ìŠ¤í„°(0x3D4)ì— ìƒìœ„ ì»¤ì„œ ìœ„ì¹˜ ë ˆì§€ìŠ¤í„° ì„ íƒ ì»¤ë§¨ë“œ(0x0E)ë¥¼ ì „ì†¡
+	// CRTC ÄÁÆ®·Ñ ¾îµå·¹½º ·¹Áö½ºÅÍ(0x3D4)¿¡ »óÀ§ Ä¿¼­ À§Ä¡ ·¹Áö½ºÅÍ ¼±ÅÃ Ä¿¸Çµå(0x0E)¸¦ Àü¼Û
 	kOutPortByte(VGA_PORT_INDEX, VGA_INDEX_UPPERCURSOR);
 
-	// CRTC ì»¨íŠ¸ë¡¤ ë°ì´í„° ë ˆì§€ìŠ¤í„°(0x3D5)ì— ì»¤ì„œì˜ ìƒìœ„ ë°”ì´íŠ¸ë¥¼ ì „ì†¡
+	// CRTC ÄÁÆ®·Ñ µ¥ÀÌÅÍ ·¹Áö½ºÅÍ(0x3D5)¿¡ Ä¿¼­ÀÇ »óÀ§ ¹ÙÀÌÆ®¸¦ Àü¼Û
 	kOutPortByte(VGA_PORT_DATA, iLinearValue >> 8);
 
-	// CRTC ì»¨íŠ¸ë¡¤ ì–´ë“œë ˆìŠ¤ ë ˆì§€ìŠ¤í„°(0x3D4)ì— í•˜ìœ„ ì»¤ì„œ ìœ„ì¹˜ ë ˆì§€ìŠ¤í„° ì„ íƒ ì»¤ë§¨ë“œ(0x0F)ë¥¼ ì „ì†¡
+	// CRTC ÄÁÆ®·Ñ ¾îµå·¹½º ·¹Áö½ºÅÍ(0x3D4)¿¡ ÇÏÀ§ Ä¿¼­ À§Ä¡ ·¹Áö½ºÅÍ ¼±ÅÃ Ä¿¸Çµå(0x0F)¸¦ Àü¼Û
 	kOutPortByte(VGA_PORT_INDEX, VGA_INDEX_LOWERCURSOR);
 
-	// CRTC ì»¨íŠ¸ë¡¤ ë°ì´í„° ë ˆì§€ìŠ¤í„°(0x3D5)ì— ì»¤ì„œì˜ í•˜ìœ„ ë°”ì´íŠ¸ë¥¼ ì „ì†¡
+	// CRTC ÄÁÆ®·Ñ µ¥ÀÌÅÍ ·¹Áö½ºÅÍ(0x3D5)¿¡ Ä¿¼­ÀÇ ÇÏÀ§ ¹ÙÀÌÆ®¸¦ Àü¼Û
 	kOutPortByte(VGA_PORT_DATA, iLinearValue & 0xFF);
 
 	gs_stConsoleManager.iCurrentPrintOffset = iLinearValue;
@@ -61,39 +63,39 @@ int kConsolePrintString(const char* pcBuffer){
 	iLength = kStrLen(pcBuffer);
 
 	for(i = 0; i < iLength; i++){
-		// ì¤„ë°”ê¿ˆ ì²˜ë¦¬
+		// ÁÙ¹Ù²Þ Ã³¸®
 		if(pcBuffer[i] == '\n'){
-			// ì¶œë ¥ ìœ„ì¹˜ë¥¼ 80ì˜ ë°°ìˆ˜ ìœ„ì¹˜ë¡œ ì´ë™ (ë‹¤ìŒ ë¼ì¸ì˜ ì²«ë²ˆì§¸ ìœ„ì¹˜ë¡œ ì´ë™)
+			// Ãâ·Â À§Ä¡¸¦ 80ÀÇ ¹è¼ö À§Ä¡·Î ÀÌµ¿ (´ÙÀ½ ¶óÀÎÀÇ Ã¹¹øÂ° À§Ä¡·Î ÀÌµ¿)
 			iPrintOffset += (CONSOLE_WIDTH - (iPrintOffset % CONSOLE_WIDTH));
 
-		// íƒ­ ì²˜ë¦¬
+		// ÅÇ Ã³¸®
 		}else if(pcBuffer[i] == '\t'){
-			// ì¶œë ¥ ìœ„ì¹˜ë¥¼ 8ì˜ ë°°ìˆ˜ ìœ„ì¹˜ë¡œ ì´ë™ (ë‹¤ìŒ íƒ­ì˜ ì²«ë²ˆì§¸ ìœ„ì¹˜ë¡œ ì´ë™)
+			// Ãâ·Â À§Ä¡¸¦ 8ÀÇ ¹è¼ö À§Ä¡·Î ÀÌµ¿ (´ÙÀ½ ÅÇÀÇ Ã¹¹øÂ° À§Ä¡·Î ÀÌµ¿)
 			iPrintOffset += (8 - (iPrintOffset % 8));
 
-		// ì¼ë°˜ ë¬¸ìžì—´ ì²˜ë¦¬
+		// ÀÏ¹Ý ¹®ÀÚ¿­ Ã³¸®
 		}else{
 			pstScreen[iPrintOffset].bCharacter = pcBuffer[i];
 			pstScreen[iPrintOffset].bAttribute = CONSOLE_DEFAULTTEXTCOLOR;
 			iPrintOffset++;
 		}
 
-		// ìŠ¤í¬ë¡¤ ì²˜ë¦¬(ì¶œë ¥ ìœ„ì¹˜ê°€ í™”ë©´ì˜ ìµœëŒ€ê°’(80*25)ì„ ë²—ì–´ë‚œ ê²½ìš°)
-		if(iPrintOffset > (CONSOLE_WIDTH * CONSOLE_HEIGHT)){
+		// ½ºÅ©·Ñ Ã³¸®(Ãâ·Â À§Ä¡°¡ È­¸éÀÇ ÃÖ´ë°ª(80*25)À» ¹þ¾î³­ °æ¿ì)
+		if(iPrintOffset >= (CONSOLE_WIDTH * CONSOLE_HEIGHT)){
 
-			// ë¹„ë””ì˜¤ ë©”ëª¨ë¦¬ ì „ì²´(ë‘ë²ˆì§¸ ì¤„ë¶€í„° ë§ˆì§€ë§‰ ì¤„ê¹Œì§€)ë¥¼ í•œ ì¤„ ìœ„ë¡œ ë³µì‚¬
-			kMemCpy(CONSOLE_VIDEOMEMORYADDRESS
-				   ,CONSOLE_VIDEOMEMORYADDRESS + (CONSOLE_WIDTH * sizeof(CHARACTER))
+			// ºñµð¿À ¸Þ¸ð¸® ÀüÃ¼(µÎ¹øÂ° ÁÙºÎÅÍ ¸¶Áö¸· ÁÙ±îÁö)¸¦ ÇÑ ÁÙ À§·Î º¹»ç
+			kMemCpy((void*)CONSOLE_VIDEOMEMORYADDRESS
+				   ,(void*)(CONSOLE_VIDEOMEMORYADDRESS + (CONSOLE_WIDTH * sizeof(CHARACTER)))
 				   ,(CONSOLE_HEIGHT - 1) * CONSOLE_WIDTH * sizeof(CHARACTER));
 
-			// ë§ˆì§€ë§‰ ì¤„ì€ ê³µë°±ìœ¼ë¡œ ì±„ì›€
+			// ¸¶Áö¸· ÁÙÀº °ø¹éÀ¸·Î Ã¤¿ò
 			for(j = ((CONSOLE_HEIGHT - 1) * CONSOLE_WIDTH); j < (CONSOLE_HEIGHT * CONSOLE_WIDTH); j++){
 				pstScreen[j].bCharacter = ' ';
 				pstScreen[j].bAttribute = CONSOLE_DEFAULTTEXTCOLOR;
 
 			}
 
-			// ì¶œë ¥ ìœ„ì¹˜ë¥¼ ë§ˆì§€ë§‰ ì¤„ì˜ ì²«ë²ˆì§¸ ìœ„ì¹˜ë¡œ ì´ë™
+			// Ãâ·Â À§Ä¡¸¦ ¸¶Áö¸· ÁÙÀÇ Ã¹¹øÂ° À§Ä¡·Î ÀÌµ¿
 			iPrintOffset = (CONSOLE_HEIGHT - 1) * CONSOLE_WIDTH;
 		}
 	}
@@ -116,15 +118,17 @@ void kClearScreen(void){
 BYTE kGetCh(void){
 	KEYDATA stData;
 
-	// í‚¤ê°€ ëˆŒëŸ¬ì§ˆ ë•Œê¹Œì§€ ëŒ€ê¸°
+	// Å°°¡ ´­·¯Áú ¶§±îÁö ´ë±â
 	while(1){
 
-		// í‚¤ íì— ë°ì´í„°ê°€ ìˆ˜ì‹ ë  ë•Œê¹Œì§€ ëŒ€ê¸°
+		// Å° Å¥¿¡ µ¥ÀÌÅÍ°¡ ¼ö½ÅµÉ ¶§±îÁö ´ë±â
 		while(kGetKeyFromKeyQueue(&stData) == FALSE){
+
+			// Å°¸¦ ´ë±âÇÏ´Â µ¿¾È ÇÁ·Î¼¼¼­¸¦ ´Ù¸¥ ÅÂ½ºÅ©¿¡ ¾çº¸ÇÏ¿© ÇÁ·Î¼¼¼­ »ç¿ë·üÀ» ³·Ãã
 			kSchedule();
 		}
 
-		// í‚¤ íì— ë°ì´í„°ê°€ ìˆ˜ì‹ ë˜ë©´ ì•„ìŠ¤í‚¤ ì½”ë“œë¥¼ ë°˜í™˜
+		// Å° Å¥¿¡ µ¥ÀÌÅÍ°¡ ¼ö½ÅµÇ¸é ¾Æ½ºÅ° ÄÚµå¸¦ ¹ÝÈ¯
 		if(stData.bFlags & KEY_FLAGS_DOWN){
 			return stData.bASCIICode;
 		}

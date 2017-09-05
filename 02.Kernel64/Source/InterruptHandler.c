@@ -11,14 +11,14 @@
 void kCommonExceptionHandler(int iVectorNumber, QWORD qwErrorCode){
 	char vcBuffer[3] = {0, };
 
-	// ë²¡í„° ë²ˆí˜¸ ì„¤ì • (2ìë¦¬ ì •ìˆ˜)
+	// º¤ÅÍ ¹øÈ£ ¼³Á¤ (2ÀÚ¸® Á¤¼ö)
 	vcBuffer[0] = '0' + iVectorNumber / 10;
 	vcBuffer[1] = '0' + iVectorNumber % 10;
 
 	kPrintStringXY(0, 0, "==================================================");
 	kPrintStringXY(0, 1, "               Exception Occur~!!                 ");
 	kPrintStringXY(0, 2, "                  Vector: [  ]                    ");
-	kPrintStringXY(27, 2, vcBuffer); // "Vector:" ë¬¸ìì—´ ì˜†ì— ì¶œë ¥
+	kPrintStringXY(27, 2, vcBuffer); // "Vector:" ¹®ÀÚ¿­ ¿·¿¡ Ãâ·Â
 	kPrintStringXY(0, 3, "==================================================");
 
 	while(1);
@@ -29,16 +29,16 @@ void kCommonInterruptHandler(int iVectorNumber){
 	static int g_iCommonInterruptCount = 0;
 
 	//====================================================================================================
-	// ì¸í„°ëŸ½íŠ¸ê°€ ë°œìƒí–ˆìŒì„ ì•Œë¦¬ë ¤ê³  ë©”ì„¸ì§€ë¥¼ ì¶œë ¥í•˜ëŠ” ë¶€ë¶„
-	// ë²¡í„° ë²ˆí˜¸ ì„¤ì • (2ìë¦¬ ì •ìˆ˜)
+	// ÀÎÅÍ·´Æ®°¡ ¹ß»ıÇßÀ½À» ¾Ë¸®·Á°í ¸Ş¼¼Áö¸¦ Ãâ·ÂÇÏ´Â ºÎºĞ
+	// º¤ÅÍ ¹øÈ£ ¼³Á¤ (2ÀÚ¸® Á¤¼ö)
 	vcBuffer[5] = '0' + iVectorNumber / 10;
 	vcBuffer[6] = '0' + iVectorNumber % 10;
 
-	// ë°œìƒ íšŸìˆ˜ ì„¤ì • (1ìë¦¬ ì •ìˆ˜)
+	// ¹ß»ı È½¼ö ¼³Á¤ (1ÀÚ¸® Á¤¼ö)
 	g_iCommonInterruptCount = (g_iCommonInterruptCount + 1) % 10;
 	vcBuffer[8] = '0' + g_iCommonInterruptCount;
 
-	// í™”ë©´ ì˜¤ë¥¸ìª½ ìœ„ì˜ ì²«ë²ˆì§¸ í–‰ì— ì¶œë ¥
+	// Ã¹¹øÂ° ÇàÀÇ ¸¶Áö¸· À§Ä¡¿¡ Ãâ·Â
 	kPrintStringXY(70, 0, vcBuffer);
 	//====================================================================================================
 
@@ -51,16 +51,16 @@ void kKeyboardHandler(int iVectorNumber){
 	BYTE bScanCode;
 
 	//====================================================================================================
-	// ì¸í„°ëŸ½íŠ¸ê°€ ë°œìƒí–ˆìŒì„ ì•Œë¦¬ë ¤ê³  ë©”ì„¸ì§€ë¥¼ ì¶œë ¥í•˜ëŠ” ë¶€ë¶„
-	// ë²¡í„° ë²ˆí˜¸ ì„¤ì • (2ìë¦¬ ì •ìˆ˜)
+	// ÀÎÅÍ·´Æ®°¡ ¹ß»ıÇßÀ½À» ¾Ë¸®·Á°í ¸Ş¼¼Áö¸¦ Ãâ·ÂÇÏ´Â ºÎºĞ
+	// º¤ÅÍ ¹øÈ£ ¼³Á¤ (2ÀÚ¸® Á¤¼ö)
 	vcBuffer[5] = '0' + iVectorNumber / 10;
 	vcBuffer[6] = '0' + iVectorNumber % 10;
 
-	// ë°œìƒ íšŸìˆ˜ ì„¤ì • (1ìë¦¬ ì •ìˆ˜)
+	// ¹ß»ı È½¼ö ¼³Á¤ (1ÀÚ¸® Á¤¼ö)
 	g_iKeyboardInterruptCount = (g_iKeyboardInterruptCount + 1) % 10;
 	vcBuffer[8] = '0' + g_iKeyboardInterruptCount;
 
-	// í™”ë©´ ì™¼ìª½ ìœ„ì˜ ì²«ë²ˆì§¸ í–‰ì— ì¶œë ¥
+	// Ã¹¹øÂ° ÇàÀÇ Ã¹¹øÂ° À§Ä¡¿¡ Ãâ·Â
 	kPrintStringXY(0, 0, vcBuffer);
 	//====================================================================================================
 
@@ -77,16 +77,16 @@ void kTimerHandler(int iVectorNumber){
 	static int g_iTimerInterruptCount = 0;
 
 	//====================================================================================================
-	// ì¸í„°ëŸ½íŠ¸ê°€ ë°œìƒí–ˆìŒì„ ì•Œë¦¬ë ¤ê³  ë©”ì„¸ì§€ë¥¼ ì¶œë ¥í•˜ëŠ” ë¶€ë¶„
-	// ë²¡í„° ë²ˆí˜¸ ì„¤ì • (2ìë¦¬ ì •ìˆ˜)
+	// ÀÎÅÍ·´Æ®°¡ ¹ß»ıÇßÀ½À» ¾Ë¸®·Á°í ¸Ş¼¼Áö¸¦ Ãâ·ÂÇÏ´Â ºÎºĞ
+	// º¤ÅÍ ¹øÈ£ ¼³Á¤ (2ÀÚ¸® Á¤¼ö)
 	vcBuffer[5] = '0' + iVectorNumber / 10;
 	vcBuffer[6] = '0' + iVectorNumber % 10;
 
-	// ë°œìƒ íšŸìˆ˜ ì„¤ì • (1ìë¦¬ ì •ìˆ˜)
+	// ¹ß»ı È½¼ö ¼³Á¤ (1ÀÚ¸® Á¤¼ö)
 	g_iTimerInterruptCount = (g_iTimerInterruptCount + 1) % 10;
 	vcBuffer[8] = '0' + g_iTimerInterruptCount;
 
-	// í™”ë©´ ì˜¤ë¥¸ìª½ ìœ„ì˜ ì²«ë²ˆì§¸ í–‰ì— ì¶œë ¥
+	// Ã¹¹øÂ° ÇàÀÇ ¸¶Áö¸· À§Ä¡¿¡ Ãâ·Â
 	kPrintStringXY(70, 0, vcBuffer);
 	//====================================================================================================
 
@@ -101,65 +101,88 @@ void kTimerHandler(int iVectorNumber){
 	}
 }
 
-// Device Not Available Handler
 void kDeviceNotAvailableHandler(int iVectorNumber){
-	TCB* pstFPUTask, *pstCurrentTask;
-	QWORD qwLastFPUTaskID;
+	TCB* pstFPUTask;       // ¸¶Áö¸· FPU »ç¿ë ÅÂ½ºÅ©
+	TCB* pstCurrentTask;   // ÇöÀç ÅÂ½ºÅ©
+	QWORD qwLastFPUTaskID; // ¸¶Áö¸· FPU »ç¿ë ÅÂ½ºÅ© ID
 
-	// FPU ì˜ˆì™¸ê°€ ë°œìƒí–ˆìŒì„ ì•Œë¦¬ë ¤ê³  ë©”ì‹œì§€ë¥¼ ì¶œë ¥í•˜ëŠ” ë¶€ë¶„
+	//====================================================================================================
+	// FPU ¿¹¿Ü°¡ ¹ß»ıÇßÀ½À» ¾Ë¸®·Á°í ¸Ş¼¼Áö¸¦ Ãâ·ÂÇÏ´Â ºÎºĞ
 	char vcBuffer[] = "[EXC:  , ]";
-	static int g_iFPUInterruptCount = 0;
+	static int g_iFPUExceptionCount = 0;
 
-	// ì˜ˆì™¸ ë²¡í„°ë¥¼ í™”ë©´ ì˜¤ë¥¸ìª½ ìœ„ì— 2ìë¦¬ ì •ìˆ˜ë¡œ ì¶œë ¥
-	vcBuffer[5] = '0' + iVectorNumber/10;
-	vcBuffer[6] = '0' + iVectorNumber%10;
+	// º¤ÅÍ ¹øÈ£ ¼³Á¤ (2ÀÚ¸® Á¤¼ö)
+	vcBuffer[5] = '0' + iVectorNumber / 10;
+	vcBuffer[6] = '0' + iVectorNumber % 10;
 
-	// ë°œìƒíšŸìˆ˜ ì¶œë ¥
-	vcBuffer[8] = '0' + g_iFPUInterruptCount;
-	g_iFPUInterruptCount = (g_iFPUInterruptCount+1) % 10;
+	// ¹ß»ı È½¼ö ¼³Á¤ (1ÀÚ¸® Á¤¼ö)
+	g_iFPUExceptionCount = (g_iFPUExceptionCount + 1) % 10;
+	vcBuffer[8] = '0' + g_iFPUExceptionCount;
 
+	// Ã¹¹øÂ° ÇàÀÇ Ã¹¹øÂ° À§Ä¡¿¡ Ãâ·Â
+	kPrintStringXY(0, 0, vcBuffer);
+	//====================================================================================================
 
-	// CR0 ì»¨íŠ¸ë¡¤ ë ˆì§€ìŠ¤í„°ì˜ TS ë¹„íŠ¸ 0 ì„¤ì •
+	// CR0.TS=0 À¸·Î ¼³Á¤
 	kClearTS();
 
-	// ì´ì „ì— FPU ì‚¬ìš©í•œ íƒœìŠ¤í¬ê°€ ìˆëŠ”ì§€ í™•ì¸ ìˆë‹¤ë©´ FPU ìƒíƒœë¥¼ íƒœìŠ¤í¬ì— ì €ì¥
 	qwLastFPUTaskID = kGetLastFPUUsedTaskID();
 	pstCurrentTask = kGetRunningTask();
 
-	// ì´ì „ì— FPU ì‚¬ìš©í•œ ê²ƒì´ ìì‹ ì´ë©´ Nothing
-	if(qwLastFPUTaskID == pstCurrentTask->stLink.qwID)
+	// ¸¶Áö¸· FPU »ç¿ë ÅÂ½ºÅ©°¡ ÇöÀç ÅÂ½ºÅ©ÀÎ °æ¿ì, FPU ÄÜÅØ½ºÆ®ÀÇ ÀúÀå ¹× º¹¿øÀÌ ÇÊ¿ä ¾ø°í, ÇöÀç FPU ÄÜÅØ½ºÆ®¸¦ ±×´ë·Î »ç¿ëÇÏ¸é µÇ¹Ç·Î ÇÔ¼ö Á¾·á
+	if(qwLastFPUTaskID == pstCurrentTask->stLink.qwID){
 		return;
 
-	// FPU ì‚¬ìš©í•œ íƒœìŠ¤í¬ê°€ ìˆìœ¼ë©´ FPU ìƒíƒœ ì €ì¥
-	else if(qwLastFPUTaskID != TASK_INVALIDID){
+	// ¸¶Áö¸· FPU »ç¿ë ÅÂ½ºÅ©°¡ Á¸Àç ÇÏ´Â °æ¿ì, ÇöÀç FPU ÄÜÅØ½ºÆ®¸¦ ¸Ş¸ğ¸®¿¡ ÀúÀå
+	}else if(qwLastFPUTaskID != TASK_INVALIDID){
 		pstFPUTask = kGetTCBInTCBPool(GETTCBOFFSET(qwLastFPUTaskID));
-		if( (pstFPUTask != NULL) && (pstFPUTask->stLink.qwID == qwLastFPUTaskID))
+		if((pstFPUTask != NULL) && (pstFPUTask->stLink.qwID == qwLastFPUTaskID)){
 			kSaveFPUContext(pstFPUTask->vqwFPUContext);
+		}
 	}
+
+	// ÇöÀç ÅÂ½ºÅ©°¡ FPU¸¦ »ç¿ëÇÑ ÀûÀÌ ¾ø´Â °æ¿ì, FPU ÃÊ±âÈ­
+	if(pstCurrentTask->bFPUUsed == FALSE){
+		kInitializeFPU();
+		pstCurrentTask->bFPUUsed = TRUE;
+
+	// ÇöÀç ÅÂ½ºÅ©°¡ FPU¸¦ »ç¿ëÇÑ ÀûÀÌ ÀÖ´Â °æ¿ì, ÇöÀç ÅÂ½ºÅ©ÀÇ FPU ÄÜÅØ½ºÆ®¸¦ ¸Ş¸ğ¸®¿¡¼­ º¹¿ø
+	}else{
+		kLoadFPUContext(pstCurrentTask->vqwFPUContext);
+	}
+
+	// ¸¶Áö¸· FPU »ç¿ë ÅÂ½ºÅ©¸¦ ÇöÀç ÅÂ½ºÅ©·Î º¯°æ
+	kSetLastFPUUsedTaskID(pstCurrentTask->stLink.qwID);
 }
 
-// í•˜ë“œ ë””ìŠ¤í¬ì—ì„œ ë°œìƒí•˜ëŠ” ì¸í„°ëŸ½íŠ¸ì˜ í•¸ë“¤ëŸ¬
 void kHDDHandler(int iVectorNumber){
-	char vcBuffer[] = "[INT: , ]";
-	static int g_iHDDinterruptCount = 0;
-	BYTE bTemp;
+	char vcBuffer[] = "[INT:  , ]";
+	static int g_iHDDInterruptCount = 0;
 
-	// ì¸í„°ëŸ½íŠ¸ê°€ ë°œìƒí–ˆìŒì„ ì•Œë¦¬ë ¤ê³  ë©”ì‹œì§€ë¥¼ ì¶œë ¥í•˜ëŠ” ë¶€ë¶„
-	// ì¸í„°ëŸ½íŠ¸ ë²¡í„°ë¥¼ í™”ë©´ ì™¼ìª½ ìœ„ì— ë‘ ìë¦¬ ì •ìˆ˜ë¡œ ì¶œë ¥
+	//====================================================================================================
+	// ÀÎÅÍ·´Æ®°¡ ¹ß»ıÇßÀ½À» ¾Ë¸®·Á°í ¸Ş¼¼Áö¸¦ Ãâ·ÂÇÏ´Â ºÎºĞ
+	// º¤ÅÍ ¹øÈ£ ¼³Á¤ (2ÀÚ¸® Á¤¼ö)
 	vcBuffer[5] = '0' + iVectorNumber / 10;
 	vcBuffer[6] = '0' + iVectorNumber % 10;
-	// ë°œìƒí•œ íšŸìˆ˜ ì¶œë ¥
-	vcBuffer[8] = '0' + g_iHDDinterruptCount;
-	g_iHDDinterruptCount = (g_iHDDinterruptCount + 1) % 10;
-	// ì™¼ìª½ ìœ„ì— ìˆëŠ” ë©”ì‹œì§€ì™€ ê²¹ì¹˜ì§€ ì•Šë„ë¡ (10, 0)ì— ì¶œë ¥
-	kPrintStringXY(10, 0, vcBuffer);
 
-	// ì²«ë²ˆì§¸ PATA í¬íŠ¸ì˜ ì¸í„°ëŸ½íŠ¸ ë²¡í„°(IRQ 14)
-	if(iVectorNumber - PIC_IRQSTARTVECTOR == 14)
+	// ¹ß»ı È½¼ö ¼³Á¤ (1ÀÚ¸® Á¤¼ö)
+	g_iHDDInterruptCount = (g_iHDDInterruptCount + 1) % 10;
+	vcBuffer[8] = '0' + g_iHDDInterruptCount;
+
+	// Ã¹¹øÂ° ÇàÀÇ µÎ¹øÂ° À§Ä¡¿¡ Ãâ·Â
+	kPrintStringXY(10, 0, vcBuffer);
+	//====================================================================================================
+
+	// Ã¹¹øÂ° PATA Æ÷Æ®ÀÇ ÀÎÅÍ·´Æ® º¤ÅÍ(IRQ14) Ã³¸®
+	if((iVectorNumber - PIC_IRQSTARTVECTOR) == 14){
+		// Ã¹¹øÂ° PATA Æ÷Æ®ÀÇ  ÀÎÅÍ·´Æ® ÇÃ·¡±×¸¦ TRUE·Î ¼³Á¤
 		kSetHDDInterruptFlag(TRUE, TRUE);
-	// ë‘ë²ˆì§¸ PATA í¬íŠ¸ì˜ ì¸í„°ëŸ½íŠ¸ ë²¡í„°(IRQ 15)
-	else
+
+	// Ã¹¹øÂ° PATA Æ÷Æ®ÀÇ ÀÎÅÍ·´Æ® º¤ÅÍ(IRQ15) Ã³¸®
+	}else{
+		// µÎ¹øÂ° PATA Æ÷Æ®ÀÇ  ÀÎÅÍ·´Æ® ÇÃ·¡±×¸¦ TRUE·Î ¼³Á¤
 		kSetHDDInterruptFlag(FALSE, TRUE);
+	}
 
 	kSendEOIToPIC(iVectorNumber - PIC_IRQSTARTVECTOR);
 }

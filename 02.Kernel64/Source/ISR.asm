@@ -2,9 +2,9 @@
 
 SECTION .text
 
-; 핸들러 (3개)
-extern kCommonExceptionHandler, kCommonInterruptHandler, kKeyboardHandler
-extern kTimerHandler, kDeviceNotAvailableHandler, kHDDHandler
+; 핸들러 (6개)
+extern kCommonExceptionHandler, kCommonInterruptHandler, kKeyboardHandler, kTimerHandler, kDeviceNotAvailableHandler
+extern kHDDHandler
 
 ; 예외 처리용 ISR(21개)
 global kISRDivideError, kISRDebug, kISRNMI, kISRBreakPoint, kISROverflow
@@ -23,6 +23,7 @@ global kISRHDD2, kISRETCInterrupt
 ; 1. 프로세서 처리: SS, RSP, RFLAGS, CS, RIP, 에러 코드 (옵션)
 ; 2. 핸들러 처리   : RBP, RAX, RBX, RCX, RDX, RDI, RSI, R8, R9, R10, R11, R12, R13, R14, R15, DS, ES, FS, GS
 
+; 콘텍스트 저장 및 세그먼트 셀렉터 교체
 %macro KSAVECONTEXT 0
 	; 콘텍스트 저장(범용 레지스터 15개 + 세그먼트 셀렉터 4개 = 19개)
 	push rbp
@@ -49,7 +50,7 @@ global kISRHDD2, kISRETCInterrupt
 	push fs
 	push gs
 
-	; 세그먼트 설렉터 교체 : DS, ES, FS, GS에 커널 데이터 세그먼트 디스크립터를 저장
+	; 세그먼트 셀렉터 교체 : DS, ES, FS, GS에 커널 데이터 세그먼트 디스크립터를 저장
 	mov ax, 0x10
 	mov ds, ax
 	mov es, ax
@@ -57,8 +58,9 @@ global kISRHDD2, kISRETCInterrupt
 	mov gs, ax
 %endmacro
 
+; 콘텍스트 복원
 %macro KLOADCONTEXT 0
-	; 콘텍스트 복원
+	; 콘텍스트 복원(범용 레지스터 15개 + 세그먼트 셀렉터 4개 = 19개)
 	pop gs
 	pop fs
 	pop rax ; DS, ES는 스택에서 직접  pop할 수 없으므로 RAX를 이용해서 pop함
@@ -318,7 +320,7 @@ kISRTimer:
 	KSAVECONTEXT                 ; 콘텍스트 저장 및 세그먼트 셀렉터 교체
 
 	mov rdi, 32                  ; 첫번째 파라미터에 벡터 번호를 설정
-	call kTimerHandler ; C언어 핸들러 함수 호출
+	call kTimerHandler           ; C언어 핸들러 함수 호출
 
 	KLOADCONTEXT                 ; 콘텍스트 복원
 	iretq                        ; 프로세서가 저장한 콘텍스트를 복원하고, 실행중이던 코드로 복귀
@@ -458,7 +460,7 @@ kISRHDD1:
 	KSAVECONTEXT                 ; 콘텍스트 저장 및 세그먼트 셀렉터 교체
 
 	mov rdi, 46                  ; 첫번째 파라미터에 벡터 번호를 설정
-	call kHDDHandler ; C언어 핸들러 함수 호출
+	call kHDDHandler             ; C언어 핸들러 함수 호출
 
 	KLOADCONTEXT                 ; 콘텍스트 복원
 	iretq                        ; 프로세서가 저장한 콘텍스트를 복원하고, 실행중이던 코드로 복귀
@@ -468,7 +470,7 @@ kISRHDD2:
 	KSAVECONTEXT                 ; 콘텍스트 저장 및 세그먼트 셀렉터 교체
 
 	mov rdi, 47                  ; 첫번째 파라미터에 벡터 번호를 설정
-	call kHDDHandler ; C언어 핸들러 함수 호출
+	call kHDDHandler             ; C언어 핸들러 함수 호출
 
 	KLOADCONTEXT                 ; 콘텍스트 복원
 	iretq                        ; 프로세서가 저장한 콘텍스트를 복원하고, 실행중이던 코드로 복귀
