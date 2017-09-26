@@ -4,29 +4,39 @@
 SECTION .text
 
 START:
-	mov ax, 0x1000 ; ╨╦хё╦П╣Е д©Ёнюг ©ёф╝╦╝ фВюнф╝ ╦ч╦П╦╝ ╬Н╣Е╥╧╫╨(0x10000)
+	mov ax, 0x1000 ; б╨б╦ц┬бёб╦ц╟б╣ц╔ ц└б©бЁц▌ц─ц┤ б©бёц├б╝б╦б╝ ц├ц╥ц─ц▌ц├б╝ б╦ц·б╦ц╟б╦б╝ б╬ц╝б╣ц╔б╥б╧б╫б╨(0x10000)
 	mov ds, ax
 	mov es, ax
 
-	; A20 ╟тюлф╝ х╟╪╨х╜
-	mov ax, 0x2401        ; ╠Б╢и ╧Ьхё(0x2401:A20 ╟тюлф╝ х╟╪╨х╜)
-	int 0x15              ; юнем╥╢ф╝ ╨╓ем евюл╨М юн╣╕╫╨(0x15:BIOS Service->System Service)
-	jc .A20_GATE_ERROR    ; ©╧©э ╧ъ╩Щ╫ц цЁ╦╝
-	jmp .A20_GATE_SUCCESS ; ╪╨╟Ь╫ц цЁ╦╝
+	; Application Processor Л²╢К╘╢ Л∙└К·≤Л²≤ ЙЁ╪Л═∙Л²└ К╙╗К▒░ К⌡╟Л√╢К└≤Л√╢Л└° КЁ╢М≤╦ К╙╗К⌠° Л╩╓К└░К║° Л²╢К▐≥
+	mov ax, 0x0000 			; application processor flag М≥∙Л²╦М∙≤К═╓ЙЁ═
+	mov es, ax				; es Л└╦Й╥╦К╗╪М┼╦ К═┬Л╖─Л┼╓М└╟Л²≤ Л▀°Л·▒ Л√╢К⌠°К═┬Л┼╓К╔╪ 0Л°╪К║° Л└╓Л═∙
+
+	cmp byte [es:0x7c09], 0x00 	; М■▄К·≤Й╥╦Й╟─ 0Л²╢К╘╢ AP Л²╢К╞─К║°
+	je .APPLICATIONPROCESSORSTARTPOINT ; APЛ ╘ Л╫■К⌠°К║° Л²╢К▐≥
+
+	; BootStrap Proccessor К╖▄ Л▀╓М√┴К░≤К┼■ К╤─К╤└
+
+	; A20 б╟ц■ц─ц▄ц├б╝ ц┬б╟б╪б╨ц┬б╜
+	mov ax, 0x2401        ; б╠ц╒б╢ц┴ б╧ц╦ц┬бё(0x2401:A20 б╟ц■ц─ц▄ц├б╝ ц┬б╟б╪б╨ц┬б╜)
+	int 0x15              ; ц─ц▌ц┘ц█б╥б╢ц├б╝ б╨б╓ц┘ц█ ц┘ц≈ц─ц▄б╨ц╜ ц─ц▌б╣б╕б╫б╨(0x15:BIOS Service->System Service)
+	jc .A20_GATE_ERROR    ; б©б╧б©ц° б╧ц÷б╩ц╫б╫ц┐ ц┐бЁб╦б╝
+	jmp .A20_GATE_SUCCESS ; б╪б╨б╟ц╦б╫ц┐ ц┐бЁб╦б╝
 
 .A20_GATE_ERROR:
-	in al, 0x92  ; ╫ц╫╨еш даф╝╥я фВф╝(0x92)©║╪╜ 1byteю╩ юп╬Н AL©║ юЗюЕ
-	or al, 0x02  ; A20 ╟тюлф╝ ╨Яф╝(╨Яф╝ 1)ю╩ 1╥н ╪Ёа╓
-	and al, 0xFE ; ╫ц╫╨еш ╦╝╪б ╨Яф╝(╨Яф╝ 0)ю╩ 0ю╦╥н ╪Ёа╓
-	out 0x92, al ; ╫ц╫╨еш даф╝╥я фВф╝(0x92)©║ ╨╞╟Ф╣х ╟╙ю╩ юЗюЕ
+	in al, 0x92  ; б╫ц┐б╫б╨ц┘ц⌡ ц└ц│ц├б╝б╥ц▒ ц├ц╥ц├б╝(0x92)б©б║б╪б╜ 1byteц─б╩ ц─ц░б╬ц╝ ALб©б║ ц─ц╨ц─ц╔
+	or al, 0x02  ; A20 б╟ц■ц─ц▄ц├б╝ б╨ц╠ц├б╝(б╨ц╠ц├б╝ 1)ц─б╩ 1б╥ц▌ б╪бЁц│б╓
+	and al, 0xFE ; б╫ц┐б╫б╨ц┘ц⌡ б╦б╝б╪ц┌ б╨ц╠ц├б╝(б╨ц╠ц├б╝ 0)ц─б╩ 0ц─б╦б╥ц▌ б╪бЁц│б╓
+	out 0x92, al ; б╫ц┐б╫б╨ц┘ц⌡ ц└ц│ц├б╝б╥ц▒ ц├ц╥ц├б╝(0x92)б©б║ б╨б╞б╟ц╕б╣ц┬ б╟б╙ц─б╩ ц─ц╨ц─ц╔
 
 .A20_GATE_SUCCESS:
-	; ╨╦хё╦П╣Е юЭх╞
-	cli                 ; юнем╥╢ф╝╟║ ╧ъ╩ЩгоаЖ ╦Ьго╣╣╥о ╪Ёа╓
-	lgdt [GDTR]         ; GDTR юз╥А╠╦а╤╦╕ га╥н╪╪╪╜©║ ╪Ёа╓го©╘ GDT евюл╨М ╥н╣Е
-	mov eax, 0x4000003B ; CR0 да╣Е╥я ╥╧аЖ╫╨ем(PG=0, CD=1, NW=0, AM=0, WP=0, NE=1, ET=1, TS=1, EM=0, MP=1, PE=1)
-	mov cr0, eax        ; ╪Ёа╓╟╙ю╩ CR0©║ юЗюЕ
-	jmp dword 0x18:(PROTECT_MODE - $$ + 0x10000) ; CS ╪╪╠в╦уф╝ ╪©╥╨ем©║ ╨╦хё╦П╣Е©К дз╣Е ╪╪╠в╦уф╝ ╣П╫╨ф╝╦Ёем╦╕ ╪Ёа╓го╟М, PROTECT_MODEюг ╦ч╦П╦╝ ╬Н╣Е╥╧╫╨╥н юл╣©
+.APPLICATIONPROCESSORSTARTPOINT:
+	; б╨б╦ц┬бёб╦ц╟б╣ц╔ ц─ц╪ц┬б╞
+	cli                 ; ц─ц▌ц┘ц█б╥б╢ц├б╝б╟б║ б╧ц÷б╩ц╫ц┤ц▐ц│ц╤ б╦ц╦ц┤ц▐б╣б╣б╥ц▐ б╪бЁц│б╓
+	lgdt [GDTR]         ; GDTR ц─ц б╥ц║б╠б╦ц│б╤б╦б╕ ц┤ц│б╥ц▌б╪б╪б╪б╜б©б║ б╪бЁц│б╓ц┤ц▐б©б╘ GDT ц┘ц≈ц─ц▄б╨ц╜ б╥ц▌б╣ц╔
+	mov eax, 0x4000003B ; CR0 ц└ц│б╣ц╔б╥ц▒ б╥б╧ц│ц╤б╫б╨ц┘ц█(PG=0, CD=1, NW=0, AM=0, WP=0, NE=1, ET=1, TS=1, EM=0, MP=1, PE=1)
+	mov cr0, eax        ; б╪бЁц│б╓б╟б╙ц─б╩ CR0б©б║ ц─ц╨ц─ц╔
+	jmp dword 0x18:(PROTECT_MODE - $$ + 0x10000) ; CS б╪б╪б╠ц≈б╦ц∙ц├б╝ б╪б©б╥б╨ц┘ц█б©б║ б╨б╦ц┬бёб╦ц╟б╣ц╔б©ц╚ ц└ц б╣ц╔ б╪б╪б╠ц≈б╦ц∙ц├б╝ б╣ц╟б╫б╨ц├б╝б╦бЁц┘ц█б╦б╕ б╪бЁц│б╓ц┤ц▐б╟ц╜, PROTECT_MODEц─ц┤ б╦ц·б╦ц╟б╦б╝ б╬ц╝б╣ц╔б╥б╧б╫б╨б╥ц▌ ц─ц▄б╣б©
 
 [BITS 32]
 PROTECT_MODE:
@@ -36,6 +46,11 @@ PROTECT_MODE:
 	mov fs, ax
 	mov gs, ax
 	mov ss, ax
+
+	; Application Processor К╙╗К▒░ ЙЁ╪Л═∙Л²└ К⌡╟Л√╢К└≤Л√╢ К╟■К║° cЛ╩╓К└░ Л≈■М┼╦К╕╛ М▐╛Л²╦М┼╦К║° Л²╢К▐≥
+	cmp byte[0x7c09], 0x00
+	je .APPLICATIONPROCESSORSTARTPOINT
+
 	mov esp, 0xFFFE
 	mov ebp, 0xFFFE
 
@@ -45,7 +60,8 @@ PROTECT_MODE:
 	call PRINT_MESSAGE
 	add esp, 12
 
-	jmp dword 0x18:0x10200 ; CS ╪╪╠в╦уф╝ ╪©╥╨ем©║ ╨╦хё╦П╣Е©К дз╣Е ╪╪╠в╦уф╝ ╣П╫╨ф╝╦Ёем╦╕ ╪Ёа╓го╟М, C╬П╬Н ©ёф╝╦╝ фВюнф╝ гт╪Жюг ╦ч╦П╦╝ ╬Н╣Е╥╧╫╨(0x10200)╥н юл╣©
+.APPLICATIONPROCESSORSTARTPOINT:
+	jmp dword 0x18:0x10200 ; CS б╪б╪б╠ц≈б╦ц∙ц├б╝ б╪б©б╥б╨ц┘ц█б©б║ б╨б╦ц┬бёб╦ц╟б╣ц╔б©ц╚ ц└ц б╣ц╔ б╪б╪б╠ц≈б╦ц∙ц├б╝ б╣ц╟б╫б╨ц├б╝б╦бЁц┘ц█б╦б╕ б╪бЁц│б╓ц┤ц▐б╟ц╜, Cб╬ц╟б╬ц╝ б©бёц├б╝б╦б╝ ц├ц╥ц─ц▌ц├б╝ ц┤ц■б╪ц╤ц─ц┤ б╦ц·б╦ц╟б╦б╝ б╬ц╝б╣ц╔б╥б╧б╫б╨(0x10200)б╥ц▌ ц─ц▄б╣б©
 
 PRINT_MESSAGE:
 	push ebp
@@ -87,16 +103,16 @@ PRINT_MESSAGE:
 	pop ebp
 	ret
 
-align 8, db 0 ; ╬ф╥║юг ╣╔юлем╦╕ 8byte е╘╠Б╥н а╓╥д
+align 8, db 0 ; б╬ц├б╥б║ц─ц┤ б╣б╔ц─ц▄ц┘ц█б╦б╕ 8byte ц┘б╘б╠ц╒б╥ц▌ ц│б╓б╥ц└
 
-dw 0x0000 ; GDTR╦╕ 8byte е╘╠Б╥н а╓╥дго╠Б ю╖го©╘ цъ╟║
+dw 0x0000 ; GDTRб╦б╕ 8byte ц┘б╘б╠ц╒б╥ц▌ ц│б╓б╥ц└ц┤ц▐б╠ц╒ ц─б╖ц┤ц▐б©б╘ ц┐ц÷б╟б║
 
 GDTR:
 	dw GDT_END - GDT - 1    ; GDT Size(2byte)
 	dd (GDT - $$ + 0x10000) ; GDT BaseAddress(4byte)
 
 GDT:
-	NULL_DESCRIPTOR: ; Ён ╪╪╠в╦уф╝ ╣П╫╨е╘╦Ёем(8byte)
+	NULL_DESCRIPTOR: ; бЁц▌ б╪б╪б╠ц≈б╦ц∙ц├б╝ б╣ц╟б╫б╨ц┘б╘б╦бЁц┘ц█(8byte)
 		dw 0x0000
 		dw 0x0000
 		db 0x00
@@ -104,35 +120,35 @@ GDT:
 		db 0x00
 		db 0x00
 
-	IA32E_CODE_DESCRIPTOR: ; IA-32e ╦П╣Е©К дз╣Е ╪╪╠в╦уф╝ ╣П╫╨е╘╦Ёем(8byte)
+	IA32E_CODE_DESCRIPTOR: ; IA-32e б╦ц╟б╣ц╔б©ц╚ ц└ц б╣ц╔ б╪б╪б╠ц≈б╦ц∙ц├б╝ б╣ц╟б╫б╨ц┘б╘б╦бЁц┘ц█(8byte)
 		dw 0xFFFF    ; Limit=0xFFFF
 		dw 0x0000    ; BaseAddress=0x0000
 		db 0x00      ; BaseAddress=0x00
-		db 0x9A      ; P=1, DPL=00, S=1, Type=0xA:CodeSegment(╫ггЮ/юп╠Б)
+		db 0x9A      ; P=1, DPL=00, S=1, Type=0xA:CodeSegment(б╫ц┤ц┤ц═/ц─ц░б╠ц╒)
 		db 0xAF      ; G=1, D/B=0, L=1, AVL=0, Limit=0xF
 		db 0x00      ; BaseAddress=0x00
 
-	IA32E_DATA_DESCRIPTOR: ; IA-32e ╦П╣Е©К  ╣╔юлем ╪╪╠в╦уф╝ ╣П╫╨е╘╦Ёем(8byte)
+	IA32E_DATA_DESCRIPTOR: ; IA-32e б╦ц╟б╣ц╔б©ц╚  б╣б╔ц─ц▄ц┘ц█ б╪б╪б╠ц≈б╦ц∙ц├б╝ б╣ц╟б╫б╨ц┘б╘б╦бЁц┘ц█(8byte)
 		dw 0xFFFF    ; Limit=0xFFFF
 		dw 0x0000    ; BaseAddress=0x0000
 		db 0x00      ; BaseAddress=0x00
-		db 0x92      ; P=1, DPL=00, S=1, Type=0x2:DataSegment(юп╠Б/╬╡╠Б)
+		db 0x92      ; P=1, DPL=00, S=1, Type=0x2:DataSegment(ц─ц░б╠ц╒/б╬б╡б╠ц╒)
 		db 0xAF      ; G=1, D/B=0, L=1, AVL=0, Limit=0xF
 		db 0x00      ; BaseAddress=0x00
 
-	PROTECT_CODE_DESCRIPTOR: ; ╨╦хё ╦П╣Е©К дз╣Е ╪╪╠в╦уф╝ ╣П╫╨е╘╦Ёем(8byte)
+	PROTECT_CODE_DESCRIPTOR: ; б╨б╦ц┬бё б╦ц╟б╣ц╔б©ц╚ ц└ц б╣ц╔ б╪б╪б╠ц≈б╦ц∙ц├б╝ б╣ц╟б╫б╨ц┘б╘б╦бЁц┘ц█(8byte)
 		dw 0xFFFF    ; Limit=0xFFFF
 		dw 0x0000    ; BaseAddress=0x0000
 		db 0x00      ; BaseAddress=0x00
-		db 0x9A      ; P=1, DPL=00, S=1, Type=0xA:CodeSegment(╫ггЮ/юп╠Б)
+		db 0x9A      ; P=1, DPL=00, S=1, Type=0xA:CodeSegment(б╫ц┤ц┤ц═/ц─ц░б╠ц╒)
 		db 0xCF      ; G=1, D/B=1, L=0, AVL=0, Limit=0xF
 		db 0x00      ; BaseAddress=0x00
 
-	PROTECT_DATA_DESCRIPTOR: ; ╨╦хё ╦П╣Е©К ╣╔юлем ╪╪╠в╦уф╝ ╣П╫╨е╘╦Ёем(8byte)
+	PROTECT_DATA_DESCRIPTOR: ; б╨б╦ц┬бё б╦ц╟б╣ц╔б©ц╚ б╣б╔ц─ц▄ц┘ц█ б╪б╪б╠ц≈б╦ц∙ц├б╝ б╣ц╟б╫б╨ц┘б╘б╦бЁц┘ц█(8byte)
 		dw 0xFFFF    ; Limit=0xFFFF
 		dw 0x0000    ; BaseAddress=0x0000
 		db 0x00      ; BaseAddress=0x00
-		db 0x92      ; P=1, DPL=00, S=1, Type=0x2:DataSegment(юп╠Б/╬╡╠Б)
+		db 0x92      ; P=1, DPL=00, S=1, Type=0x2:DataSegment(ц─ц░б╠ц╒/б╬б╡б╠ц╒)
 		db 0xCF      ; G=1, D/B=1, L=0, AVL=0, Limit=0xF
 		db 0x00      ; BaseAddress=0x00
 

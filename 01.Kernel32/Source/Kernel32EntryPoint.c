@@ -9,19 +9,27 @@ BOOL kIsMemoryEnough(void);
 BOOL kInitializeKernel64Area(void);
 void kCopyKernel64ImageTo2Mbyte(void);
 
+// Bootstrap Processor ì—¬ë¶€ê°€ ì €ì¥ëœ ì–´ë“œë ˆìŠ¤, ë¶€íŠ¸ ë¡œë” ì˜ì—­ì˜ ì•ìª½ì— ìœ„ì¹˜
+#define BOOTSTRAPPROCESSOR_FLAGADDRESS	0x7c09
+
 void Start32Kernel(void){
-	// º¯¼ö ¼±¾ğ
+	// ÂºÂ¯Â¼Ã¶ Â¼Â±Â¾Ã°
 	DWORD dwEAX, dwEBX, dwECX, dwEDX;
 	char vcVendorString[13] = {0, };
 
-	// BootLoader.asm ÀÇ ¸Ş¼¼Áö¸¦ ¿©±â¼­ Ãâ·Â(ÀÓ½Ã¹æÆí) : ºÎÆ®·Î´õ¿¡¼­´Â ¸Ş¼¼Áö À§Ä¡¿Í USB ÆÄÆ¼¼Ç Á¤º¸ À§Ä¡°¡ Áßº¹µÉ ¼öµµ ÀÖ´Â °ü°è·Î Á¦°Å ÇßÀ½.
+	if( *(BYTE*)BOOTSTRAPPROCESSOR_FLAGADDRESS == 0){
+		kSwitchAndExecute64bitKernel();
+		while(1);
+	}
+
+	// BootLoader.asm Ã€Ã‡ Â¸ÃÂ¼Â¼ÃÃ¶Â¸Â¦ Â¿Â©Â±Ã¢Â¼Â­ ÃƒÃ¢Â·Ã‚(Ã€Ã“Â½ÃƒÂ¹Ã¦Ã†Ã­) : ÂºÃÃ†Â®Â·ÃÂ´ÃµÂ¿Â¡Â¼Â­Â´Ã‚ Â¸ÃÂ¼Â¼ÃÃ¶ Ã€Â§Ã„Â¡Â¿Ã USB Ã†Ã„Ã†Â¼Â¼Ã‡ ÃÂ¤ÂºÂ¸ Ã€Â§Ã„Â¡Â°Â¡ ÃÃŸÂºÂ¹ÂµÃ‰ Â¼Ã¶ÂµÂµ Ã€Ã–Â´Ã‚ Â°Ã¼Â°Ã¨Â·Ã ÃÂ¦Â°Ã… Ã‡ÃŸÃ€Â½.
 	kPrintString(0, 0,  DEF_FONT_C, "MINT64 OS Boot Loader Start~!!");
 	kPrintString(0, 1,  DEF_FONT_C, "OS Image Loading... Complete~!!");
 
-	// º¸È£¸ğµå C¾ğ¾î Ä¿³Î ½ÃÀÛ ¸Ş¼¼Áö
+	// ÂºÂ¸ÃˆÂ£Â¸Ã°ÂµÃ¥ CÂ¾Ã°Â¾Ã® Ã„Â¿Â³Ã Â½ÃƒÃ€Ã› Â¸ÃÂ¼Â¼ÃÃ¶
 	kPrintString(0, 3,  DEF_FONT_C, "Protected Mode C Language Kernel Start......[Pass]");
 
-	// ÃÖ¼Ò ¸Ş¸ğ¸® Å©±â Ã¼Å©
+	// ÃƒÃ–Â¼Ã’ Â¸ÃÂ¸Ã°Â¸Â® Ã…Â©Â±Ã¢ ÃƒÂ¼Ã…Â©
 	kPrintString(0, 4,  DEF_FONT_C, "Minimum Memory Size Check...................[    ]");
 	if(kIsMemoryEnough() == FALSE){
 		kPrintString(45, 4, DEF_FONT_C,  "Fail");
@@ -32,7 +40,7 @@ void Start32Kernel(void){
 		kPrintString(45, 4, DEF_FONT_C,  "Pass");
 	}
 
-	// IA-32e ¸ğµå Ä¿³ÎÀÇ ¸Ş¸ğ¸® ¿µ¿ªÀ» ÃÊ±âÈ­
+	// IA-32e Â¸Ã°ÂµÃ¥ Ã„Â¿Â³ÃÃ€Ã‡ Â¸ÃÂ¸Ã°Â¸Â® Â¿ÂµÂ¿ÂªÃ€Â» ÃƒÃŠÂ±Ã¢ÃˆÂ­
 	kPrintString(0, 5,  DEF_FONT_C, "IA-32e Kernel Area Initialize...............[    ]");
 	if(kInitializeKernel64Area() == FALSE){
 		kPrintString(45, 5, DEF_FONT_C,  "Fail");
@@ -43,12 +51,12 @@ void Start32Kernel(void){
 		kPrintString(45, 5, DEF_FONT_C,  "Pass");
 	}
 
-	// IA-32e ¸ğµå Ä¿³ÎÀ» À§ÇÑ ÆäÀÌÁö Å×ÀÌºí »ı¼º
+	// IA-32e Â¸Ã°ÂµÃ¥ Ã„Â¿Â³ÃÃ€Â» Ã€Â§Ã‡Ã‘ Ã†Ã¤Ã€ÃŒÃÃ¶ Ã…Ã—Ã€ÃŒÂºÃ­ Â»Ã½Â¼Âº
 	kPrintString(0, 6,  DEF_FONT_C, "IA-32e Page Tables Initialize...............[    ]");
 	kInitializePageTables();
 	kPrintString(45, 6, DEF_FONT_C,  "Pass");
 
-	// ÇÁ·Î¼¼¼­ Á¦Á¶»ç ÀÌ¸§ ÀĞ±â
+	// Ã‡ÃÂ·ÃÂ¼Â¼Â¼Â­ ÃÂ¦ÃÂ¶Â»Ã§ Ã€ÃŒÂ¸Â§ Ã€ÃÂ±Ã¢
 	kReadCPUID(0x00000000, &dwEAX, &dwEBX, &dwECX, &dwEDX);
 	*((DWORD*)vcVendorString) = dwEBX;
 	*((DWORD*)vcVendorString + 1) = dwEDX;
@@ -56,7 +64,7 @@ void Start32Kernel(void){
 	kPrintString(0, 7,  DEF_FONT_C, "Processor Vendor String.....................[            ]");
 	kPrintString(45, 7, DEF_FONT_C,  vcVendorString);
 
-	// 64ºñÆ® ¸ğµå Áö¿ø ¿©ºÎ È®ÀÎ
+	// 64ÂºÃ±Ã†Â® Â¸Ã°ÂµÃ¥ ÃÃ¶Â¿Ã¸ Â¿Â©ÂºÃ ÃˆÂ®Ã€Ã
 	kReadCPUID(0x80000001, &dwEAX, &dwEBX, &dwECX, &dwEDX);
 	kPrintString(0, 8,  DEF_FONT_C, "64bit Mode Support Check....................[    ]");
 	if(dwEDX & (1 << 29)){
@@ -68,12 +76,12 @@ void Start32Kernel(void){
 		while(1);
 	}
 
-	// IA-32e ¸ğµå Ä¿³ÎÀ» 0x200000(2Mbyte) ¾îµå·¹½º·Î º¹»ç
+	// IA-32e Â¸Ã°ÂµÃ¥ Ã„Â¿Â³ÃÃ€Â» 0x200000(2Mbyte) Â¾Ã®ÂµÃ¥Â·Â¹Â½ÂºÂ·Ã ÂºÂ¹Â»Ã§
 	kPrintString(0, 9,  DEF_FONT_C, "Copy IA-32e Kernel to 2MB Address...........[    ]");
 	kCopyKernel64ImageTo2Mbyte();
 	kPrintString(45, 9, DEF_FONT_C,  "Pass");
 
-	// IA-32e ¸ğµå ÀüÈ¯
+	// IA-32e Â¸Ã°ÂµÃ¥ Ã€Ã¼ÃˆÂ¯
 	kSwitchAndExecute64bitKernel();
 
 	while(1);
@@ -102,7 +110,7 @@ BOOL kIsMemoryEnough(void){
 			return FALSE;
 		}
 
-		pdwCurrentAddress += (0x100000 / 4); // 1MB¾¿ Áõ°¡
+		pdwCurrentAddress += (0x100000 / 4); // 1MBÂ¾Â¿ ÃÃµÂ°Â¡
 	}
 
 	return TRUE;

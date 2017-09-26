@@ -1,33 +1,41 @@
 #include "Descriptor.h"
 #include "Utility.h"
 #include "ISR.h"
+#include "MultiProcessor.h"
 
 //====================================================================================================
-// GDT/TSS ���� �Լ�
+// GDT/TSS °ü·Ã ÇÔ¼ö
 //====================================================================================================
 void kInitializeGDTTableAndTSS(void){
 	GDTR* pstGDTR;
 	GDTENTRY8* pstEntry;
 	TSSSEGMENT* pstTSS;
+	int i;
 
-	// GDTR ����
+	// GDTR »ý¼º
 	pstGDTR = (GDTR*)GDTR_STARTADDRESS;
 	pstEntry = (GDTENTRY8*)(GDTR_STARTADDRESS + sizeof(GDTR));
 	pstGDTR->wLimit = GDT_TABLESIZE - 1;
 	pstGDTR->qwBaseAddress = (QWORD)pstEntry;
-	pstGDTR->wPadding = 0;
-	pstGDTR->dwPadding = 0;
 
-	// TSS ��巹�� ����
+
+	// TSS ¾îµå·¹½º ¼³Á¤
 	pstTSS = (TSSSEGMENT*)((QWORD)pstEntry + GDT_TABLESIZE);
 
-	// GDT(��/�ڵ�/������/TSS ���׸�Ʈ ��ũ����) ����
+	// NULL, 64 비트 Code/Data, TSS를 위해 총 3+16 개의 세그먼트를 생성
 	kSetGDTEntry8(&(pstEntry[0]), 0, 0, 0, 0, 0);
 	kSetGDTEntry8(&(pstEntry[1]), 0x00000000, 0xFFFFF, GDT_FLAGS_UPPER_CODE, GDT_FLAGS_LOWER_KERNELCODE, GDT_TYPE_CODE);
 	kSetGDTEntry8(&(pstEntry[2]), 0x00000000, 0xFFFFF, GDT_FLAGS_UPPER_DATA, GDT_FLAGS_LOWER_KERNELDATA, GDT_TYPE_DATA);
-	kSetGDTEntry16((GDTENTRY16*)&(pstEntry[3]), (QWORD)pstTSS, sizeof(TSSSEGMENT) - 1, GDT_FLAGS_UPPER_TSS, GDT_FLAGS_LOWER_TSS, GDT_TYPE_TSS);
 
-	// TSS ����
+	for(i=0; i<MAXPROCESSORCOUNT; i++){
+		// TSS는 16바이트이므로 kSetGDTEntry16 함수로 사용
+		// pstEntry 는 8byte 이므로 2개를 합쳐서 하나로 사용
+		kSetGDTEntry16((GDTENTRY16*)&(pstEntry[GDT_MAXENTRY8COUNT + 
+			(i*2)]), (QWORD)pstTSS + (i*sizeof(TSSSEGMENT)), sizeof(TSSSEGMENT)-1, GDT_FLAGS_UPPER_TSS, GDT_FLAGS_LOWER_TSS, GDT_TYPE_TSS);
+
+	}
+
+	// TSS »ý¼º
 	kInitializeTSSSegment(pstTSS);
 }
 
@@ -52,27 +60,39 @@ void kSetGDTEntry16(GDTENTRY16* pstEntry, QWORD qwBaseAddress, DWORD dwLimit, BY
 }
 
 void kInitializeTSSSegment(TSSSEGMENT* pstTSS){
-	kMemSet(pstTSS, 0, sizeof(TSSSEGMENT));
-	pstTSS->qwIST[0] = IST_STARTADDRESS + IST_SIZE;
-	pstTSS->wIOMapBaseAddress = 0xFFFF; // IO�� TSS�� Limit������ ũ�� ���������ν� IO Map�� ������� �ʵ��� ��
+	int i;
+
+	// 최대 프로세서 또는 코어의 수만큼 루프를 돌면서 생성
+	for(i=0; i<MAXPROCESSORCOUNT; i++){
+		kMemSet(pstTSS, 0, sizeof(TSSSEGMENT));
+
+		// IST 의 뒤에서부터 잘라서 할당함. (주의, IST는 16바이트 단위로 정렬해야함)
+		pstTSS->qwIST[0] = IST_STARTADDRESS + IST_SIZE - (IST_SIZE / MAXPROCESSORCOUNT * i);
+
+		// IO Map 기준 주소를 TSS 디스크립터의 limit 필드보다 크게 설정함으로써
+		// IO Map 을 사용하지 않도록 함
+		pstTSS->wIOMapBaseAddress = 0xffff;
+
+		pstTSS++;
+	}
 }
 
 //====================================================================================================
-// IDT ���� �Լ�
+// IDT °ü·Ã ÇÔ¼ö
 //====================================================================================================
 void kInitializeIDTTable(void){
 	IDTR* pstIDTR;
 	IDTENTRY* pstEntry;
 	int i;
 
-	// IDTR ����
+	// IDTR »ý¼º
 	pstIDTR = (IDTR*)IDTR_STARTADDRESS;
 	pstEntry = (IDTENTRY*)(IDTR_STARTADDRESS + sizeof(IDTR));
 	pstIDTR->wLimit = IDT_TABLESIZE - 1;
 	pstIDTR->qwBaseAddress = (QWORD)pstEntry;
 
-	// IDT(IDT ����Ʈ ��ũ���� 100��) ���� : 0~99������ ���Ϳ� ISR(Handler)�� ����
-	// ���� ó���� ISR(21��): #0~#19, #20~#31
+	// IDT(IDT °ÔÀÌÆ® µð½ºÅ©¸³ÅÍ 100°³) »ý¼º : 0~99±îÁöÀÇ º¤ÅÍ¿¡ ISR(Handler)¸¦ ¿¬°á
+	// ¿¹¿Ü Ã³¸®¿ë ISR(21°³): #0~#19, #20~#31
 	kSetIDTEntry(&(pstEntry[0]),  kISRDivideError,               GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
 	kSetIDTEntry(&(pstEntry[1]),  kISRDebug,                     GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
 	kSetIDTEntry(&(pstEntry[2]),  kISRNMI,                       GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
@@ -97,7 +117,7 @@ void kInitializeIDTTable(void){
 		kSetIDTEntry(&(pstEntry[i]), kISRETCException,           GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
 	}
 
-	// ���ͷ�Ʈ ó���� ISR(17��): #32~#47, #48~#99
+	// ÀÎÅÍ·´Æ® Ã³¸®¿ë ISR(17°³): #32~#47, #48~#99
 	kSetIDTEntry(&(pstEntry[32]), kISRTimer,                     GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
 	kSetIDTEntry(&(pstEntry[33]), kISRKeyboard,                  GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
 	kSetIDTEntry(&(pstEntry[34]), kISRSlavePIC,                  GDT_KERNELCODESEGMENT, IDT_FLAGS_IST1, IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);

@@ -10,22 +10,23 @@ global kSwitchContext
 global kHlt
 global kTestAndSet
 global kInitializeFPU, kSaveFPUContext, kLoadFPUContext, kSetTS, kClearTS
+global kEnableGlobalLocalAPIC
 
-; **********[Cพ๐พ๎ฟกผญ พ๎ผภบํธฎ พ๐พ๎ วิผ๖ ศฃรโ ฑิพเ : IA-32e ธ๐ตๅ]**********
-; ฦฤถ๓นฬลอ ผ๘ผญ     มคผ๖ ลธภิ        ฝวผ๖ ลธภิ
+; **********[Cยพรฐยพรฎยฟยกยผยญ ยพรฎยผร€ยบรญยธยฎ ยพรฐยพรฎ รร”ยผรถ รยฃรรข ยฑร”ยพร  : IA-32e ยธรฐยตรฅ]**********
+; รรยถรณยนรร…ร ยผรธยผยญ     รยคยผรถ ร…ยธร€ร”        ยฝรยผรถ ร…ยธร€ร”
 ;     1     RDI(1)   XMM0(11.1)
 ;     2     RSI(2)   XMM1(12.2)
 ;     3     RDX(3)   XMM2(13.3)
 ;     4     RCX(4)   XMM3(14.4)
 ;     5     R8(5)    XMM4(15.5)
 ;     6     R9(6)    XMM5(16.6)
-;     7     ฝบลร(7)    XMM6(17.7)
-;     8     ฝบลร(8)    XMM7(18.8)
-;     9     ฝบลร(9)    ฝบลร(19.9)
-;     10    ฝบลร(10)   ฝบลร(20.0)
+;     7     ยฝยบร…ร(7)    XMM6(17.7)
+;     8     ยฝยบร…ร(8)    XMM7(18.8)
+;     9     ยฝยบร…ร(9)    ยฝยบร…ร(19.9)
+;     10    ยฝยบร…ร(10)   ยฝยบร…ร(20.0)
 ;     ...   ...      ...
 ;
-; นÝศฏฐช ผ๘ผญ        มคผ๖ ลธภิ        ฝวผ๖ ลธภิ
+; ยนรรยฏยฐยช ยผรธยผยญ        รยคยผรถ ร…ยธร€ร”        ยฝรยผรถ ร…ยธร€ร”
 ;     -     RAX(1)   XMM0(1.1)
 ;     -     RDX      XMM1
 ; ******************************************************
@@ -36,8 +37,8 @@ kInPortByte:
 	push rdx
 
 	mov rdx, rdi ; wPort
-	mov rax, 0   ; bData(รสฑโศญ)
-	; DXฟก ภ๚ภๅตศ ฦ๗ฦฎ น๘ศฃ(ฦ๗ฦฎ I/O พ๎ตๅทนฝบ)ฟกผญ 1Byteธฆ ภะพ๎, ALฟก ภ๚ภๅ.(ALภบ วิผ๖ภว นÝศฏฐชภธทฮ ป็ฟ๋ตส)
+	mov rax, 0   ; bData(รรยฑรขรยญ)
+	; DXยฟยก ร€รบร€รฅยตร รรทรยฎ ยนรธรยฃ(รรทรยฎ I/O ยพรฎยตรฅยทยนยฝยบ)ยฟยกยผยญ 1Byteยธยฆ ร€รยพรฎ, ALยฟยก ร€รบร€รฅ.(ALร€ยบ รร”ยผรถร€ร ยนรรยฏยฐยชร€ยธยทร ยปรงยฟรซยตร)
 	in al, dx
 
 	pop rdx
@@ -51,7 +52,7 @@ kOutPortByte:
 
 	mov rdx, rdi ; wPort
 	mov rax, rsi ; bData
-    ; DXฟก ภ๚ภๅตศ ฦ๗ฦฎ น๘ศฃ(ฦ๗ฦฎ I/O พ๎ตๅทนฝบ)ฟก ALฟก ภ๚ภๅตศ ฐช(1Byte)ภป พธ.
+    ; DXยฟยก ร€รบร€รฅยตร รรทรยฎ ยนรธรยฃ(รรทรยฎ I/O ยพรฎยตรฅยทยนยฝยบ)ยฟยก ALยฟยก ร€รบร€รฅยตร ยฐยช(1Byte)ร€ยป ยพยธ.
 	out dx, al
 
 	pop rax
@@ -64,8 +65,8 @@ kInPortWord:
 	push rdx
 
 	mov rdx, rdi ; wPort
-	mov rax, 0   ; wData(รสฑโศญ)
-	; DXฟก ภ๚ภๅตศ ฦ๗ฦฎ น๘ศฃ(ฦ๗ฦฎ I/O พ๎ตๅทนฝบ)ฟกผญ 2Byteธฆ ภะพ๎, AXฟก ภ๚ภๅ.(AXภบ วิผ๖ภว นÝศฏฐชภธทฮ ป็ฟ๋ตส)
+	mov rax, 0   ; wData(รรยฑรขรยญ)
+	; DXยฟยก ร€รบร€รฅยตร รรทรยฎ ยนรธรยฃ(รรทรยฎ I/O ยพรฎยตรฅยทยนยฝยบ)ยฟยกยผยญ 2Byteยธยฆ ร€รยพรฎ, AXยฟยก ร€รบร€รฅ.(AXร€ยบ รร”ยผรถร€ร ยนรรยฏยฐยชร€ยธยทร ยปรงยฟรซยตร)
 	in ax, dx
 
 	pop rdx
@@ -79,7 +80,7 @@ kOutPortWord:
 
 	mov rdx, rdi ; wPort
 	mov rax, rsi ; wData
-    ; DXฟก ภ๚ภๅตศ ฦ๗ฦฎ น๘ศฃ(ฦ๗ฦฎ I/O พ๎ตๅทนฝบ)ฟก AXฟก ภ๚ภๅตศ ฐช(2Byte)ภป พธ.
+    ; DXยฟยก ร€รบร€รฅยตร รรทรยฎ ยนรธรยฃ(รรทรยฎ I/O ยพรฎยตรฅยทยนยฝยบ)ยฟยก AXยฟยก ร€รบร€รฅยตร ยฐยช(2Byte)ร€ยป ยพยธ.
 	out dx, ax
 
 	pop rax
@@ -89,41 +90,41 @@ kOutPortWord:
 ; PARAM  : QWORD qwGDTRAddress(RDI)
 ; RETURN : void
 kLoadGDTR:
-	; GDTR ภฺทแฑธมถภว พ๎ตๅทนฝบธฆ GDTR ทนม๖ฝบลอฟก ผณมควฯฐํ, GDT ลืภฬบํภป วมทฮผผผญฟก ทฮตๅวิ
+	; GDTR ร€รยทรกยฑยธรยถร€ร ยพรฎยตรฅยทยนยฝยบยธยฆ GDTR ยทยนรรถยฝยบร…รยฟยก ยผยณรยครรยฐรญ, GDT ร…ร—ร€รยบรญร€ยป รรยทรยผยผยผยญยฟยก ยทรยตรฅรร”
 	lgdt [rdi]
 	ret
 
 ; PARAM  : WORD wTSSSegmentOffset(DI)
 ; RETURN : void
 kLoadTR:
-	; TSS ผผฑืธีฦฎ ต๐ฝบลฉธณลอภว ฟภวมผยภป TR ทนม๖ฝบลอฟก ผณมควฯฐํ, TSS ผผฑืธีฦฎธฆ วมทฮผผผญฟก ทฮตๅวิ
+	; TSS ยผยผยฑร—ยธร•รยฎ ยตรฐยฝยบร…ยฉยธยณร…รร€ร ยฟร€รรยผรร€ยป TR ยทยนรรถยฝยบร…รยฟยก ยผยณรยครรยฐรญ, TSS ยผยผยฑร—ยธร•รยฎยธยฆ รรยทรยผยผยผยญยฟยก ยทรยตรฅรร”
 	ltr di
 	ret
 
 ; PARAM  : QWORD qwIDTRAddress(RDI)
 ; RETURN : void
 kLoadIDTR:
-	; IDTR ภฺทแฑธมถภว พ๎ตๅทนฝบธฆ IDTR ทนม๖ผญฦฎฟก ผณมควฯฐํ, IDT ลืภฬบํภป วมทฮผผผญฟก ทฮตๅวิ
+	; IDTR ร€รยทรกยฑยธรยถร€ร ยพรฎยตรฅยทยนยฝยบยธยฆ IDTR ยทยนรรถยผยญรยฎยฟยก ยผยณรยครรยฐรญ, IDT ร…ร—ร€รยบรญร€ยป รรยทรยผยผยผยญยฟยก ยทรยตรฅรร”
 	lidt [rdi]
 	ret
 
 ; PARAM  : void
 ; RETURN : void
 kEnableInterrupt:
-	sti ; วมทฮผผผญฟก ภฮลอทดฦฎธฆ ศฐผบศญ
+	sti ; รรยทรยผยผยผยญยฟยก ร€รร…รยทยดรยฎยธยฆ รยฐยผยบรยญ
 	ret
 
 ; PARAM  : void
 ; RETURN : void
 kDisableInterrupt:
-	cli ; วมทฮผผผญฟก ภฮลอทดฦฎธฆ บ๑ศฐผบศญ
+	cli ; รรยทรยผยผยผยญยฟยก ร€รร…รยทยดรยฎยธยฆ ยบรฑรยฐยผยบรยญ
 	ret
 
 ; PARAM  : void
 ; RETURN : QWORD qwData(RAX)
 kReadRFLAGS:
-	pushfq  ; RFLAGS ทนม๖ฝบลอภว ฐชภป ฝบลรฟก ภ๚ภๅ
-	pop rax ; RFLAGS ทนม๖ฝบลอภว ฐชภป ฝบลรฟกผญ ฒจณปผญ RAX ทนม๖ฝบลอฟก ภ๚ภๅ (RAXดย วิผ๖ภว นÝศฏฐชภธทฮ ป็ฟ๋ตส)
+	pushfq  ; RFLAGS ยทยนรรถยฝยบร…รร€ร ยฐยชร€ยป ยฝยบร…รยฟยก ร€รบร€รฅ
+	pop rax ; RFLAGS ยทยนรรถยฝยบร…รร€ร ยฐยชร€ยป ยฝยบร…รยฟยกยผยญ ยฒยจยณยปยผยญ RAX ยทยนรรถยฝยบร…รยฟยก ร€รบร€รฅ (RAXยดร รร”ยผรถร€ร ยนรรยฏยฐยชร€ยธยทร ยปรงยฟรซยตร)
 	ret
 
 ; PARAM  : void
@@ -131,19 +132,19 @@ kReadRFLAGS:
 kReadTSC:
 	push rdx
 
-	; Read Time Stamp Counter: ลธภำ ฝบลฦวม ฤซฟ๎ลอ ทนม๖ฝบลอ(64บ๑ฦฎ)ภป ภะพ๎ผญ, ป๓ภง 32บ๑ฦฎดย RDXฟก, วฯภง 32บ๑ฦฎดย RAXฟก ภ๚ภๅ
+	; Read Time Stamp Counter: ร…ยธร€ร“ ยฝยบร…รรร รยซยฟรฎร…ร ยทยนรรถยฝยบร…ร(64ยบรฑรยฎ)ร€ยป ร€รยพรฎยผยญ, ยปรณร€ยง 32ยบรฑรยฎยดร RDXยฟยก, รรร€ยง 32ยบรฑรยฎยดร RAXยฟยก ร€รบร€รฅ
 	rdtsc
 
-	; RAX = RAX | (RDX << 32) : RAXดย วิผ๖ภว นÝศฏฐชภธทฮ ป็ฟ๋ตส
+	; RAX = RAX | (RDX << 32) : RAXยดร รร”ยผรถร€ร ยนรรยฏยฐยชร€ยธยทร ยปรงยฟรซยตร
 	shl rdx, 32
 	or rax, rdx
 
 	pop rdx
 	ret
 
-; ฤÜลุฝบฦฎ ภ๚ภๅ
+; รรร…รยฝยบรยฎ ร€รบร€รฅ
 %macro KSAVECONTEXT 0
-	; ฤÜลุฝบฦฎ ภ๚ภๅ(นüฟ๋ ทนม๖ฝบลอ 15ฐณ + ผผฑืธีฦฎ ผฟทบลอ 4ฐณ = 19ฐณ)
+	; รรร…รยฝยบรยฎ ร€รบร€รฅ(ยนรผยฟรซ ยทยนรรถยฝยบร…ร 15ยฐยณ + ยผยผยฑร—ยธร•รยฎ ยผยฟยทยบร…ร 4ยฐยณ = 19ยฐยณ)
 	push rbp
 	push rax
 	push rbx
@@ -160,7 +161,7 @@ kReadTSC:
 	push r14
 	push r15
 
-	mov ax, ds ; DS, ESดย ฝบลรฟก ม๗มข pushวา ผ๖ พ๘ภธนวทฮ RAXธฆ ภฬฟ๋วุผญ pushวิ
+	mov ax, ds ; DS, ESยดร ยฝยบร…รยฟยก รรทรยข pushรร’ ยผรถ ยพรธร€ยธยนรยทร RAXยธยฆ ร€รยฟรซรรยผยญ pushรร”
 	push rax
 	mov ax, es
 	push rax
@@ -168,12 +169,12 @@ kReadTSC:
 	push gs
 %endmacro
 
-; ฤÜลุฝบฦฎ บนฟ๘
+; รรร…รยฝยบรยฎ ยบยนยฟรธ
 %macro KLOADCONTEXT 0
-	; ฤÜลุฝบฦฎ บนฟ๘(นüฟ๋ ทนม๖ฝบลอ 15ฐณ + ผผฑืธีฦฎ ผฟทบลอ 4ฐณ = 19ฐณ)
+	; รรร…รยฝยบรยฎ ยบยนยฟรธ(ยนรผยฟรซ ยทยนรรถยฝยบร…ร 15ยฐยณ + ยผยผยฑร—ยธร•รยฎ ยผยฟยทยบร…ร 4ยฐยณ = 19ยฐยณ)
 	pop gs
 	pop fs
-	pop rax ; DS, ESดย ฝบลรฟกผญ ม๗มข  popวา ผ๖ พ๘ภธนวทฮ RAXธฆ ภฬฟ๋วุผญ popวิ
+	pop rax ; DS, ESยดร ยฝยบร…รยฟยกยผยญ รรทรยข  popรร’ ยผรถ ยพรธร€ยธยนรยทร RAXยธยฆ ร€รยฟรซรรยผยญ popรร”
 	mov es, ax
 	pop rax
 	mov ds, ax
@@ -201,101 +202,101 @@ kSwitchContext:
 	push rbp
 	mov rbp, rsp
 
-	; pstCurrentContext=NULLภฬธ้, ฤÜลุฝบฦฎธฆ ภ๚ภๅวา วสฟไ พ๘ภฝ
-	pushfq ; พฦทกภว cmpภว ฐแฐ๚ทฮ RFLAGSฐก บฏวฯม๖ พสตตทฯ ฝบลรฟก ภ๚ภๅ
+	; pstCurrentContext=NULLร€รยธรฉ, รรร…รยฝยบรยฎยธยฆ ร€รบร€รฅรร’ รรยฟรค ยพรธร€ยฝ
+	pushfq ; ยพรยทยกร€ร cmpร€ร ยฐรกยฐรบยทร RFLAGSยฐยก ยบยฏรรรรถ ยพรยตยตยทร ยฝยบร…รยฟยก ร€รบร€รฅ
 	cmp rdi, 0
 	je .LoadConext
 	popfq
 
-	; ***** ว๖ภ็ ลยฝบลฉภว ฤÜลุฝบฦฎธฆ ภ๚ภๅ *****
-	push rax ; RAXธฆ ทนม๖ฝบลอ ฟภวมผยภธทฮ ป็ฟ๋วฯฑโ ภงวุ น้พ๗
+	; ***** รรถร€รง ร…รยฝยบร…ยฉร€ร รรร…รยฝยบรยฎยธยฆ ร€รบร€รฅ *****
+	push rax ; RAXยธยฆ ยทยนรรถยฝยบร…ร ยฟร€รรยผรร€ยธยทร ยปรงยฟรซรรยฑรข ร€ยงรร ยนรฉยพรท
 
-	; 5ฐณ ทนม๖ฝบลอ(SS, RSP, RFLAGS, CS, RIP)ธฆ CONTEXT ภฺทแฑธมถ(pstCurrentContext)ฟก ภ๚ภๅ
-	mov ax, ss ; SS ภ๚ภๅ
+	; 5ยฐยณ ยทยนรรถยฝยบร…ร(SS, RSP, RFLAGS, CS, RIP)ยธยฆ CONTEXT ร€รยทรกยฑยธรยถ(pstCurrentContext)ยฟยก ร€รบร€รฅ
+	mov ax, ss ; SS ร€รบร€รฅ
 	mov qword [rdi + (23 * 8)], rax
 
-	mov rax, rbp ; RBPฟก ภ๚ภๅตศ RSP ภ๚ภๅ
-	add rax, 16  ; RSP ภ๚ภๅฝร, RBP(push rbp)ฟอ บนฑอ มึผาธฆ มฆฟÜ
+	mov rax, rbp ; RBPยฟยก ร€รบร€รฅยตร RSP ร€รบร€รฅ
+	add rax, 16  ; RSP ร€รบร€รฅยฝร, RBP(push rbp)ยฟร ยบยนยฑร รร–ยผร’ยธยฆ รยฆยฟร
 	mov qword [rdi + (22 * 8)], rax
 
-	pushfq ; RFLAGS ภ๚ภๅ
+	pushfq ; RFLAGS ร€รบร€รฅ
 	pop rax
 	mov qword [rdi + (21 * 8)], rax
 
-	mov ax, cs ; CS ภ๚ภๅ
+	mov ax, cs ; CS ร€รบร€รฅ
 	mov qword [rdi + (20 * 8)], rax
 
-	mov rax, qword [rbp + 8] ; RIPธฆ บนฑอ มึผาทฮ ผณมควฯฟฉ, ดูภฝ ฤÜลุฝบฦฎ บนฟ๘ฝรฟก kSwitchContext วิผ๖ ศฃรโ ดูภฝ ถ๓ภฮภธทฮ ภฬตฟ
+	mov rax, qword [rbp + 8] ; RIPยธยฆ ยบยนยฑร รร–ยผร’ยทร ยผยณรยครรยฟยฉ, ยดรร€ยฝ รรร…รยฝยบรยฎ ยบยนยฟรธยฝรยฟยก kSwitchContext รร”ยผรถ รยฃรรข ยดรร€ยฝ ยถรณร€รร€ยธยทร ร€รยตยฟ
 	mov qword [rdi + (19 * 8)], rax
 
 	pop rax
 	pop rbp
 
-	; CONTEXT ภฺทแฑธมถภว 18น๘(RBP)~0น๘(GS) ฟภวมผยฟก ณชธำม๖ 19ฐณภว ทนม๖ฝบลอธฆ ภ๚ภๅวฯฑโ ภงวุ, RSPธฆ 19น๘(RIP) ฟภวมผย ภงฤกทฮ ภฬตฟ
+	; CONTEXT ร€รยทรกยฑยธรยถร€ร 18ยนรธ(RBP)~0ยนรธ(GS) ยฟร€รรยผรยฟยก ยณยชยธร“รรถ 19ยฐยณร€ร ยทยนรรถยฝยบร…รยธยฆ ร€รบร€รฅรรยฑรข ร€ยงรร, RSPยธยฆ 19ยนรธ(RIP) ยฟร€รรยผร ร€ยงรยกยทร ร€รยตยฟ
 	add rdi, (19 * 8)
 	mov rsp, rdi
 	sub rdi, (19 * 8)
 
-	; ณชธำม๖ 19ฐณ ทนม๖ฝบลอธฆ CONTEXT ภฺทแฑธมถ(pstCurrentContext)ฟก ภ๚ภๅ
+	; ยณยชยธร“รรถ 19ยฐยณ ยทยนรรถยฝยบร…รยธยฆ CONTEXT ร€รยทรกยฑยธรยถ(pstCurrentContext)ยฟยก ร€รบร€รฅ
 	KSAVECONTEXT
 
-; ***** ดูภฝ ลยฝบลฉภว ฤÜลุฝบฦฎธฆ บนฟ๘ *****
+; ***** ยดรร€ยฝ ร…รยฝยบร…ยฉร€ร รรร…รยฝยบรยฎยธยฆ ยบยนยฟรธ *****
 .LoadConext:
 	mov rsp, rsi
 
-	; CONTEXT ภฺทแฑธมถ(pstNextContext)ฟกผญ 19ฐณ ทนม๖ฝบลอธฆ บนฟ๘
+	; CONTEXT ร€รยทรกยฑยธรยถ(pstNextContext)ยฟยกยผยญ 19ยฐยณ ยทยนรรถยฝยบร…รยธยฆ ยบยนยฟรธ
 	KLOADCONTEXT
 
-	; CONTEXT ภฺทแฑธมถ(pstNextContext)ฟกผญ ณชธำม๖ 5ฐณ ทนม๖ฝบลอธฆ บนฟ๘วฯฐํ, RIPฐก ฐกธฎลฐดย พ๎ตๅทนฝบทฮ บนฑอ
+	; CONTEXT ร€รยทรกยฑยธรยถ(pstNextContext)ยฟยกยผยญ ยณยชยธร“รรถ 5ยฐยณ ยทยนรรถยฝยบร…รยธยฆ ยบยนยฟรธรรยฐรญ, RIPยฐยก ยฐยกยธยฎร…ยฐยดร ยพรฎยตรฅยทยนยฝยบยทร ยบยนยฑร
 	iretq
 
 ; PARAM  : void
 ; RETURN : void
 kHlt:
-	; วมทฮผผผญธฆ ด๋ฑโ ป๓ลยทฮ ภüศฏวิ(ฝฌฐิ วิ)
+	; รรยทรยผยผยผยญยธยฆ ยดรซยฑรข ยปรณร…รยทร ร€รผรยฏรร”(ยฝยฌยฐร” รร”)
 	hlt
 	hlt
 	ret
 
 ; PARAM  : volatile BYTE* pbDest(RDI), BYTE bCmp(RSI), BYTE bSrc(RDX)
 ; RETURN : BOOL bRet(RAX)
-; วิผ๖ ผณธํ    : ลืฝบฦฎ(บ๑ฑณ)ฟอ ผณมคภป วฯณชภว ธํทษพ๎(Atomic Operation, ฟ๘ภฺภ๛ ฟฌป๊)ทฮ รณธฎ [AX==bCmp, A==*pbDest, B==bSrc ฟก วุด็]
-;          -> bCmp == *pbDest ภฮ ฐๆฟ์, *pbDestฟก  bSrcธฆ ผณมควฯฐํ, TRUE(1)ภป ธฎลฯวิ
-;          -> bCmp != *pbDest ภฮ ฐๆฟ์, FALSE(0)ภป ธฎลฯวิ
+; รร”ยผรถ ยผยณยธรญ    : ร…ร—ยฝยบรยฎ(ยบรฑยฑยณ)ยฟร ยผยณรยคร€ยป รรยณยชร€ร ยธรญยทรยพรฎ(Atomic Operation, ยฟรธร€รร€รป ยฟยฌยปรช)ยทร รยณยธยฎ [AX==bCmp, A==*pbDest, B==bSrc ยฟยก รรยดรง]
+;          -> bCmp == *pbDest ร€ร ยฐรฆยฟรฌ, *pbDestยฟยก  bSrcยธยฆ ยผยณรยครรยฐรญ, TRUE(1)ร€ยป ยธยฎร…รรร”
+;          -> bCmp != *pbDest ร€ร ยฐรฆยฟรฌ, FALSE(0)ร€ยป ยธยฎร…รรร”
 kTestAndSet:
 	; 1. lock
-	;    -> พ๎ผภบํธฎพ๎ ฤฺตๅฟกผญ ภüฤกป็ทฮ ป็ฟ๋ตวธ็, ตฺฟก ฟภดย ธํทษพ๎ธฆ ผ๖วเวฯดย ตฟพศ ฝรฝบลÛ น๖ฝบธฆ ภแฑืฐํ ดูธฅ วมทฮผผผญณช ฤฺพ๎ฐก ธÞธ๐ธฎฟก มขฑูวา ผ๖ พ๘ฐิ วิ
+	;    -> ยพรฎยผร€ยบรญยธยฎยพรฎ รรยตรฅยฟยกยผยญ ร€รผรยกยปรงยทร ยปรงยฟรซยตรยธรง, ยตรยฟยก ยฟร€ยดร ยธรญยทรยพรฎยธยฆ ยผรถรร รรยดร ยตยฟยพร ยฝรยฝยบร…ร ยนรถยฝยบยธยฆ ร€รกยฑร—ยฐรญ ยดรยธยฅ รรยทรยผยผยผยญยณยช รรยพรฎยฐยก ยธรยธรฐยธยฎยฟยก รยขยฑรรร’ ยผรถ ยพรธยฐร” รร”
 	; 2. cmpxchg A, B
-	;    -> AX == A ภฮ ฐๆฟ์, mov RFLAGS.ZF, 1 วฯฐํ, mov A, B วิ
-	;    -> AX != A ภฮ ฐๆฟ์, mov RFLAGS.ZF, 0 วฯฐํ, mov AX, A วิ
+	;    -> AX == A ร€ร ยฐรฆยฟรฌ, mov RFLAGS.ZF, 1 รรยฐรญ, mov A, B รร”
+	;    -> AX != A ร€ร ยฐรฆยฟรฌ, mov RFLAGS.ZF, 0 รรยฐรญ, mov AX, A รร”
 	mov rax, rsi
 	lock cmpxchg byte [rdi], dl
-	je .SUCCESS ; RFLAGS.ZF == 1 ภฮ ฐๆฟ์, .SUCCESSทฮ ภฬตฟ
+	je .SUCCESS ; RFLAGS.ZF == 1 ร€ร ยฐรฆยฟรฌ, .SUCCESSยทร ร€รยตยฟ
 
 .NOTSAME:
-	mov rax, 0x00 ; FALSE(0)ภป ธฎลฯ
+	mov rax, 0x00 ; FALSE(0)ร€ยป ยธยฎร…ร
 	ret
 
 .SUCCESS:
-	mov rax, 0x01 ; TRUE(1)ภป ธฎลฯ
+	mov rax, 0x01 ; TRUE(1)ร€ยป ยธยฎร…ร
 	ret
 
 ; PARAM  : void
 ; RETURN : void
 kInitializeFPU:
-	finit ; FPU รสฑโศญ
+	finit ; FPU รรยฑรขรยญ
 	ret
 
 ; PARAM  : void* pvFPUContext(RDI)
 ; RETURN : void
 kSaveFPUContext:
-	fxsave [rdi] ; pvFPUContext ธÞธ๐ธฎ พ๎ตๅทนฝบฟก FPU ทนม๖ฝบลอ(512 byte)ธฆ ภ๚ภๅ
+	fxsave [rdi] ; pvFPUContext ยธรยธรฐยธยฎ ยพรฎยตรฅยทยนยฝยบยฟยก FPU ยทยนรรถยฝยบร…ร(512 byte)ยธยฆ ร€รบร€รฅ
 	ret
 
 ; PARAM  : void* pvFPUContext(RDI)
 ; RETURN : void
 kLoadFPUContext:
-	fxrstor [rdi] ; pvFPUContext ธÞธ๐ธฎ พ๎ตๅทนฝบฟก ภ๚ภๅตศ FPU ทนม๖ฝบลอ(512 byte)ธฆ บนฟ๘
+	fxrstor [rdi] ; pvFPUContext ยธรยธรฐยธยฎ ยพรฎยตรฅยทยนยฝยบยฟยก ร€รบร€รฅยตร FPU ยทยนรรถยฝยบร…ร(512 byte)ยธยฆ ยบยนยฟรธ
 	ret
 
 ; PARAM  : void
@@ -303,7 +304,7 @@ kLoadFPUContext:
 kSetTS:
 	push rax
 
-	; CR0.TS(บ๑ฦฎ 3)=1 ทฮ ผณมควฯฟฉ, ลยฝบลฉ ภüศฏ(Task Switched)ฝร 7น๘ ฟนฟÜ(#NM, Device Not Available)ฐก น฿ปýวฯตตทฯ วิ
+	; CR0.TS(ยบรฑรยฎ 3)=1 ยทร ยผยณรยครรยฟยฉ, ร…รยฝยบร…ยฉ ร€รผรยฏ(Task Switched)ยฝร 7ยนรธ ยฟยนยฟร(#NM, Device Not Available)ยฐยก ยนรยปรฝรรยตยตยทร รร”
 	mov rax, cr0
 	or rax, 0x08
 	mov cr0, rax
@@ -314,6 +315,28 @@ kSetTS:
 ; PARAM  : void
 ; RETURN : void
 kClearTS:
-	; CR0.TS(บ๑ฦฎ 3)=0 ภธทฮ ผณมค
+	; CR0.TS(ยบรฑรยฎ 3)=0 ร€ยธยทร ยผยณรยค
 	clts
+	ret
+
+
+; IA32_APIC_BASE MSR์ ์ ์—ญ ํ€์ฑํ” ํ•๋“(11)๋ฅผ 1๋ก ์ค์ •ํ•์—ฌ APIC ํ์ฑํ”
+; PARAM : ์—์
+kEnableGlobalLocalAPIC:
+	push rax
+	push rcx
+	push rdx
+
+	; IA_32APIc Base MBr์— ์ค์ •๋ ๊ธฐ์กด ๊ฐ’์ ์ฝ์–ด์ ์ ์—ญ APIC ํ์ฑํ”
+	mov rcx, 27		; IA32_APIC_BASE MSR์€ ๋ ์ง€์คํฐ ์–ด๋“๋ ์ค 27์์นใ…”
+	rdmsr 			; MSR์ ์์ 32๋นํธ์€ ํ•์ 32๋นํธ๋” ๊ฐ๊ฐ edx๋ ์ง€์คํฐ์€
+					; EAX ๋ ์ง€์คํฐ๋ฅผ ์ฌ์ฉํ•จ
+
+					
+	or eax, 0x0800
+	wrmsr
+
+	pop rdx
+	pop rcx
+	pop rax
 	ret

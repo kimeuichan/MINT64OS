@@ -11,6 +11,9 @@
 #include "HardDisk.h"
 #include "FileSystem.h"
 #include "SerialPort.h"
+#include "MPConfigurationTable.h"
+#include "LocalAPIC.h"
+#include "MultiProcessor.h"
 
 /***** Àü¿ª º¯¼ö Á¤ÀÇ *****/
 // Ä¿¸Çµå Å×ÀÌºí
@@ -52,7 +55,8 @@ static SHELLCOMMANDENTRY gs_vstCommandTable[] = {
 		{"testperformance", "Test File Read/Write Performance", kTestPerformance},
 		{"flush", "Flush File System Cache", kFlushCache},
 		{"download", "Download Data form Serial, ex)download a.txt", kDownloadFile},
-
+		{"showmpinfo", "Show MP Configuration Table Information", kShowMPConfigurationTable},
+		{"startap", "Start Application Processor", kStartApplicationProcessor},
 };
 
 //====================================================================================================
@@ -2080,5 +2084,19 @@ static void kDownloadFile(const char* pcParameterBuffer){
 
 	fclose(fp);
 	kFlushFileSystemCache();
+}
 
+static void kShowMPConfigurationTable(const char* pcParameterBuffer){
+	kPrintMPConfigurationTable();
+}
+
+static void kStartApplicationProcessor(const char* pcParameterBuffer){
+	// AP 를깨움
+	if(kStartUpApplicationProcessor() == FALSE){
+		kPrintf("Application Processor Start Fail\n");
+		return ;
+	}
+
+	kPrintf("Application Processor Start Success\n");
+	kPrintf("BootStrap Processor[APIC ID:%d] Start AP\n", kGetAPICID());
 }
