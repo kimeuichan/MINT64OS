@@ -26,6 +26,8 @@ FileSystem.o: ../Source/FileSystem.c ../Source/FileSystem.h \
 HardDisk.o: ../Source/HardDisk.c ../Source/HardDisk.h ../Source/Types.h \
  ../Source/Synchronization.h ../Source/AssemblyUtility.h ../Source/Task.h \
  ../Source/List.h ../Source/Utility.h ../Source/Console.h
+IOAPIC.o: ../Source/IOAPIC.c ../Source/IOAPIC.h ../Source/Types.h \
+ ../Source/MPConfigurationTable.h ../Source/PIC.h
 InterruptHandler.o: ../Source/InterruptHandler.c \
  ../Source/InterruptHandler.h ../Source/Types.h ../Source/PIC.h \
  ../Source/Keyboard.h ../Source/Console.h ../Source/Utility.h \

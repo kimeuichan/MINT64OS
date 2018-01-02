@@ -213,6 +213,7 @@ BOOL kFindMPFloatingPointerAddress(QWORD* pdwAddress);
 BOOL kAnalysisMPConfigurationTable(void);
 MPCONFIGURATIONMANAGER* kGetMPConfigurationManager(void);
 void kPrintMPConfigurationTable(void);
+IOAPICENTRY* kFindIOAPICEntryForISA( void );
 int kGetProcessorCount(void);
 
 #endif
