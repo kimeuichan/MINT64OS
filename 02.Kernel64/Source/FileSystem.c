@@ -23,7 +23,6 @@ fWriteHDDSector gs_pfWriteHDDSector = NULL;
 BOOL kInitializeFileSystem( void )
 {
     BOOL bCacheEnable = FALSE;
-    
     // 자료구조 초기화와 동기화 객체 초기화
     kMemSet( &gs_stFileSystemManager, 0, sizeof( gs_stFileSystemManager ) );
     kInitializeMutex( &( gs_stFileSystemManager.stMutex ) );

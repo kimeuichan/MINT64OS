@@ -2,30 +2,30 @@
 
 SECTION .text
 
-; ÇÚµé·¯ (6°³)
+; í•¸ë“¤ëŸ¬ (6ê°œ)
 extern kCommonExceptionHandler, kCommonInterruptHandler, kKeyboardHandler, kTimerHandler, kDeviceNotAvailableHandler
 extern kHDDHandler
 
-; ¿¹¿Ü Ã³¸®¿ë ISR(21°³)
+; ì˜ˆì™¸ ì²˜ë¦¬ìš© ISR(21ê°œ)
 global kISRDivideError, kISRDebug, kISRNMI, kISRBreakPoint, kISROverflow
 global kISRBoundRangeExceeded, kISRInvalidOpcode, kISRDeviceNotAvailable, kISRDoubleFault, kISRCoprocessorSegmentOverrun
 global kISRInvalidTSS, kISRSegmentNotPresent, kISRStackSegmentFault, kISRGeneralProtection, kISRPageFault
 global kISR15, kISRFPUError, kISRAlignmentCheck, kISRMachineCheck, kISRSIMDError
 global kISRETCException
 
-; ÀÎÅÍ·´Æ® Ã³¸®¿ë ISR(17°³)
+; ì¸í„°ëŸ½íŠ¸ ì²˜ë¦¬ìš© ISR(17ê°œ)
 global kISRTimer, kISRKeyboard, kISRSlavePIC, kISRSerial2, kISRSerial1
 global kISRParallel2, kISRFloppy, kISRParallel1, kISRRTC, kISRReserved
 global kISRNotUsed1, kISRNotUsed2, kISRMouse, kISRCoprocessor, kISRHDD1
 global kISRHDD2, kISRETCInterrupt
 
-; MINT64 OSÀÇ ÄÜÅØ½ºÆ® ÀúÀå°ú º¹¿ø ¼ø¼­ (IST ½ºÅÃ ÀÌ¿ë)
-; 1. ÇÁ·Î¼¼¼­ Ã³¸®: SS, RSP, RFLAGS, CS, RIP, ¿¡·¯ ÄÚµå (¿É¼Ç)
-; 2. ÇÚµé·¯ Ã³¸®   : RBP, RAX, RBX, RCX, RDX, RDI, RSI, R8, R9, R10, R11, R12, R13, R14, R15, DS, ES, FS, GS
+; MINT64 OSì˜ ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ê³¼ ë³µì› ìˆœì„œ (IST ìŠ¤íƒ ì´ìš©)
+; 1. í”„ë¡œì„¸ì„œ ì²˜ë¦¬: SS, RSP, RFLAGS, CS, RIP, ì—ëŸ¬ ì½”ë“œ (ì˜µì…˜)
+; 2. í•¸ë“¤ëŸ¬ ì²˜ë¦¬   : RBP, RAX, RBX, RCX, RDX, RDI, RSI, R8, R9, R10, R11, R12, R13, R14, R15, DS, ES, FS, GS
 
-; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 %macro KSAVECONTEXT 0
-	; ÄÜÅØ½ºÆ® ÀúÀå(¹ü¿ë ·¹Áö½ºÅÍ 15°³ + ¼¼±×¸ÕÆ® ¼¿·ºÅÍ 4°³ = 19°³)
+	; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥(ë²”ìš© ë ˆì§€ìŠ¤í„° 15ê°œ + ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° 4ê°œ = 19ê°œ)
 	push rbp
 	mov rbp, rsp
 	push rax
@@ -43,14 +43,14 @@ global kISRHDD2, kISRETCInterrupt
 	push r14
 	push r15
 
-	mov ax, ds ; DS, ES´Â ½ºÅÃ¿¡ Á÷Á¢ pushÇÒ ¼ö ¾øÀ¸¹Ç·Î RAX¸¦ ÀÌ¿ëÇØ¼­ pushÇÔ
+	mov ax, ds ; DS, ESëŠ” ìŠ¤íƒì— ì§ì ‘ pushí•  ìˆ˜ ì—†ìœ¼ë¯€ë¡œ RAXë¥¼ ì´ìš©í•´ì„œ pushí•¨
 	push rax
 	mov ax, es
 	push rax
 	push fs
 	push gs
 
-	; ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼ : DS, ES, FS, GS¿¡ Ä¿³Î µ¥ÀÌÅÍ ¼¼±×¸ÕÆ® µð½ºÅ©¸³ÅÍ¸¦ ÀúÀå
+	; ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´ : DS, ES, FS, GSì— ì»¤ë„ ë°ì´í„° ì„¸ê·¸ë¨¼íŠ¸ ë””ìŠ¤í¬ë¦½í„°ë¥¼ ì €ìž¥
 	mov ax, 0x10
 	mov ds, ax
 	mov es, ax
@@ -58,12 +58,12 @@ global kISRHDD2, kISRETCInterrupt
 	mov gs, ax
 %endmacro
 
-; ÄÜÅØ½ºÆ® º¹¿ø
+; ì½˜í…ìŠ¤íŠ¸ ë³µì›
 %macro KLOADCONTEXT 0
-	; ÄÜÅØ½ºÆ® º¹¿ø(¹ü¿ë ·¹Áö½ºÅÍ 15°³ + ¼¼±×¸ÕÆ® ¼¿·ºÅÍ 4°³ = 19°³)
+	; ì½˜í…ìŠ¤íŠ¸ ë³µì›(ë²”ìš© ë ˆì§€ìŠ¤í„° 15ê°œ + ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° 4ê°œ = 19ê°œ)
 	pop gs
 	pop fs
-	pop rax ; DS, ES´Â ½ºÅÃ¿¡¼­ Á÷Á¢  popÇÒ ¼ö ¾øÀ¸¹Ç·Î RAX¸¦ ÀÌ¿ëÇØ¼­ popÇÔ
+	pop rax ; DS, ESëŠ” ìŠ¤íƒì—ì„œ ì§ì ‘  popí•  ìˆ˜ ì—†ìœ¼ë¯€ë¡œ RAXë¥¼ ì´ìš©í•´ì„œ popí•¨
 	mov es, ax
 	pop rax
 	mov ds, ax
@@ -86,401 +86,401 @@ global kISRHDD2, kISRETCInterrupt
 %endmacro
 
 ;====================================================================================================
-; ¿¹¿Ü Ã³¸®¿ë ISR(21°³): #0~#19, #20~#31
+; ì˜ˆì™¸ ì²˜ë¦¬ìš© ISR(21ê°œ): #0~#19, #20~#31
 ;====================================================================================================
 ; #0 : Divide Error ISR
 kISRDivideError:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 0                   ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kCommonExceptionHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 0                   ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kCommonExceptionHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #1 : Debug Exception ISR
 kISRDebug:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 1                   ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kCommonExceptionHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 1                   ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kCommonExceptionHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #2 : NMI Interrupt ISR
 kISRNMI:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 2                   ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kCommonExceptionHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 2                   ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kCommonExceptionHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #3 : Break Point ISR
 kISRBreakPoint:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 3                   ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kCommonExceptionHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 3                   ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kCommonExceptionHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #4 : Overflow ISR
 kISROverflow:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 4                   ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kCommonExceptionHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 4                   ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kCommonExceptionHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #5 : BOUND Range Exceeded ISR
 kISRBoundRangeExceeded:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 5                   ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kCommonExceptionHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 5                   ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kCommonExceptionHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #6 : Invalid Opcode (Undefined Opcode) ISR
 kISRInvalidOpcode:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 6                   ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kCommonExceptionHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 6                   ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kCommonExceptionHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #7 : Device Not Available (No Math Coprocessor) ISR
 kISRDeviceNotAvailable:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 7                   ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kDeviceNotAvailableHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 7                   ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kDeviceNotAvailableHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #8 : Double Fault ISR
 kISRDoubleFault:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 8                   ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	mov rsi, qword [rbp + 8]     ; µÎ¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ ¿¡·¯ ÄÚµå¸¦ ¼³Á¤
-	call kCommonExceptionHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 8                   ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	mov rsi, qword [rbp + 8]     ; ë‘ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ì—ëŸ¬ ì½”ë“œë¥¼ ì„¤ì •
+	call kCommonExceptionHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	add rsp, 8                   ; ¿¡·¯ ÄÚµå¸¦ ½ºÅÃ¿¡¼­ Á¦°Å
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	add rsp, 8                   ; ì—ëŸ¬ ì½”ë“œë¥¼ ìŠ¤íƒì—ì„œ ì œê±°
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #9 : Coprocessor Segment Overrun (Reserved) ISR
 kISRCoprocessorSegmentOverrun:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 9                   ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kCommonExceptionHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 9                   ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kCommonExceptionHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #10 : Invalid TSS ISR
 kISRInvalidTSS:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 10                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	mov rsi, qword [rbp + 8]     ; µÎ¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ ¿¡·¯ ÄÚµå¸¦ ¼³Á¤
-	call kCommonExceptionHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 10                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	mov rsi, qword [rbp + 8]     ; ë‘ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ì—ëŸ¬ ì½”ë“œë¥¼ ì„¤ì •
+	call kCommonExceptionHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	add rsp, 8                   ; ¿¡·¯ ÄÚµå¸¦ ½ºÅÃ¿¡¼­ Á¦°Å
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	add rsp, 8                   ; ì—ëŸ¬ ì½”ë“œë¥¼ ìŠ¤íƒì—ì„œ ì œê±°
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #11 : Segment Not Present ISR
 kISRSegmentNotPresent:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 11                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	mov rsi, qword [rbp + 8]     ; µÎ¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ ¿¡·¯ ÄÚµå¸¦ ¼³Á¤
-	call kCommonExceptionHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 11                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	mov rsi, qword [rbp + 8]     ; ë‘ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ì—ëŸ¬ ì½”ë“œë¥¼ ì„¤ì •
+	call kCommonExceptionHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	add rsp, 8                   ; ¿¡·¯ ÄÚµå¸¦ ½ºÅÃ¿¡¼­ Á¦°Å
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	add rsp, 8                   ; ì—ëŸ¬ ì½”ë“œë¥¼ ìŠ¤íƒì—ì„œ ì œê±°
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #12 : Stack-Segment Fault ISR
 kISRStackSegmentFault:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 12                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	mov rsi, qword [rbp + 8]     ; µÎ¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ ¿¡·¯ ÄÚµå¸¦ ¼³Á¤
-	call kCommonExceptionHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 12                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	mov rsi, qword [rbp + 8]     ; ë‘ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ì—ëŸ¬ ì½”ë“œë¥¼ ì„¤ì •
+	call kCommonExceptionHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	add rsp, 8                   ; ¿¡·¯ ÄÚµå¸¦ ½ºÅÃ¿¡¼­ Á¦°Å
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	add rsp, 8                   ; ì—ëŸ¬ ì½”ë“œë¥¼ ìŠ¤íƒì—ì„œ ì œê±°
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #13 : General Protection ISR
 kISRGeneralProtection:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 13                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	mov rsi, qword [rbp + 8]     ; µÎ¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ ¿¡·¯ ÄÚµå¸¦ ¼³Á¤
-	call kCommonExceptionHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 13                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	mov rsi, qword [rbp + 8]     ; ë‘ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ì—ëŸ¬ ì½”ë“œë¥¼ ì„¤ì •
+	call kCommonExceptionHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	add rsp, 8                   ; ¿¡·¯ ÄÚµå¸¦ ½ºÅÃ¿¡¼­ Á¦°Å
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	add rsp, 8                   ; ì—ëŸ¬ ì½”ë“œë¥¼ ìŠ¤íƒì—ì„œ ì œê±°
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #14 : Page Fault ISR
 kISRPageFault:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 14                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	mov rsi, qword [rbp + 8]     ; µÎ¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ ¿¡·¯ ÄÚµå¸¦ ¼³Á¤
-	call kCommonExceptionHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 14                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	mov rsi, qword [rbp + 8]     ; ë‘ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ì—ëŸ¬ ì½”ë“œë¥¼ ì„¤ì •
+	call kCommonExceptionHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	add rsp, 8                   ; ¿¡·¯ ÄÚµå¸¦ ½ºÅÃ¿¡¼­ Á¦°Å
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	add rsp, 8                   ; ì—ëŸ¬ ì½”ë“œë¥¼ ìŠ¤íƒì—ì„œ ì œê±°
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #15 : Intel Reserved ISR
 kISR15:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 15                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kCommonExceptionHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 15                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kCommonExceptionHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #16 : x87 FPU Floating-Point Error (Math Fault) ISR
 kISRFPUError:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 16                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kCommonExceptionHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 16                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kCommonExceptionHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #17 : Alignment Check ISR
 kISRAlignmentCheck:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 17                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	mov rsi, qword [rbp + 8]     ; µÎ¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ ¿¡·¯ ÄÚµå¸¦ ¼³Á¤
-	call kCommonExceptionHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 17                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	mov rsi, qword [rbp + 8]     ; ë‘ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ì—ëŸ¬ ì½”ë“œë¥¼ ì„¤ì •
+	call kCommonExceptionHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	add rsp, 8                   ; ¿¡·¯ ÄÚµå¸¦ ½ºÅÃ¿¡¼­ Á¦°Å
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	add rsp, 8                   ; ì—ëŸ¬ ì½”ë“œë¥¼ ìŠ¤íƒì—ì„œ ì œê±°
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #18 : Machine Check ISR
 kISRMachineCheck:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 18                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kCommonExceptionHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 18                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kCommonExceptionHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #19 : SIMD Floating-Point Exception ISR
 kISRSIMDError:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 19                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kCommonExceptionHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 19                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kCommonExceptionHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #20~#31 : Intel Reserved ISR
 kISRETCException:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 20                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kCommonExceptionHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 20                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kCommonExceptionHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ;====================================================================================================
-; ÀÎÅÍ·´Æ® Ã³¸®¿ë ISR(17°³): #32~#47, #48~#99
+; ì¸í„°ëŸ½íŠ¸ ì²˜ë¦¬ìš© ISR(17ê°œ): #32~#47, #48~#99
 ;====================================================================================================
 ; #32 : Timer ISR
 kISRTimer:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 32                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kTimerHandler           ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 32                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kTimerHandler           ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #33 : PS/2 Keyboard ISR
 kISRKeyboard:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 33                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kKeyboardHandler        ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 33                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kKeyboardHandler        ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #34 : Slave PIC Controller ISR
 kISRSlavePIC:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 34                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kCommonInterruptHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 34                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kCommonInterruptHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #35 : Serial Port 2 (COM Port 2) ISR
 kISRSerial2:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 35                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kCommonInterruptHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 35                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kCommonInterruptHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #36 : Serial Port 1 (COM Port 1) ISR
 kISRSerial1:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 36                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kCommonInterruptHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 36                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kCommonInterruptHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #37 : Parallel Port 2 (Print Port 2) ISR
 kISRParallel2:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 37                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kCommonInterruptHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 37                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kCommonInterruptHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #38 : Floppy Disk Controller ISR
 kISRFloppy:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 38                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kCommonInterruptHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 38                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kCommonInterruptHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #39 : Parallel Port 1 (Print Port 1) ISR
 kISRParallel1:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 39                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kCommonInterruptHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 39                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kCommonInterruptHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #40 : RTC ISR
 kISRRTC:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 40                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kCommonInterruptHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 40                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kCommonInterruptHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #41 : Reserved ISR
 kISRReserved:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 41                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kCommonInterruptHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 41                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kCommonInterruptHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #42 : Not Used 1 ISR
 kISRNotUsed1:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 42                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kCommonInterruptHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 42                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kCommonInterruptHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #43 : Not Used 2 ISR
 kISRNotUsed2:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 43                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kCommonInterruptHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 43                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kCommonInterruptHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #44 : PS/2 Mouse ISR
 kISRMouse:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 44                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kCommonInterruptHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 44                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kCommonInterruptHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #45 : Coprocessor ISR
 kISRCoprocessor:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 45                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kCommonInterruptHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 45                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kCommonInterruptHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #46 : Hard Disk 1 (HDD1) ISR
 kISRHDD1:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 46                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kHDDHandler             ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 46                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kHDDHandler             ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #47 : Hard Disk 2 (HDD2) ISR
 kISRHDD2:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 47                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kHDDHandler             ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 47                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kHDDHandler             ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€
 
 ; #48~#99 : ETC Interrupt ISR
 kISRETCInterrupt:
-	KSAVECONTEXT                 ; ÄÜÅØ½ºÆ® ÀúÀå ¹× ¼¼±×¸ÕÆ® ¼¿·ºÅÍ ±³Ã¼
+	KSAVECONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ì €ìž¥ ë° ì„¸ê·¸ë¨¼íŠ¸ ì…€ë ‰í„° êµì²´
 
-	mov rdi, 48                  ; Ã¹¹øÂ° ÆÄ¶ó¹ÌÅÍ¿¡ º¤ÅÍ ¹øÈ£¸¦ ¼³Á¤
-	call kCommonInterruptHandler ; C¾ð¾î ÇÚµé·¯ ÇÔ¼ö È£Ãâ
+	mov rdi, 48                  ; ì²«ë²ˆì§¸ íŒŒë¼ë¯¸í„°ì— ë²¡í„° ë²ˆí˜¸ë¥¼ ì„¤ì •
+	call kCommonInterruptHandler ; Cì–¸ì–´ í•¸ë“¤ëŸ¬ í•¨ìˆ˜ í˜¸ì¶œ
 
-	KLOADCONTEXT                 ; ÄÜÅØ½ºÆ® º¹¿ø
-	iretq                        ; ÇÁ·Î¼¼¼­°¡ ÀúÀåÇÑ ÄÜÅØ½ºÆ®¸¦ º¹¿øÇÏ°í, ½ÇÇàÁßÀÌ´ø ÄÚµå·Î º¹±Í
+	KLOADCONTEXT                 ; ì½˜í…ìŠ¤íŠ¸ ë³µì›
+	iretq                        ; í”„ë¡œì„¸ì„œê°€ ì €ìž¥í•œ ì½˜í…ìŠ¤íŠ¸ë¥¼ ë³µì›í•˜ê³ , ì‹¤í–‰ì¤‘ì´ë˜ ì½”ë“œë¡œ ë³µê·€

@@ -3,13 +3,14 @@
 
 #include "Types.h"
 #include "List.h"
+#include "Synchronization.h"
 
-/***** ธลลฉทฮ มคภว *****/
-// ฤÜลุฝบฦฎ ทนม๖ฝบลอ ฐณผ๖ฟอ ลฉฑโ
-#define TASK_REGISTERCOUNT 24 // 24 = 5(SS, RSP, RFLAGS, CS, RIP) + 19(ISRฟกผญ ภ๚ภๅวฯดย ทนม๖ฝบลอต้)
+/***** ยธร…ร…ยฉยทร รยคร€ร *****/
+// รรร…รยฝยบรยฎ ยทยนรรถยฝยบร…ร ยฐยณยผรถยฟร ร…ยฉยฑรข
+#define TASK_REGISTERCOUNT 24 // 24 = 5(SS, RSP, RFLAGS, CS, RIP) + 19(ISRยฟยกยผยญ ร€รบร€รฅรรยดร ยทยนรรถยฝยบร…รยตรฉ)
 #define TASK_REGISTERSIZE  8
 
-// CONTEXT ภฺทแฑธมถภว ทนม๖ฝบลอ ฟภวมผย
+// CONTEXT ร€รยทรกยฑยธรยถร€ร ยทยนรรถยฝยบร…ร ยฟร€รรยผร
 #define TASK_GS_OFFSET     0
 #define TASK_FS_OFFSET     1
 #define TASK_ES_OFFSET     2
@@ -35,45 +36,52 @@
 #define TASK_RSP_OFFSET    22
 #define TASK_SS_OFFSET     23
 
-// ลยฝบลฉ วฎ ฐüทร ธลลฉทฮ
+// ร…รยฝยบร…ยฉ รยฎ ยฐรผยทร ยธร…ร…ยฉยทร
 #define TASK_TCBPOOLADDRESS 0x800000 // 8M
 #define TASK_MAXCOUNT       1024
 
-// ฝบลร วฎ ฐüทร ธลลฉทฮ
+// ยฝยบร…ร รยฎ ยฐรผยทร ยธร…ร…ยฉยทร
 #define TASK_STACKPOOLADDRESS (TASK_TCBPOOLADDRESS + (sizeof(TCB) * TASK_MAXCOUNT))
 #define TASK_STACKSIZE        8192 // 8KB
 
-// ภฏศฟวฯม๖ พสภบ ลยฝบลฉ ID
+// ร€ยฏรยฟรรรรถ ยพรร€ยบ ร…รยฝยบร…ยฉ ID
 #define TASK_INVALIDID     0xFFFFFFFFFFFFFFFF
 
-// ลยฝบลฉฐก วัน๘ฟก รึด๋ทฮ พต ผ๖ ภึดย วมทฮผผผญ ฝรฐฃ(5ms)
+// ร…รยฝยบร…ยฉยฐยก รร‘ยนรธยฟยก รร–ยดรซยทร ยพยต ยผรถ ร€ร–ยดร รรยทรยผยผยผยญ ยฝรยฐยฃ(5ms)
 #define TASK_PROCESSORTIME 5
 
-// มุบ๑ ธฎฝบฦฎ ฐณผ๖
+// รรยบรฑ ยธยฎยฝยบรยฎ ยฐยณยผรถ
 #define TASK_MAXREADYLISTCOUNT 5
 
-// ลยฝบลฉ ฟ์ผฑผ๘ภง (ลยฝบลฉ วรทกฑื(64บ๑ฦฎ)ภว วฯภง 8บ๑ฦฎ )
-#define TASK_FLAGS_HIGHEST 0    // ฐกภๅ ณ๔ภฝ
-#define TASK_FLAGS_HIGH    1    // ณ๔ภฝ
-#define TASK_FLAGS_MEDIUM  2    // ม฿ฐฃ
-#define TASK_FLAGS_LOW     3    // ณทภฝ
-#define TASK_FLAGS_LOWEST  4    // ฐกภๅ ณทภฝ
-#define TASK_FLAGS_WAIT    0xFF // มพทแ ลยฝบลฉ ฟ์ผฑผ๘ภง
+// ร…รยฝยบร…ยฉ ยฟรฌยผยฑยผรธร€ยง (ร…รยฝยบร…ยฉ รรยทยกยฑร—(64ยบรฑรยฎ)ร€ร รรร€ยง 8ยบรฑรยฎ )
+#define TASK_FLAGS_HIGHEST 0    // ยฐยกร€รฅ ยณรดร€ยฝ
+#define TASK_FLAGS_HIGH    1    // ยณรดร€ยฝ
+#define TASK_FLAGS_MEDIUM  2    // รรยฐยฃ
+#define TASK_FLAGS_LOW     3    // ยณยทร€ยฝ
+#define TASK_FLAGS_LOWEST  4    // ยฐยกร€รฅ ยณยทร€ยฝ
+#define TASK_FLAGS_WAIT    0xFF // รยพยทรก ร…รยฝยบร…ยฉ ยฟรฌยผยฑยผรธร€ยง
 
-// ลยฝบลฉ วรทกฑื
-#define TASK_FLAGS_ENDTASK 0x8000000000000000 // มพทแ ลยฝบลฉ
-#define TASK_FLAGS_SYSTEM  0x4000000000000000 // ฝรฝบลÛ ลยฝบลฉ
-#define TASK_FLAGS_PROCESS 0x2000000000000000 // วมทฮผผฝบ
-#define TASK_FLAGS_THREAD  0x1000000000000000 // ฝบทนตๅ
-#define TASK_FLAGS_IDLE    0x0800000000000000 // ภฏศÞ ลยฝบลฉ
+// ร…รยฝยบร…ยฉ รรยทยกยฑร—
+#define TASK_FLAGS_ENDTASK 0x8000000000000000 // รยพยทรก ร…รยฝยบร…ยฉ
+#define TASK_FLAGS_SYSTEM  0x4000000000000000 // ยฝรยฝยบร…ร ร…รยฝยบร…ยฉ
+#define TASK_FLAGS_PROCESS 0x2000000000000000 // รรยทรยผยผยฝยบ
+#define TASK_FLAGS_THREAD  0x1000000000000000 // ยฝยบยทยนยตรฅ
+#define TASK_FLAGS_IDLE    0x0800000000000000 // ร€ยฏรร ร…รยฝยบร…ยฉ
 
-// ธลฦฎทฮ วิผ๖
-#define GETPRIORITY(x)           ((x) & 0xFF)                                     // TCB.qwFlags(64บ๑ฦฎ)ภว วฯภง 8บ๑ฦฎ ร฿รโ
-#define SETPRIORITY(x, priority) ((x) = ((x) & 0xFFFFFFFFFFFFFF00) | (priority))  // TCB.qwFlags(64บ๑ฦฎ)ภว วฯภง 8บ๑ฦฎ ผณมค
-#define GETTCBOFFSET(x)          ((x) & 0xFFFFFFFF)                               // TCB.stLink.qwID(64บ๑ฦฎ)ภว วฯภง 32บ๑ฦฎ ร฿รโ
-#define GETTCBFROMTHREADLINK(x)  (TCB*)((QWORD)(x) - offsetof(TCB, stThreadLink)) // TCB.stThreadLink พ๎ตๅทนฝบธฆ ล๋วุ, TCB พ๎ตๅทนฝบธฆ ฐ่ป๊วฯฟฉ นÝศฏวิ
+// ยธร…รยฎยทร รร”ยผรถ
+#define GETPRIORITY(x)           ((x) & 0xFF)                                     // TCB.qwFlags(64ยบรฑรยฎ)ร€ร รรร€ยง 8ยบรฑรยฎ รรรรข
+#define SETPRIORITY(x, priority) ((x) = ((x) & 0xFFFFFFFFFFFFFF00) | (priority))  // TCB.qwFlags(64ยบรฑรยฎ)ร€ร รรร€ยง 8ยบรฑรยฎ ยผยณรยค
+#define GETTCBOFFSET(x)          ((x) & 0xFFFFFFFF)                               // TCB.stLink.qwID(64ยบรฑรยฎ)ร€ร รรร€ยง 32ยบรฑรยฎ รรรรข
+#define GETTCBFROMTHREADLINK(x)  (TCB*)((QWORD)(x) - offsetof(TCB, stThreadLink)) // TCB.stThreadLink ยพรฎยตรฅยทยนยฝยบยธยฆ ร…รซรร, TCB ยพรฎยตรฅยทยนยฝยบยธยฆ ยฐรจยปรชรรยฟยฉ ยนรรยฏรร”
 
-/***** ฑธมถรผ มคภว *****/
+
+// ํ”๋ก์ธ์ ์นํ”๋ ํ•๋“์— ์•๋์ ๊ฐ’์ด ์ค์ •๋๋ฉด, ํ•ด๋น ํ์คํฌ๋” ํน๋ณํ• ์”๊ตฌ์ฌํ•ญ์ด ์—๋”
+// ๊ฒ์ผ๋ก ํ๋จํ•๊ณ  ํ์คํฌ ๋ถ€ํ• ๋ถ์ฐ ์ํ–
+#define TASK_LOADBALANCINGID	0xff
+
+
+
+/***** ยฑยธรยถรยผ รยคร€ร *****/
 #pragma pack(push, 1)
 
 typedef struct kContextStruct{
@@ -81,91 +89,108 @@ typedef struct kContextStruct{
 } CONTEXT;
 
 typedef struct kTaskControlBlockStruct{
-	LISTLINK stLink;            // ฝบฤษมูทฏ ธตลฉ -> ดูภฝ ลยฝบลฉ ภงฤก(stLink.pvNext)
-	                            //         -> ลยฝบลฉ ID(stLink.qwID) -> ป๓ภง 32บ๑ฦฎ: TCB วาด็ ศฝผ๖
-	                            //                                -> วฯภง 32บ๑ฦฎ: TCB ฟภวมผย
-	                            //         [มึภว:LISTLINKฐก นÝตๅฝร ฑธมถรผภว ธว พีฟก ภงฤกวุพ฿ วิ]
-	QWORD qwFlags;              // ลยฝบลฉ วรทกฑื -> บ๑ฦฎ 63: มพทแ ลยฝบลฉ ฟฉบฮ
-                                //         -> บ๑ฦฎ 62: ฝรฝบลÛ ลยฝบลฉ ฟฉบฮ
-	                            //         -> บ๑ฦฎ 61: วมทฮผผผญ ฟฉบฮ
-	                            //         -> บ๑ฦฎ 60: ฝบทนตๅ ฟฉบฮ
-	                            //         -> บ๑ฦฎ 59: ภฏศÞ ลยฝบลฉ ฟฉบฮ
-	                            //         -> บ๑ฦฎ 7~0: ลยฝบลฉ ฟ์ผฑผ๘ภง
-	void* pvMemoryAddress;      // วมทฮผผฝบ ธÞธ๐ธฎ ฟตฟช ฝรภÛ พ๎ตๅทนฝบ(ฤฺตๅ, ตฅภฬลอ ฟตฟช)
-	QWORD qwMemorySize;         // วมทฮผผผญ ธÞธ๐ธฎ ฟตฟช ลฉฑโ(ฤฺตๅ, ตฅภฬลอ ฟตฟช)
+	LISTLINK stLink;            // ยฝยบรรรรยทยฏ ยธยตร…ยฉ -> ยดรร€ยฝ ร…รยฝยบร…ยฉ ร€ยงรยก(stLink.pvNext)
+	                            //         -> ร…รยฝยบร…ยฉ ID(stLink.qwID) -> ยปรณร€ยง 32ยบรฑรยฎ: TCB รร’ยดรง รยฝยผรถ
+	                            //                                -> รรร€ยง 32ยบรฑรยฎ: TCB ยฟร€รรยผร
+	                            //         [รร–ร€ร:LISTLINKยฐยก ยนรยตรฅยฝร ยฑยธรยถรยผร€ร ยธร ยพร•ยฟยก ร€ยงรยกรรยพร รร”]
+	QWORD qwFlags;              // ร…รยฝยบร…ยฉ รรยทยกยฑร— -> ยบรฑรยฎ 63: รยพยทรก ร…รยฝยบร…ยฉ ยฟยฉยบร
+                                //         -> ยบรฑรยฎ 62: ยฝรยฝยบร…ร ร…รยฝยบร…ยฉ ยฟยฉยบร
+	                            //         -> ยบรฑรยฎ 61: รรยทรยผยผยผยญ ยฟยฉยบร
+	                            //         -> ยบรฑรยฎ 60: ยฝยบยทยนยตรฅ ยฟยฉยบร
+	                            //         -> ยบรฑรยฎ 59: ร€ยฏรร ร…รยฝยบร…ยฉ ยฟยฉยบร
+	                            //         -> ยบรฑรยฎ 7~0: ร…รยฝยบร…ยฉ ยฟรฌยผยฑยผรธร€ยง
+	void* pvMemoryAddress;      // รรยทรยผยผยฝยบ ยธรยธรฐยธยฎ ยฟยตยฟยช ยฝรร€ร ยพรฎยตรฅยทยนยฝยบ(รรยตรฅ, ยตยฅร€รร…ร ยฟยตยฟยช)
+	QWORD qwMemorySize;         // รรยทรยผยผยผยญ ยธรยธรฐยธยฎ ยฟยตยฟยช ร…ยฉยฑรข(รรยตรฅ, ยตยฅร€รร…ร ยฟยตยฟยช)
 	//--------------------------------------------------
-	// ภฬวฯดย ฝบทนตๅ มคบธ
+	// ร€รรรยดร ยฝยบยทยนยตรฅ รยคยบยธ
 	//--------------------------------------------------
-	LISTLINK stThreadLink;      // ภฺฝฤ ฝบทนตๅ ธตลฉ(ดูภฝ ภฺฝฤ ฝบทนตๅ ภงฤก, ฝบทนตๅ ID)
-	QWORD qwParentProcessID;    // บฮธ๐ วมทฮผผฝบ ID
-	QWORD vqwFPUContext[512/8]; // FPU ฤÜลุฝบฦฎ -> [มึภว]FPU ฤÜลุฝบฦฎภว ฝรภÛ พ๎ตๅทนฝบดย นÝตๅฝร 16ภว น่ผ๖ฟฉพ฿วิ. ฑืทฏฑโ ภงวุผญดย พฦทก 3ฐกม๖ มถฐวภป ธธมทฝรฤัพ฿ วิ.
-	                            // (512 byte ฐํมค)   มถฐว 1: TCB วฎภว ฝรภÛ พ๎ตๅทนฝบฐก 16ภว น่ผ๖ฟฉพ฿วิ (ว๖ภ็ 0x800000(8MB))
-	                            //                  มถฐว 2: ฐข TCBภว ลฉฑโฐก 16ภว น่ผ๖ฟฉพ฿วิ (ว๖ภ็ 816B)
-                                //                  มถฐว 3: ฐข TCBฟกผญ FPU ฤÜลุฝบฦฎภว ฟภวมผยภฬ 16ภว น่ผ๖ฟฉพ฿วิ (ว๖ภ็ 64B)
-	                            //                  ว๖ภ็ ภง 3ฐกม๖ มถฐวภป ธธมทวฯนวทฮ, ภฬศฤฟก TCBฟก วสตๅ ร฿ฐกฝร นÝตๅฝร vqwFPUContextภว พฦทกฟก ร฿ฐกวุพ฿ วิ.
-	LIST stChildThreadList;     // ภฺฝฤ ฝบทนตๅ ธฎฝบฦฎ
-	CONTEXT stContext;          // ฤÜลุฝบฦฎ
-	void* pvStackAddress;       // ฝบลร ฝรภÛ พ๎ตๅทนฝบ
-	QWORD qwStackSize;          // ฝบลร ลฉฑโ
-	BOOL bFPUUsed;              // FPU ป็ฟ๋ ฟฉบฮ (วุด็ ลยฝบลฉฟกผญ ภฬภüฟก FPU ฟฌป๊ภป ป็ฟ๋วั ภ๛ภฬ ภึดยม๖ ฟฉบฮ)
-	char vcPadding[11];         // ฦะต๙ นูภฬฦฎ (FPU ฤÜลุฝบฦฎภว มึภว.มถฐว 2ฟก ต๛ถ๓, TCBภว ลฉฑโธฆ 16 byteภว น่ผ๖ฟก ธยร฿ฑโ ภงวิ)
-} TCB; // LISTITEMฟก วุด็, ว๖ภ็ TCB ลฉฑโดย 816 byteภำ
+	LISTLINK stThreadLink;      // ร€รยฝร ยฝยบยทยนยตรฅ ยธยตร…ยฉ(ยดรร€ยฝ ร€รยฝร ยฝยบยทยนยตรฅ ร€ยงรยก, ยฝยบยทยนยตรฅ ID)
+	QWORD qwParentProcessID;    // ยบรยธรฐ รรยทรยผยผยฝยบ ID
+	QWORD vqwFPUContext[512/8]; // FPU รรร…รยฝยบรยฎ -> [รร–ร€ร]FPU รรร…รยฝยบรยฎร€ร ยฝรร€ร ยพรฎยตรฅยทยนยฝยบยดร ยนรยตรฅยฝร 16ร€ร ยนรจยผรถยฟยฉยพรรร”. ยฑร—ยทยฏยฑรข ร€ยงรรยผยญยดร ยพรยทยก 3ยฐยกรรถ รยถยฐรร€ยป ยธยธรยทยฝรรร‘ยพร รร”.
+	                            // (512 byte ยฐรญรยค)   รยถยฐร 1: TCB รยฎร€ร ยฝรร€ร ยพรฎยตรฅยทยนยฝยบยฐยก 16ร€ร ยนรจยผรถยฟยฉยพรรร” (รรถร€รง 0x800000(8MB))
+	                            //                  รยถยฐร 2: ยฐยข TCBร€ร ร…ยฉยฑรขยฐยก 16ร€ร ยนรจยผรถยฟยฉยพรรร” (รรถร€รง 816B)
+                                //                  รยถยฐร 3: ยฐยข TCBยฟยกยผยญ FPU รรร…รยฝยบรยฎร€ร ยฟร€รรยผรร€ร 16ร€ร ยนรจยผรถยฟยฉยพรรร” (รรถร€รง 64B)
+	                            //                  รรถร€รง ร€ยง 3ยฐยกรรถ รยถยฐรร€ยป ยธยธรยทรรยนรยทร, ร€รรรยฟยก TCBยฟยก รรยตรฅ รรยฐยกยฝร ยนรยตรฅยฝร vqwFPUContextร€ร ยพรยทยกยฟยก รรยฐยกรรยพร รร”.
+	LIST stChildThreadList;     // ร€รยฝร ยฝยบยทยนยตรฅ ยธยฎยฝยบรยฎ
+	CONTEXT stContext;          // รรร…รยฝยบรยฎ
+	void* pvStackAddress;       // ยฝยบร…ร ยฝรร€ร ยพรฎยตรฅยทยนยฝยบ
+	QWORD qwStackSize;          // ยฝยบร…ร ร…ยฉยฑรข
+	BOOL bFPUUsed;              // FPU ยปรงยฟรซ ยฟยฉยบร (รรยดรง ร…รยฝยบร…ยฉยฟยกยผยญ ร€รร€รผยฟยก FPU ยฟยฌยปรชร€ยป ยปรงยฟรซรร‘ ร€รปร€ร ร€ร–ยดรรรถ ยฟยฉยบร)
+
+	// ํ”๋ก์ธ์ ์นํ”๋
+	BYTE bAffinity;
+	// ํ์ฌ ํ์คํฌ๋ฅผ ์ํ–ํ•๋” ๋ก์ปฌ APIC ID
+	BYTE bAPICID;
+	// TCB ์ ์ฒด๋ฅผ 16๋ฐ”์ดํธ๋ก ๋ง์ถ”๊ธฐ ์ํ• ํจ๋”ฉ
+	char vcPadding[9];
+} TCB; // LISTITEMยฟยก รรยดรง, รรถร€รง TCB ร…ยฉยฑรขยดร 816 byteร€ร“
 
 typedef struct kTCBPoolManagerStruct{
-	TCB* pstStartAddress; // TCB วฎ ฝรภÛ มึผา
-	int iMaxCount;        // TCB รึด๋ ฐณผ๖(TCB วฎฟกผญ รึด๋ TCB ฐณผ๖)
-	int iUseCount;        // TCB ป็ฟ๋ ฐณผ๖(TCB วฎฟกผญ ป็ฟ๋ม฿ภฮ TCB ฐณผ๖)
-	int iAllocatedCount;  // TCB วาด็ ศฝผ๖(TCB วฎฟกผญ TCBฐก วาด็ตศ ศฝผ๖)
+	SPINLOCK stSpinLock;
+
+	TCB* pstStartAddress; // TCB รยฎ ยฝรร€ร รร–ยผร’
+	int iMaxCount;        // TCB รร–ยดรซ ยฐยณยผรถ(TCB รยฎยฟยกยผยญ รร–ยดรซ TCB ยฐยณยผรถ)
+	int iUseCount;        // TCB ยปรงยฟรซ ยฐยณยผรถ(TCB รยฎยฟยกยผยญ ยปรงยฟรซรรร€ร TCB ยฐยณยผรถ)
+
+	int iAllocatedCount;  // TCB รร’ยดรง รยฝยผรถ(TCB รยฎยฟยกยผยญ TCBยฐยก รร’ยดรงยตร รยฝยผรถ)
 } TCBPOOLMANAGER;
 
 typedef struct kSchedulerStruct{
-	TCB* pstRunningTask;                        // ว๖ภ็ ฝววเม฿ภฮ ลยฝบลฉ
-	int iProcessorTime;                         // ว๖ภ็ ฝววเม฿ภฮ ลยฝบลฉฐก ป็ฟ๋วา ผ๖ ภึดย วมทฮผผผญ ฝรฐฃ
-	LIST vstReadyList[TASK_MAXREADYLISTCOUNT];  // มุบ๑ ธฎฝบฦฎ(ฝววเวา ลยฝบลฉฐก มุบ๑ม฿ภฮ ธฎฝบฦฎ, ลยฝบลฉ ฟ์ผฑผ๘ภงฟก ต๛ถ๓ ฑธบะ)
-	LIST stWaitList;                            // ด๋ฑโ ธฎฝบฦฎ(มพทแวา ลยฝบลฉฐก ด๋ฑโม฿ภฮ ธฎฝบฦฎ)
-	int viExecuteCount[TASK_MAXREADYLISTCOUNT]; // ฟ์ผฑผ๘ภงบฐ ลยฝบลฉ ฝววเ ศฝผ๖
-	QWORD qwProcessorLoad;                      // วมทฮผผผญ บฮวฯ(วมทฮผผผญ ป็ฟ๋ทü)
-	QWORD qwSpendProcessorTimeInIdleTask;       // ภฏศÞ ลยฝบลฉฐก ป็ฟ๋วั วมทฮผผผญ ฝรฐฃ
-	QWORD qwLastFPUUsedTaskID;                  // ธถม๖ธท FPU ป็ฟ๋ ลยฝบลฉ ID
+	SPINLOCK stSpinLock;
+
+	TCB* pstRunningTask;                        // รรถร€รง ยฝรรร รรร€ร ร…รยฝยบร…ยฉ
+	int iProcessorTime;                         // รรถร€รง ยฝรรร รรร€ร ร…รยฝยบร…ยฉยฐยก ยปรงยฟรซรร’ ยผรถ ร€ร–ยดร รรยทรยผยผยผยญ ยฝรยฐยฃ
+	LIST vstReadyList[TASK_MAXREADYLISTCOUNT];  // รรยบรฑ ยธยฎยฝยบรยฎ(ยฝรรร รร’ ร…รยฝยบร…ยฉยฐยก รรยบรฑรรร€ร ยธยฎยฝยบรยฎ, ร…รยฝยบร…ยฉ ยฟรฌยผยฑยผรธร€ยงยฟยก ยตรปยถรณ ยฑยธยบร)
+	LIST stWaitList;                            // ยดรซยฑรข ยธยฎยฝยบรยฎ(รยพยทรกรร’ ร…รยฝยบร…ยฉยฐยก ยดรซยฑรขรรร€ร ยธยฎยฝยบรยฎ)
+	int viExecuteCount[TASK_MAXREADYLISTCOUNT]; // ยฟรฌยผยฑยผรธร€ยงยบยฐ ร…รยฝยบร…ยฉ ยฝรรร  รยฝยผรถ
+	QWORD qwProcessorLoad;                      // รรยทรยผยผยผยญ ยบรรร(รรยทรยผยผยผยญ ยปรงยฟรซยทรผ)
+	QWORD qwSpendProcessorTimeInIdleTask;       // ร€ยฏรร ร…รยฝยบร…ยฉยฐยก ยปรงยฟรซรร‘ รรยทรยผยผยผยญ ยฝรยฐยฃ
+	QWORD qwLastFPUUsedTaskID;                  // ยธยถรรถยธยท FPU ยปรงยฟรซ ร…รยฝยบร…ยฉ ID
+	BOOL bUseLoadBalancing;						// ๋ถ€ํ• ๋ถ์ฐ ์ฌ์ฉ ์—ฌ๋ถ€
+
 } SCHEDULER;
 
 #pragma pack(pop)
 
-/***** วิผ๖ มคภว *****/
-// ลยฝบลฉ ฐüทร วิผ๖
+/***** รร”ยผรถ รยคร€ร *****/
+// ร…รยฝยบร…ยฉ ยฐรผยทร รร”ยผรถ
 static void kInitializeTCBPool(void);
 static TCB* kAllocateTCB(void);
 static void kFreeTCB(QWORD qwID);
-TCB* kCreateTask(QWORD qwFlags, void* pvMemoryAddress, QWORD qwMemorySize, QWORD qwEntryPointAddress);
+TCB* kCreateTask(QWORD qwFlags, void* pvMemoryAddress, QWORD qwMemorySize, QWORD qwEntryPointAddress, BYTE bAffinity);
 static void kSetUpTask(TCB* pstTCB, QWORD qwFlags, QWORD qwEntryPointAddress, void* pvStackAddress, QWORD qwStackSize);
 
-// ฝบฤษมูทฏ ฐüทร วิผ๖
+// ยฝยบรรรรยทยฏ ยฐรผยทร รร”ยผรถ
 void kInitializeScheduler(void);
-void kSetRunningTask(TCB* pstTask);
-TCB* kGetRunningTask(void);
-static TCB* kGetNextTaskToRun(void);           // มุบ๑ ธฎฝบฦฎฟกผญ ดูภฝฟก ฝววเวา ลยฝบลฉ ผฑลร(ป่มฆ)
-static BOOL kAddTaskToReadyList(TCB* pstTask); // มุบ๑ ธฎฝบฦฎฟก ลยฝบลฉ ร฿ฐก
-void kSchedule(void);                          // ลยฝบลฉ ภüศฏ(ลยฝบลฉ ผ๖วเฝร)
-BOOL kScheduleInInterrupt(void);               // ลยฝบลฉ ภüศฏ(ภฮลอทดฦฎ วฺต้ทฏ ผ๖วเฝร)
-void kDecreaseProcessorTime(void);
-BOOL kIsProcessorTimeExpired(void);
-static TCB* kRemoveTaskFromReadyList(QWORD qwTaskID); // มุบ๑ ธฎฝบฦฎฟกผญ ลยฝบลฉ ป่มฆ
-BOOL kChangePriority(QWORD qwTaskID, BYTE bPriority); // ลยฝบลฉ ฟ์ผฑผ๘ภง บฏฐๆ
-BOOL kEndTask(QWORD qwTaskID);                        // ลยฝบลฉ มพทแ
-void kExitTask(void);                                 // ลยฝบลฉฐก ฝววเม฿ภฮ ภฺฝลภป มพทแ
-int kGetReadyTaskCount(void); // ฝววเ มุบ๑ ลยฝบลฉ ผ๖ นÝศฏ
-int kGetTaskCount(void);      // รั ลยฝบลฉ ผ๖ นÝศฏ(รั ลยฝบลฉ ผ๖ = ฝววเ มุบ๑ ลยฝบลฉ ผ๖ + มพทแ ด๋ฑโ ลยฝบลฉ ผ๖ + ว๖ภ็ ฝววเม฿ภฮ ลยฝบลฉ ผ๖)
+void kSetRunningTask(BYTE,TCB* pstTask);
+TCB* kGetRunningTask(BYTE);
+static TCB* kGetNextTaskToRun(BYTE);           // รรยบรฑ ยธยฎยฝยบรยฎยฟยกยผยญ ยดรร€ยฝยฟยก ยฝรรร รร’ ร…รยฝยบร…ยฉ ยผยฑร…ร(ยปรจรยฆ)
+static BOOL kAddTaskToReadyList(BYTE, TCB* pstTask); // รรยบรฑ ยธยฎยฝยบรยฎยฟยก ร…รยฝยบร…ยฉ รรยฐยก
+BOOL kSchedule(void);                          // ร…รยฝยบร…ยฉ ร€รผรยฏ(ร…รยฝยบร…ยฉ ยผรถรร ยฝร)
+BOOL kScheduleInInterrupt(void);               // ร…รยฝยบร…ยฉ ร€รผรยฏ(ร€รร…รยทยดรยฎ รรยตรฉยทยฏ ยผรถรร ยฝร)
+void kDecreaseProcessorTime(BYTE);
+BOOL kIsProcessorTimeExpired(BYTE);
+static TCB* kRemoveTaskFromReadyList(BYTE, QWORD qwTaskID); // รรยบรฑ ยธยฎยฝยบรยฎยฟยกยผยญ ร…รยฝยบร…ยฉ ยปรจรยฆ
+static BOOL kFindSchedulerOfTaskAndLock(QWORD, BYTE*);
+BOOL kChangePriority(QWORD qwTaskID, BYTE bPriority); // ร…รยฝยบร…ยฉ ยฟรฌยผยฑยผรธร€ยง ยบยฏยฐรฆ
+BOOL kEndTask(QWORD qwTaskID);                        // ร…รยฝยบร…ยฉ รยพยทรก
+void kExitTask(void);                                 // ร…รยฝยบร…ยฉยฐยก ยฝรรร รรร€ร ร€รยฝร…ร€ยป รยพยทรก
+int kGetReadyTaskCount(BYTE); // ยฝรรร  รรยบรฑ ร…รยฝยบร…ยฉ ยผรถ ยนรรยฏ
+int kGetTaskCount(BYTE);      // รร‘ ร…รยฝยบร…ยฉ ยผรถ ยนรรยฏ(รร‘ ร…รยฝยบร…ยฉ ยผรถ = ยฝรรร  รรยบรฑ ร…รยฝยบร…ยฉ ยผรถ + รยพยทรก ยดรซยฑรข ร…รยฝยบร…ยฉ ยผรถ + รรถร€รง ยฝรรร รรร€ร ร…รยฝยบร…ยฉ ยผรถ)
 TCB* kGetTCBInTCBPool(int iOffset);
 BOOL kIsTaskExist(QWORD qwTaskID);
-QWORD kGetProcessorLoad(void);
-static TCB* kGetProcessByThread(TCB* pstThread); // ภฺฝลภฬ ผำวั วมทฮผผฝบ ร๋ตๆ(วมทฮผผฝบภฮ ฐๆฟ์ ภฺฝลภป ธฎลฯวฯฐํ, ฝบทนตๅภฮ ฐๆฟ์ บฮธ๐ วมทฮผผฝบธฆ ธฎลฯวิ)
+QWORD kGetProcessorLoad(BYTE);
+static TCB* kGetProcessByThread(TCB* pstThread); // ร€รยฝร…ร€ร ยผร“รร‘ รรยทรยผยผยฝยบ รรซยตรฆ(รรยทรยผยผยฝยบร€ร ยฐรฆยฟรฌ ร€รยฝร…ร€ยป ยธยฎร…รรรยฐรญ, ยฝยบยทยนยตรฅร€ร ยฐรฆยฟรฌ ยบรยธรฐ รรยทรยผยผยฝยบยธยฆ ยธยฎร…รรร”)
+void kAddTaskToSchedulerWithLoadBalancing(TCB*);
+static BYTE kFindSchedulerOfMinimumTaskCount(const TCB*);
+BOOL kChangeProcessorAffinity(QWORD, BYTE);
 
-// ภฏศÞ ลยฝบลฉ ฐüทร วิผ๖
+// ์ ํด ํ์คํฌ ๊ด€๋ จ
 void kIdleTask(void);
-void kHaltProcessorByLoad(void);
+void kHaltProcessorByLoad(BYTE);
 
-// FPU ฐüทร วิผ๖
-QWORD kGetLastFPUUsedTaskID(void);
-void kSetLastFPUUsedTaskID(QWORD qwTaskID);
+// FPU ๊ด€๋ จ
+QWORD kGetLastFPUUsedTaskID(BYTE);
+void kSetLastFPUUsedTaskID(BYTE, QWORD qwTaskID);
 
 #endif // __TASK_H__

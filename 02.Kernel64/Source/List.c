@@ -87,7 +87,7 @@ void* kRemoveList(LIST* pstList, QWORD qwID){
 	return NULL;
 }
 
-void* kRemoveListFromHead(LIST* pstList){
+void* kRemoveListFromHeader(LIST* pstList){
 	LISTLINK* pstLink;
 
 	// 리스트 아이템이 0개 있을 경우 (리스트가 비어 있을 경우)

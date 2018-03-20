@@ -7,7 +7,6 @@
 static HDDMANAGER gs_stHDDManager;
 
 BOOL kInitializeHDD(void){
-
 	// 뮤텍스 초기화
 	kInitializeMutex(&(gs_stHDDManager.stMutex));
 

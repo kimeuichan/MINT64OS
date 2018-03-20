@@ -14,6 +14,8 @@
 #include "MPConfigurationTable.h"
 #include "LocalAPIC.h"
 #include "MultiProcessor.h"
+#include "IOAPIC.h"
+#include "InterruptHandler.h"
 
 /***** Àü¿ª º¯¼ö Á¤ÀÇ *****/
 // Ä¿¸Çµå Å×ÀÌºí
@@ -57,6 +59,12 @@ static SHELLCOMMANDENTRY gs_vstCommandTable[] = {
 		{"download", "Download Data form Serial, ex)download a.txt", kDownloadFile},
 		{"showmpinfo", "Show MP Configuration Table Information", kShowMPConfigurationTable},
 		{"startap", "Start Application Processor", kStartApplicationProcessor},
+		{"startsymmetricio", "Start Symmetric I/O Mode", kStartSymmetricIOMode},
+		{"showirqintinmap", "Show IRQ->INITIN Mapping Table", kShowIRQINTINMappingTable},
+		{"showintproccount", "Show Interrupt Processing Count", kShowInterruptProcessingCount},
+		{"startintloadbal", "Start Interrupt Load Balacing", kStartInterruptLoadBalancing},
+		{"starttaskloadbal", "Start Task Load Balacing", kStartTaskLoadBalacing},
+		{"changeaffinity", "Change Task Affinity, ex)changeaffinity 1(ID) 0xff(Affinity)", kChangeTaskAffinity},
 };
 
 //====================================================================================================
@@ -404,7 +412,7 @@ static void kTestTask1(void){
 	TCB* pstRunningTask;
 
 	// TCB IDÀÇ ÀÏ·Ã ¹øÈ£¸¦ È­¸é ¿ÀÇÁ¼ÂÀ¸·Î ÀÌ¿ë
-	pstRunningTask = kGetRunningTask();
+	pstRunningTask = kGetRunningTask(kGetAPICID());
 	iMargin = (pstRunningTask->stLink.qwID & 0xFFFFFFFF) % 10;
 
 	for(j = 0; j < 20000; j++){
@@ -458,7 +466,7 @@ static void kTestTask2(void){
 	char vcData[4] = {'-', '\\', '|', '/'};
 
 	// ÇöÀç ÅÂ½ºÅ© IDÀÇ ¿ÀÇÁ¼ÂÀ» È­¸é ¿ÀÇÁ¼ÂÀ¸·Î »ç¿ë
-	pstRunningTask = kGetRunningTask();
+	pstRunningTask = kGetRunningTask(kGetAPICID());
 	iOffset = (pstRunningTask->stLink.qwID & 0xFFFFFFFF) * 2;
 	iOffset = (CONSOLE_WIDTH * CONSOLE_HEIGHT) - (iOffset % (CONSOLE_WIDTH * CONSOLE_HEIGHT));
 
@@ -469,9 +477,35 @@ static void kTestTask2(void){
 		pstScreen[iOffset].bCharacter = vcData[i % 4];
 		pstScreen[iOffset].bAttribute = (iOffset % 15) + 1;
 		i++;
-
 		// ¶ó¿îµå ·Îºó ½ºÄÉÁÙ·¯->¸ÖÆ¼·¹º§ Å¥ ½ºÄÉÁÙ·¯·Î ¾÷±×·¹ÀÌµåÇß±â ¶§¹®¿¡, ÅÂ½ºÅ© ÀüÈ¯Àº ÁÖ¼® Ã³¸®
 		//kSchedule();
+	}
+}
+
+// 태스트3 : 자신이 수행되는 코어의 ID가 변경될 때마다 자신의 태스크 ID와 코어의 ID를 출력
+static void kTestTask3(void){
+	QWORD qwTaskID;
+	TCB* pstRunningTask;
+	BYTE bLastLocalAPICID;
+	QWORD qwLastTick;
+
+	// 자신의 태스크 자료구조를 저장
+	pstRunningTask = kGetRunningTask(kGetAPICID());
+
+	qwTaskID = pstRunningTask->stLink.qwID;
+
+	kPrintf("Test Task 3 Started. Task ID = 0x%q, Local APIC ID = 0x%q\n", qwTaskID, kGetAPICID());
+
+	bLastLocalAPICID = kGetAPICID();
+
+	// 현재 수행중인 로컬 APIC ID저장 했다가 태스크 부하 분산되어 다른 코어로 옮겼을 때 메시지 출력
+	while(1){
+		// 이전에 수행되었던 코어와 현재 수행 코어 다르면 메시지 출력
+		if(bLastLocalAPICID != kGetAPICID()){
+			kPrintf("Core Changed. Task ID = 0x%q, Previous APIC ID = 0x%x, Current = 0x%x\n", qwTaskID, bLastLocalAPICID, kGetAPICID());
+			bLastLocalAPICID = kGetAPICID();
+		}
+		kSchedule();
 	}
 }
 
@@ -503,7 +537,7 @@ static void kCreateTestTask(const char* pcParameterBuffer){
 	switch(lType){
 	case 1: // Å×½ºÆ® ÅÂ½ºÅ© 1 : Å×µÎ¸® ¹®ÀÚ Ãâ·Â
 		for(i = 0; i < lCount; i++){
-			if(kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_THREAD, 0, 0, (QWORD)kTestTask1) == NULL){
+			if(kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_THREAD, 0, 0, (QWORD)kTestTask1, TASK_LOADBALANCINGID) == NULL){
 				break;
 			}
 		}
@@ -514,12 +548,22 @@ static void kCreateTestTask(const char* pcParameterBuffer){
 	case 2: // Å×½ºÆ® ÅÂ½ºÅ© 2 : ¹Ù¶÷°³ºñ Ãâ·Â
 	default:
 		for(i = 0; i < lCount; i++){
-			if(kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_THREAD, 0, 0, (QWORD)kTestTask2) == NULL){
+			if(kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_THREAD, 0, 0, (QWORD)kTestTask2, TASK_LOADBALANCINGID) == NULL){
 				break;
 			}
 		}
 
 		kPrintf("kTestTask2 Created(%d)\n", i);
+		break;
+
+	case 3:
+		for(i=0; i< lCount; i++){
+			if(kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_THREAD, 0, 0, (QWORD)kTestTask3, TASK_LOADBALANCINGID) == NULL)
+				break;
+
+			kSchedule();
+		}
+		kPrintf("kTestTask3 Created(%d)\n", i);
 		break;
 	}
 }
@@ -569,35 +613,55 @@ static void kShowTaskList(const char* pcParameterBuffer){
 	int i;
 	TCB* pstTCB;
 	int iCount = 0;
+	int iTotalTaskCount = 0;
 	int iTaskCount;
+	char vcBuffer[20];
+	int iRemainLenght;
+	int iProcessCount;
 	char vcLinePadding[4] = {0, };
 
-	iTaskCount = kGetTaskCount();
 
-	// Task Total Count ¶óÀÎ Ã¤¿ì±â
-	if(iTaskCount < 10){
-		kMemCpy(vcLinePadding, "===", 3);
+	iProcessCount = kGetProcessorCount();
 
-	}else if(iTaskCount < 100){
-		kMemCpy(vcLinePadding, "==", 2);
-
-	}else if(iTaskCount < 1000){
-		kMemCpy(vcLinePadding, "=", 1);
+	// 프로세서별로 태스크 수를 구함
+	for(i=0; i<iProcessCount; i++){
+		iTotalTaskCount += kGetTaskCount(kGetAPICID());
 	}
 
-	kPrintf("=========================== Task Total Count [%d] ===========================%s\n", iTaskCount, vcLinePadding);
+	kPrintf("=========================== Task Total Count [%d] ===========================\n", iTotalTaskCount);
+
+	if(iProcessCount > 1){
+		for(i=0; i<iProcessCount; i++){
+			if( ((i%4) == 0 ) && i !=0)
+				kPrintf("\n");
+
+			kSPrintf(vcBuffer, "Core %d : %d", i , kGetTaskCount(i));
+			kPrintf(vcBuffer);
+
+			// 출력하고 남은 공간을 모두 스페이스바로 채움
+			iRemainLenght = 19 - kStrLen(vcBuffer);
+			kMemSet(vcBuffer, ' ', iRemainLenght);
+			vcBuffer[iRemainLenght] = '\0';
+			kPrintf(vcBuffer);
+		}
+
+		kPrintf("\nPress any key to continue... ('q' is exit) :");
+		if(kGetCh() == 'q'){
+			kPrintf("\n");
+			return;
+		}
+		kPrintf("\n\n");
+	}
 
 	for(i = 0; i < TASK_MAXCOUNT; i++){
+		// TCB를 구해서 TCB가 사용 중이면 ID 출력
 		pstTCB = kGetTCBInTCBPool(i);
 
-		// ÅÂ½ºÅ© IDÀÇ »óÀ§ 32ºñÆ®(TCB ÇÒ´ç È½¼ö)°¡ 0ÀÌ ¾Æ´ÑÁö È®ÀÎ
 		if((pstTCB->stLink.qwID >> 32) != 0){
-
-			// ÅÂ½ºÅ© Á¤º¸¸¦ 5°³ Ãâ·Â½Ã¸¶´Ù Á¤º¸¸¦ ´õ Ãâ·ÂÇÒÁö ¿©ºÎ¸¦ È®ÀÎ
-			if((iCount != 0) && ((iCount % 5) == 0)){
+			// 태스크가 6개 출력될 때마다 계속 태스크 정보를 표시할지 여부를 확인
+			if((iCount != 0) && ((iCount % 6) == 0)){
 
 				kPrintf("Press any key to continue...('q' is exit):");
-
 				if(kGetCh() == 'q'){
 					kPrintf("\n");
 					break;
@@ -618,6 +682,7 @@ static void kShowTaskList(const char* pcParameterBuffer){
 			// 9. P/T  : Process/Thread
 			kPrintf("[%d] TID=[0x%Q], PRI=[%d], FG=[0x%Q], CTH=[%d]\n"
 					, 1 + iCount++, pstTCB->stLink.qwID, GETPRIORITY(pstTCB->qwFlags), pstTCB->qwFlags, kGetListCount(&(pstTCB->stChildThreadList)));
+			kPrintf("     Core ID[0x%X] CPU Affinity[0x%X]\n", pstTCB->bAPICID, pstTCB->bAffinity);
 			kPrintf("     PPID=[0x%Q], MA=[0x%Q], MS=[0x%Q], S=[%d], P/T=[%d/%d]\n"
 					, pstTCB->qwParentProcessID, pstTCB->pvMemoryAddress, pstTCB->qwMemorySize
 					, (pstTCB->qwFlags & TASK_FLAGS_SYSTEM) ? 1 : 0
@@ -703,7 +768,26 @@ static void kKillTask(const char* pcParameterBuffer){
 }
 
 static void kCPULoad(const char* pcParameterBuffer){
-	kPrintf("Processor Load: %d %%\n", kGetProcessorLoad());
+	int i;
+	char vcBuffer[50];
+	int iRemainLenght;
+
+	kPrintf("================ Processor Load ================\n");
+
+	for(i=0; i<kGetProcessorCount(); i++){
+		if( (i!=0) && (i%4 == 0))
+			kPrintf("\n");
+
+		kSPrintf(vcBuffer, "Core %d : %d%%", i, kGetProcessorLoad(i));
+		kPrintf("%s", vcBuffer);
+
+		// 출력하고 남은 공간을 모두 스페이스바로 채움
+		iRemainLenght = 19 - kStrLen(vcBuffer);
+		kMemSet(vcBuffer, ' ', iRemainLenght);
+		vcBuffer[iRemainLenght] = '\0';
+		kPrintf(vcBuffer);
+	}
+	kPrintf("\n");
 }
 
 /***** Àü¿ª º¯¼ö ¼±¾ð *****/
@@ -725,7 +809,7 @@ static void kPrintNumberTask(const char* pcParameterBuffer){
 	for(i = 0; i < 5; i++){
 		kLock(&(gs_stMutex));
 
-		kPrintf("Test Mutex : TaskID=[0x%Q] Value=[%d]\n", kGetRunningTask()->stLink.qwID, gs_qwAdder);
+		kPrintf("Test Mutex : TaskID=[0x%Q] Value=[%d]\n", kGetRunningTask(kGetAPICID())->stLink.qwID, gs_qwAdder);
 		gs_qwAdder++;
 
 		kUnlock(&(gs_stMutex));
@@ -754,7 +838,7 @@ static void kTestMutex(const char* pcParameterBuffer){
 
 	// ¹ÂÅØ½º Å×½ºÆ®¿ë ÅÂ½ºÅ© 3°³ »ý¼º
 	for(i = 0; i < 3; i++){
-		kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_THREAD, 0, 0, (QWORD)kPrintNumberTask);
+		kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_THREAD, 0, 0, (QWORD)kPrintNumberTask, kGetAPICID());
 	}
 
 	kPrintf("Wait for the mutex test until [%d] tasks end...\n", i);
@@ -765,7 +849,7 @@ static void kCreateThreadTask(void){
 	int i;
 
 	for(i = 0; i < 3; i++){
-		kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_THREAD, 0, 0, (QWORD)kTestTask2);
+		kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_THREAD, 0, 0, (QWORD)kTestTask2, TASK_LOADBALANCINGID);
 	}
 
 	while(1){
@@ -777,7 +861,7 @@ static void kTestThread(const char* pcParameterBuffer){
 	TCB* pstProcess;
 
 	// ÇÁ·Î¼¼½º 1°³¿Í ½º·¹µå 3°³¸¦ »ý¼º
-	pstProcess = kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_PROCESS, (void*)0xEEEEEEEE, 0x1000, (QWORD)kCreateThreadTask);
+	pstProcess = kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_PROCESS, (void*)0xEEEEEEEE, 0x1000, (QWORD)kCreateThreadTask, TASK_LOADBALANCINGID);
 
 	if(pstProcess != NULL){
 		kPrintf("Process [0x%Q] Create Success\n", pstProcess->stLink.qwID);
@@ -826,7 +910,7 @@ static void kMatrixProcess(void){
 	int i;
 
 	for(i = 0; i < 300; i++){
-		if(kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_THREAD, 0, 0, (QWORD)kDropCharacterThread) == NULL){
+		if(kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_THREAD, 0, 0, (QWORD)kDropCharacterThread, TASK_LOADBALANCINGID) == NULL){
 			break;
 		}
 
@@ -842,7 +926,7 @@ static void kMatrixProcess(void){
 static void kShowMatrix(const char* pcParameterBuffer){
 	TCB* pstProcess;
 
-	pstProcess = kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_PROCESS, (void*)0xE00000, 0xE00000, (QWORD)kMatrixProcess);
+	pstProcess = kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_PROCESS, (void*)0xE00000, 0xE00000, (QWORD)kMatrixProcess, TASK_LOADBALANCINGID);
 
 	if(pstProcess != NULL){
 		kPrintf("Matrix Process [0x%Q] Create Success\n", pstProcess->stLink.qwID);
@@ -869,7 +953,7 @@ static void kFPUTestTask(void){
 	CHARACTER* pstScreen = (CHARACTER*)CONSOLE_VIDEOMEMORYADDRESS;
 
 	// ÇöÀç ÅÂ½ºÅ© IDÀÇ ¿ÀÇÁ¼ÂÀ» È­¸é ¿ÀÇÁ¼ÂÀ¸·Î »ç¿ë
-	pstRunningTask = kGetRunningTask();
+	pstRunningTask = kGetRunningTask(kGetAPICID());
 	iOffset = (pstRunningTask->stLink.qwID & 0xFFFFFFFF) * 2;
 	iOffset = (CONSOLE_WIDTH * CONSOLE_HEIGHT) - (iOffset % (CONSOLE_WIDTH * CONSOLE_HEIGHT));
 
@@ -918,7 +1002,7 @@ static void kTestPIE(const char* pcParameterBuffer){
 
 	// ½Ç¼ö¸¦ °è»êÇÏ´Â ÅÂ½ºÅ©(È¸ÀüÇÏ´Â ¹Ù¶÷°³ºñ)¸¦ 100°³ »ý¼º
 	for(i = 0; i < 100; i++){
-		kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_THREAD, 0, 0, (QWORD)kFPUTestTask);
+		kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_THREAD, 0, 0, (QWORD)kFPUTestTask, TASK_LOADBALANCINGID);
 	}
 }
 
@@ -1009,7 +1093,7 @@ static void kRandomAllocationTask(void){
 	int i, j;
 	int iY;
 
-	pstTask = kGetRunningTask();
+	pstTask = kGetRunningTask(kGetAPICID());
 	iY = (pstTask->stLink.qwID) % 15 + 9;
 
 	for(j = 0; j < 10; j++){
@@ -1064,7 +1148,7 @@ static void kTestRandomAllocation(const char* pcParameterBuffer){
 	kPrintf("====>>>> Dynamic Memory Random Test\n");
 
 	for(i = 0; i < 1000; i++){
-		kCreateTask(TASK_FLAGS_LOWEST | TASK_FLAGS_THREAD, 0, 0, (QWORD)kRandomAllocationTask);
+		kCreateTask(TASK_FLAGS_LOWEST | TASK_FLAGS_THREAD, 0, 0, (QWORD)kRandomAllocationTask, TASK_LOADBALANCINGID);
 	}
 }
 
@@ -2099,4 +2183,176 @@ static void kStartApplicationProcessor(const char* pcParameterBuffer){
 
 	kPrintf("Application Processor Start Success\n");
 	kPrintf("BootStrap Processor[APIC ID:%d] Start AP\n", kGetAPICID());
+}
+
+// I/O Apic 를 대칭 모드로 전환
+static void kStartSymmetricIOMode(const char* pcParameterBuffer){
+	MPCONFIGURATIONMANAGER* pstMPManager;
+	BOOL bInterruptFlag;
+
+	if(kAnalysisMPConfigurationTable() == FALSE){
+		kPrintf("Analyze MP Configuration Table Fail\n");
+		return ;
+	}
+
+	pstMPManager = kGetMPConfigurationManager();
+	if(pstMPManager->bUsePICMode == TRUE){
+		// PIC 모드이면 아래의 명령어 수행으로
+		// PIC 모드 비활성화
+		kOutPortByte(0x22, 0x70);
+		kOutPortByte(0x23, 0x01);
+	}
+
+	kPrintf("Mask All PIC Controller Interrupt\n");
+	kMaskPICInterrupt(0xffff);
+
+	// 프로세서 로컬 APIC 활성화
+	kPrintf("Enable Global Local APIC\n");
+	kEnableGlobalLocalAPIC();
+
+	// 현재 코어의 로컬 APIC 활성화
+	kPrintf("Enable Software Local APIC\n");
+	kEnableSoftwareLocalAPIC();
+
+	// 인터럽트를 불가로 설정
+	kPrintf("Disable CPU Interrupt\n");
+	bInterruptFlag = kSetInterruptFlag(FALSE);
+
+	// 모든 인터럽트를 수신할 수 있도록 태스크 우선순위 레지스터를 0으로 설정
+	kSetTaskPriority(0);
+
+	// 로컬 APIC의 로컬 벡터 테이블을 초기화
+	kInitializeLocalVectorTable();
+
+	kSetSymmetricIOMode(TRUE);
+
+	// I/O APIC 초기화
+	kPrintf("Initialize IO Redirection Table\n");
+	kInitializeIORedirectionTable();
+
+	// 이전 인터럽트 플래그를 복원
+	kPrintf("Restore CPU Interrupt\n");
+	kSetInterruptFlag(bInterruptFlag);
+
+	kPrintf("Change Symmetric I/O Mode Complete\n");
+}
+static void kShowIRQINTINMappingTable(const char* pcParameterBuffer){
+	kPrintIRQToINTINMap();
+}
+
+// 코어별 인터럽트 처리 갯수 출력
+static void kShowInterruptProcessingCount(const char* pcParameterBuffer){
+	INTERRUPTMANAGER* pstInterruptManager;
+	int i,j;
+	int iProcessCount;
+	char vcBuffer[20];
+	int iRemainLenght;
+	int iLineCount;
+
+    kPrintf( "========================== Interrupt Count ==========================\n" );
+
+	// MP 설정 테이블에 저장된 코어의 개수를 읽음
+	iProcessCount = kGetProcessorCount();
+
+	// Colum 출력
+	// 프로세서의 수만큼 Column을 출력
+	// 한 줄에 코어 4개씩 출력하고 한 Colum당 15칸을 할당함
+	for(i=0; i<iProcessCount; i++){
+		if(i==0)
+			kPrintf("IRQ Num\t\t");
+		else if( (i%4) == 0)
+            kPrintf( "\n       \t\t" );
+		kSPrintf(vcBuffer, "Core %d", i);
+		kPrintf(vcBuffer);
+
+		iRemainLenght = 15 - kStrLen(vcBuffer);
+		kMemSet(vcBuffer, ' ', iRemainLenght);
+		vcBuffer[iRemainLenght] = '\0';
+		kPrintf(vcBuffer);
+	}
+	kPrintf("\n");
+
+	// Row와 인터럽트 처리 횟수 출력
+	iLineCount = 0;
+	pstInterruptManager = kGetInterruptManager();
+	for(i=0; i<INTERRUPT_MAXVECTORCOUNT; i++){
+		for(j=0; j<iProcessCount; j++){
+			// Row를 출력, 한 줄에 코어 4개씩 출력하고 한 Colum당 15칸을 할당
+			if(j==0){
+				// 20 라인마다 화면 정지
+				if((iLineCount !=0) && (iLineCount > 10)){
+					kPrintf("\nPress any key to continue...('q' is exit):");
+					if(kGetCh() == 'q'){
+						kPrintf("\n");
+						return;
+					}
+					iLineCount = 0;
+					kPrintf("\n");
+				}
+				kPrintf( "---------------------------------------------------------------------\n" );
+            	kPrintf( "IRQ %d\t\t", i );
+            	iLineCount += 2;
+			}
+
+			else if( (j%4) == 0){
+				kPrintf("\n     \t\t");
+				iLineCount++;
+			}
+
+			kSPrintf(vcBuffer, "0x%Q", pstInterruptManager->vvqwCoreInterruptCount[j][i]);
+			kPrintf(vcBuffer);
+			// 출력하고 남은 부분 공백으로 채움
+			iRemainLenght = 15 - kStrLen(vcBuffer);
+			kMemSet(vcBuffer, ' ', iRemainLenght);
+			vcBuffer[iRemainLenght] = '\0';
+			kPrintf(vcBuffer);
+		}
+		kPrintf("\n");
+	}
+}
+
+// 인터럽트 분산 기능 시작
+static void kStartInterruptLoadBalancing(const char* pcParameterBuffer){
+	kPrintf("Start Interrupt Load Balacing\n");
+	kSetInterruptLoadBalancing(TRUE);
+}
+
+// 태스크 부하 분산 기능을 시작
+static void kStartTaskLoadBalacing(const char* pcParameterBuffer){
+	int i;
+
+	kPrintf("Start Task Load Balacing\n");
+
+	for(i=0; i<MAXPROCESSORCOUNT; i++)
+		kSetTaskLoadBalancing(i, TRUE);
+}
+static void kChangeTaskAffinity(const char* pcParameterBuffer){
+	PARAMETERLIST stList;
+	char vcID[30];
+	char vcAffinity[30];
+	QWORD qwID;
+	BYTE bAffinity;
+
+	// 파라미터 추출
+	kInitializeParameter(&stList, pcParameterBuffer);
+	kGetNextParameter(&stList, vcID);
+	kGetNextParameter(&stList, vcAffinity);
+
+	// 태스크 ID 필드 추출
+	if(kMemCmp(vcID, "0x", 2) == 0)
+		qwID = kAToI(vcID+2, 16);
+	else
+		qwID = kAToI(vcID, 10);
+
+	// 프로세서 친화도 추출
+	if(kMemCmp(vcID, "0x", 2) == 0)
+		bAffinity = kAToI(vcAffinity+2, 16);
+	else
+		bAffinity = kAToI(vcAffinity, 10);
+
+	kPrintf("Change Task Affinity ID[0x%q] Affinity[0x%q] ", qwID, bAffinity);
+	if(kChangeProcessorAffinity(qwID, bAffinity) == TRUE)
+		kPrintf("Success\n");
+	else
+		kPrintf("Fail\n");
 }

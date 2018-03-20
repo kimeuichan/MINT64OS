@@ -3,6 +3,7 @@
 
 #include "Types.h"
 #include "Task.h"
+#include "Synchronization.h"
 
 /***** 매크로 정의 *****/
 // 동적 메모리 영역 시작 어드레스(0x1100000, 17MB): 1MB 단위로 정렬(1MB의 배수로 설정, 올림 처리), TCB 자료구조의 크기가 1KB이하라는 조건하에서 17MB가 됨
@@ -31,6 +32,8 @@ typedef struct kDynamicMemoryManagerStruct{
 	QWORD qwEndAddredss;             // 블록 풀 끝 어드레스
 	BYTE* pbAllocatedBlockListIndex; // 인덱스 영역의 어드레스(할당된 블록의 블록 리스트 인덱스를 저장하는 영역의 어드레스)
 	BITMAP* pstBitmapOfLevel;        // 비트맵 자료구조의 어드레스
+
+	SPINLOCK stSpinLock;
 } DYNAMICMEMORY;
 
 #pragma pack(pop)

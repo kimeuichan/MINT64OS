@@ -63,7 +63,7 @@ BOOL kActivateKeyboard(void){
 	BOOL bPreviousFlag;
 	BOOL bResult;
 
-	bPreviousFlag = kLockForSystemData();
+	bPreviousFlag = kSetInterruptFlag(FALSE);
 
 	// 키보드 컨트롤러의 키보드 디바이스 활성화: 컨트롤 레지스터에 [0xAE:키보드 디바이스 활성화 커맨드]를 씀
 	kOutPortByte(0x64, 0xAE);
@@ -80,7 +80,7 @@ BOOL kActivateKeyboard(void){
 	// 응답코드 확인: ACK을 수신할 때까지 대기함
 	bResult = kWaitForACKAndPutOtherScanCode();
 
-	kUnlockForSystemData(bPreviousFlag);
+	kSetInterruptFlag(bPreviousFlag);
 
 	return bResult;
 }
@@ -99,7 +99,7 @@ BOOL kChangeKeyboardLED(BOOL bCapsLockOn, BOOL bNumLockOn, BOOL bScrollLockOn){
 	BOOL bPreviousFlag;
 	BOOL bResult;
 
-	bPreviousFlag = kLockForSystemData();
+	bPreviousFlag = kSetInterruptFlag(FALSE);
 
 	for(i = 0; i < 0xFFFF; i++){
 		if(kIsInputBufferFull() == FALSE){
@@ -120,7 +120,7 @@ BOOL kChangeKeyboardLED(BOOL bCapsLockOn, BOOL bNumLockOn, BOOL bScrollLockOn){
 	bResult = kWaitForACKAndPutOtherScanCode();
 
 	if(bResult == FALSE){
-		kUnlockForSystemData(bPreviousFlag);
+		kSetInterruptFlag(bPreviousFlag);
 		return FALSE;
 	}
 
@@ -137,7 +137,7 @@ BOOL kChangeKeyboardLED(BOOL bCapsLockOn, BOOL bNumLockOn, BOOL bScrollLockOn){
 	// 응답코드 확인: ACK을 수신할 때까지 대기함
 	bResult = kWaitForACKAndPutOtherScanCode();
 
-	kUnlockForSystemData(bPreviousFlag);
+	kSetInterruptFlag(bPreviousFlag);
 
 	return bResult;
 }
@@ -463,7 +463,7 @@ BOOL kConvertScanCodeToASCIICode(BYTE bScanCode, BYTE* pbASCIICode, BYTE* pbFlag
 BOOL kInitializeKeyboard(void){
 	// 키 큐 초기화
 	kInitializeQueue(&gs_stKeyQueue, gs_vstKeyQueueBuffer, KEY_MAXQUEUECOUNT, sizeof(KEYDATA));
-
+	kInitializeSpinLock( &(gs_stKeyboardManager.stSpinLock));
 	// 키보드 활성화
 	return kActivateKeyboard();
 }
@@ -478,12 +478,12 @@ BOOL kConvertScanCodeAndPutQueue(BYTE bScanCode){
 	// 스캔 코드->아스키 코드 변환
 	if(kConvertScanCodeToASCIICode(bScanCode, &(stData.bASCIICode), &(stData.bFlags)) == TRUE){
 
-		bPreviousFlag = kLockForSystemData();
+		kLockForSpinLock( &(gs_stKeyboardManager.stSpinLock));
 
 		// 키 큐에 데이터 삽입
 		bResult = kPutQueue(&gs_stKeyQueue, &stData);
 
-		kUnlockForSystemData(bPreviousFlag);
+		kUnlockForSpinLock( &(gs_stKeyboardManager.stSpinLock));
 
 	}
 
@@ -498,12 +498,12 @@ BOOL kGetKeyFromKeyQueue(KEYDATA* pstData){
 		return FALSE;
 	}
 
-	bPreviousFlag = kLockForSystemData();
+	bPreviousFlag = kSetInterruptFlag(FALSE);
 
 	// 키 큐에서 데이터 삭제
 	bResult = kGetQueue(&gs_stKeyQueue, pstData);
 
-	kUnlockForSystemData(bPreviousFlag);
+	kSetInterruptFlag(bPreviousFlag);
 
 	return bResult;
 }

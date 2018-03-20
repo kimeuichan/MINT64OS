@@ -34,7 +34,7 @@ int kGetListCount(const LIST* pstList);
 void kAddListToTail(LIST* pstList, void* pvItem);
 void kAddListToHead(LIST* pstList, void* pvItem);
 void* kRemoveList(LIST* pstList, QWORD qwID);
-void* kRemoveListFromHead(LIST* pstList);
+void* kRemoveListFromHeader(LIST* pstList);
 void* kRemoveListFromTail(LIST* pstList);
 void* kFindList(const LIST* pstList, QWORD qwID);
 void* kGetHeadFromList(const LIST* pstList);

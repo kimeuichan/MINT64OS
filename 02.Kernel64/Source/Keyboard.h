@@ -2,18 +2,20 @@
 #define __KEYBOARD_H__
 
 #include "Types.h"
+#include "Synchronization.h"
 
-/***** ��ũ�� ���� *****/
+
+/***** ¸ÅÅ©·Î Á¤ÀÇ *****/
 #define KEY_SKIPCOUNTFORPAUSE 2
 
-// Ű ���� �÷���
+// Å° »óÅÂ ÇÃ·¡±×
 #define KEY_FLAGS_UP          0x00
 #define KEY_FLAGS_DOWN        0x01
 #define KEY_FLAGS_EXTENDEDKEY 0x02
 
 #define KEY_MAPPINGTABLEMAXCOUNT 89
 
-// �ƽ�Ű �ڵ忡 ���� Ű �� (��, ENTER, TAB�� �ƽ�Ű �ڵ忡 ����)
+// ¾Æ½ºÅ° ÄÚµå¿¡ ¾ø´Â Å° °ª (´Ü, ENTER, TABÀº ¾Æ½ºÅ° ÄÚµå¿¡ ÀÖÀ½)
 #define KEY_NONE        0x00
 #define KEY_ENTER       '\n'
 #define KEY_TAB         '\t'
@@ -52,42 +54,45 @@
 #define KEY_F12         0x9F
 #define KEY_PAUSE       0xA0
 
-// Ű ť ���� ��ũ��
+// Å° Å¥ °ü·Ã ¸ÅÅ©·Î
 #define KEY_MAXQUEUECOUNT 100
 
-/***** ����ü ���� *****/
+/***** ±¸Á¶Ã¼ Á¤ÀÇ *****/
 #pragma pack(push, 1)
 
 typedef struct kKeyMappingEntryStruct{
-	BYTE bNormalCode;   // �Ϲ� Ű�� �ƽ�Ű �ڵ�
-	BYTE bCombinedCode; // ���� Ű�� �ƽ�Ű �ڵ�
+	BYTE bNormalCode;   // ÀÏ¹Ý Å°ÀÇ ¾Æ½ºÅ° ÄÚµå
+	BYTE bCombinedCode; // Á¶ÇÕ Å°ÀÇ ¾Æ½ºÅ° ÄÚµå
 } KEYMAPPINGENTRY;
 
 typedef struct kKerboardManagerStruct{
-	// ����Ű ����
+	// 자료 구조 동기화를 위한 스핀락
+	SPINLOCK stSpinLock;
+
+	// Á¶ÇÕÅ° Á¤º¸
 	BOOL bShiftDown;
 	BOOL bCapsLockOn;
 	BOOL bNumLockOn;
 	BOOL bScrollLockOn;
 
-	// Ȯ��Ű ����
+	// È®ÀåÅ° Á¤º¸
 	BOOL bExtendedCodeIn;
 	int iSkipCountForPause;
 } KEYBOARDMANAGER;
 
 typedef struct kKeyDataStruct{
-	BYTE bScanCode;  // ��ĵ �ڵ�
-	BYTE bASCIICode; // �ƽ�Ű �ڵ�
-	BYTE bFlags;     // Ű ���� �÷��� (UP, DOWN, EXTENDEDKEY)
+	BYTE bScanCode;  // ½ºÄµ ÄÚµå
+	BYTE bASCIICode; // ¾Æ½ºÅ° ÄÚµå
+	BYTE bFlags;     // Å° »óÅÂ ÇÃ·¡±× (UP, DOWN, EXTENDEDKEY)
 } KEYDATA;
 
 #pragma pack(pop)
 
-/***** �Լ� ���� *****/
+/***** ÇÔ¼ö Á¤ÀÇ *****/
 BOOL kIsOutputBufferFull(void);
 BOOL kIsInputBufferFull(void);
 BOOL kActivateKeyboard(void);
-BYTE kGetKeyboardScanCode(void); // ��ĵ �ڵ� ���
+BYTE kGetKeyboardScanCode(void); // ½ºÄµ ÄÚµå Ãëµæ
 BOOL kChangeKeyboardLED(BOOL bCapsLockOn, BOOL bNumLockOn, BOOL bScrollLockOn);
 void kEnableA20Gate(void);
 void kReboot(void);
@@ -97,9 +102,9 @@ BOOL kIsNumberPadScanCode(BYTE bDownScanCode);
 BOOL kIsUseCombinedCode(BYTE bScanCode);
 void kUpdateCombinationKeyStatusAndLED(BYTE bScanCode);
 BOOL kConvertScanCodeToASCIICode(BYTE bScanCode, BYTE* pbASCIICode, BYTE* pbFlags);
-BOOL kInitializeKeyboard(void);                   // Ű ť �ʱ�ȭ �� Ű���� Ȱ��ȭ
-BOOL kConvertScanCodeAndPutQueue(BYTE bScanCode); // ��ĵ �ڵ�->�ƽ�Ű �ڵ� ��ȯ �� Ű ť�� ������ ����
-BOOL kGetKeyFromKeyQueue(KEYDATA* pstData);       // Ű ť���� ������ ����
+BOOL kInitializeKeyboard(void);                   // Å° Å¥ ÃÊ±âÈ­ ¹× Å°º¸µå È°¼ºÈ­
+BOOL kConvertScanCodeAndPutQueue(BYTE bScanCode); // ½ºÄµ ÄÚµå->¾Æ½ºÅ° ÄÚµå º¯È¯ ¹× Å° Å¥¿¡ µ¥ÀÌÅÍ »ðÀÔ
+BOOL kGetKeyFromKeyQueue(KEYDATA* pstData);       // Å° Å¥¿¡¼­ µ¥ÀÌÅÍ »èÁ¦
 BOOL kWaitForACKAndPutOtherScanCode(void);
 
 #endif // __KEYBOARD_H__

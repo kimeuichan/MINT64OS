@@ -3,6 +3,7 @@
 #include "Task.h"
 #include "AssemblyUtility.h"
 
+#if 0
 BOOL kLockForSystemData(void){
 	return kSetInterruptFlag(FALSE);
 }
@@ -10,47 +11,121 @@ BOOL kLockForSystemData(void){
 void kUnlockForSystemData(BOOL bInterruptFlag){
 	kSetInterruptFlag(bInterruptFlag);
 }
+#endif
 
 void kInitializeMutex(MUTEX* pstMutex){
 	pstMutex->bLockFlag = FALSE;
 	pstMutex->dwLockCount = 0;
 	pstMutex->qwTaskID = TASK_INVALIDID;
 }
-void kLock(MUTEX* pstMutex){
+void kLock(MUTEX* pstMutex) {
+	BYTE bCurrentAPICID;
+	BOOL bInterruptFlag;
 
-	// ÀÌ¹Ì Àá±Ý »óÅÂÀÎ °æ¿ì, ÀÚ½Å(ÇöÀç ¼öÇàÁßÀÎ ÅÂ½ºÅ©)ÀÌ Àá±É´ÂÁö È®ÀÎÇÏ°í, ±×·¸´Ù¸é Àá±Ý È½¼ö¸¦ Áõ°¡½ÃÅ°°í Á¾·á
-	if(kTestAndSet(&(pstMutex->bLockFlag), FALSE, TRUE) == FALSE){
-		// ÀÚ½ÅÀÌ Àá±ÉÀ» °æ¿ì, Àá±Ý È½¼ö¸¦ Áõ°¡½ÃÅ°°í Á¾·á
-		if(pstMutex->qwTaskID == kGetRunningTask()->stLink.qwID){
+	// ì¸í„°ëŸ½íŠ¸ë¥¼ ë¹„í™œì„±í™”
+	bInterruptFlag = kSetInterruptFlag(FALSE);
+
+	bCurrentAPICID = kGetAPICID();
+
+	//bLockFlagì™€ ë‘ë²ˆì§¸ì¸ìž(FALSE)ë¥¼ ë¹„êµë¥¼ í•˜ì—¬ì„œ, ë§Œì•½ ê°™ì€ ê°’ì´ë©´ ì²«ë²ˆì§¸ ì¸ìžì˜ ê°’ì€ ì„¸ë²ˆì§¸ ì¸ìžê°’(TRUE)ê°€ ëœë‹¤.
+	//ì¦‰, ì•„ëž˜ ì½”ë“œì—ì„œëŠ” bLockFlagê°€ FALSEì¼ ê²½ìš° bLockFlagì˜ ê°’ì„ TRUEë¡œ ë°”ê¾¼ ë’¤, í•¨ìˆ˜ëŠ” TRUEë¥¼ ë¦¬í„´í•œë‹¤.
+	//ë§Œì•½ TRUEì¼ ê²½ìš°ì—ëŠ” bLockFlagì˜ ê°’ì´ ë³€í•˜ì§€ ì•Šê³  í•¨ìˆ˜ëŠ” FALSEë¥¼ ë¦¬í„´
+	if(kTestAndSet(&(pstMutex->bLockFlag),0,1)==FALSE) { //flagê°€ trueì¼ ê²½ìš°
+		//ì´ë¯¸ ìž ê²¨ì ¸ ìžˆì„ ë•Œ, ë™ì¼í•œ IDì˜ íƒœìŠ¤í¬ê°€ ë‹¤ì‹œ í•œë²ˆ ìž ê¸€ë ¤ê³  í•œë‹¤ë©´, ì¹´ìš´íŠ¸ë¥¼ ì¦ê°€ì‹œí‚´
+		if(pstMutex->qwTaskID==kGetRunningTask(bCurrentAPICID)->stLink.qwID) {
+			kSetInterruptFlag(bInterruptFlag);
 			pstMutex->dwLockCount++;
 			return;
 		}
+		//ìž ê¸ˆí•´ì œë  ë•Œê¹Œì§€ ê³„ì†í•´ì„œ ë‹¤ë¥¸ íƒœìŠ¤í¬ì—ê²Œ ì–‘ë³´
+		while(kTestAndSet(&(pstMutex->bLockFlag),0,1)==FALSE)
+			kSchedule();
+	}
+	pstMutex->dwLockCount = 1;
+	pstMutex->qwTaskID = kGetRunningTask(bCurrentAPICID)->stLink.qwID;
+	kSetInterruptFlag(bInterruptFlag);
+}
 
-		// ´Ù¸¥ ÅÂ½ºÅ©°¡ Àá±ÉÀ» °æ¿ì, Àá±Ý ÇØÁ¦ »óÅÂ°¡ µÉ ¶§±îÁö ´ë±â
-		while(kTestAndSet(&(pstMutex->bLockFlag), FALSE, TRUE) == FALSE){
-			kSchedule(); // ´ë±âÇÏ´Â µ¿¾È ÇÁ·Î¼¼¼­¸¦ ´Ù¸¥ ÅÂ½ºÅ©¿¡°Ô ¾çº¸ÇÔÀ¸·Î½á, ÇÁ·Î¼¼¼­¸¦ ºÒÇÊ¿äÇÏ°Ô ¼Ò¸ð(»ç¿ë)ÇÏ´Â °ÍÀ» ¹æÁö
+void kUnlock(MUTEX* pstMutex) {
+	//ì´ë¯¸ í’€ë ¤ìžˆê±°ë‚˜, ë®¤íƒìŠ¤ë¥¼ ìž ê·¼ íƒœìŠ¤í¬ê°€ ì•„ë‹Œ ë‹¤ë¥¸ íƒœìŠ¤í¬ê°€ í•´ì œí• ë ¤ê³  í•˜ë©´ ì¢…ë£Œ
+
+	BOOL bInterruptFlag;
+
+	bInterruptFlag = kSetInterruptFlag(FALSE);
+
+	if((pstMutex->bLockFlag==FALSE) || (pstMutex->qwTaskID!=kGetRunningTask(kGetAPICID())->stLink.qwID)){
+		kSetInterruptFlag(bInterruptFlag);
+		return;
+	}
+
+	if(pstMutex->dwLockCount>1) {
+		pstMutex->dwLockCount--;
+	}
+	else{
+		pstMutex->qwTaskID = TASK_INVALIDID;
+		pstMutex->dwLockCount = 0;
+		pstMutex->bLockFlag = FALSE;
+	}
+	
+	kSetInterruptFlag(bInterruptFlag);
+}
+
+
+void kInitializeSpinLock(SPINLOCK* pstSpinLock){
+	pstSpinLock->bLockFlag = FALSE;
+	pstSpinLock->dwLockCount = 0;
+	pstSpinLock->bAPICID = 0xff;
+	pstSpinLock->bInterruptFlag = FALSE;
+}
+
+// ì‹œìŠ¤í…œ ì „ì—­ì—ì„œ ì‚¬ìš©í•˜ëŠ” ë°ì´í„°ë¥¼ ìœ„í•œ ìž ê¸ˆ í•¨ìˆ˜
+void kLockForSpinLock(SPINLOCK* pstSpinLock){
+	BOOL bInterruptFlag;
+
+	bInterruptFlag = kSetInterruptFlag(FALSE);
+
+	// ì´ë¯¸ ìž ê²¨ìžˆë‹¤ë©´ ìžì‹ ì´ ìž ê°”ëŠ”ì§€ í™•ì¸í•˜ê³  ìžì‹ ì´ ìž ê·¼ê±°ë¼ë©´ íšŸìˆ˜ë¥¼ ì¦ê°€í•œ ë’¤ ì¢…ë£Œ
+	if(kTestAndSet(&(pstSpinLock->bLockFlag), 0, 1) == FALSE){
+		if(pstSpinLock->bAPICID == kGetAPICID()){
+			pstSpinLock->dwLockCount++;
+			return;
+		}
+
+		// ìžì‹ ì´ ì•„ë‹Œ ê²½ìš°ëŠ” ìž ê¸´ê²ƒì´ í•´ì œë  ë•Œ ê¹Œì§€ ëŒ€ê¸°
+		while(kTestAndSet(&(pstSpinLock->bLockFlag), 0, 1) == FALSE){
+			while(pstSpinLock->bLockFlag == TRUE){
+				kPause();
+			}
 		}
 	}
 
-	// Àá±Ý ÇØÁ¦ »óÅÂÀÎ °æ¿ì, Àá±Ý Ã³¸®(pstMutex->bLockFlag = TRUE ¼³Á¤Àº kTestAndSet¿¡¼­ ¿øÀÚÀû ¿¬»êÀ¸·Î Ã³¸®)
-	pstMutex->dwLockCount = 1;
-	pstMutex->qwTaskID = kGetRunningTask()->stLink.qwID;
+	
+
+	pstSpinLock->dwLockCount = 1;
+	pstSpinLock->bAPICID = kGetAPICID();
+	pstSpinLock->bInterruptFlag = bInterruptFlag;
 }
-void kUnlock(MUTEX* pstMutex){
 
-	// ÀÌ¹Ì Àá±Ý ÇØÁ¦ »óÅÂÀÎ °æ¿ì, ¶Ç´Â ´Ù¸¥ ÅÂ½ºÅ©°¡ Àá±ÉÀ» °æ¿ì, Á¾·á
-	if((pstMutex->bLockFlag == FALSE) || (pstMutex->qwTaskID != kGetRunningTask()->stLink.qwID)){
+void kUnlockForSpinLock(SPINLOCK* pstSpinLock){
+	BOOL bInterruptFlag;
+
+	bInterruptFlag = kSetInterruptFlag(FALSE);
+
+	if( (pstSpinLock->bLockFlag == FALSE )|| (pstSpinLock->bAPICID != kGetAPICID())){
+		kSetInterruptFlag(bInterruptFlag);
 		return;
 	}
 
-	// Áßº¹ Àá±Ý »óÅÂÀÎ °æ¿ì, Àá±Ý È½¼ö¸¸ °¨¼Ò½ÃÅ°°í Á¾·á
-	if(pstMutex->dwLockCount > 1){
-		pstMutex->dwLockCount--;
+	if(pstSpinLock->dwLockCount > 1){
+		pstSpinLock->dwLockCount--;
 		return;
 	}
 
-	// ´ÜÀÏ Àá±Ý »óÅÂÀÎ °æ¿ì, Àá±Ý ÇØÁ¦ Ã³¸® [ÁÖÀÇ: Àá±Ý ÇÃ·¡±×¸¦ °¡Àå ³ªÁß¿¡ ÇØÁ¦ÇØ¾ß ÇÔ]
-	pstMutex->qwTaskID = TASK_INVALIDID;
-	pstMutex->dwLockCount = 0;
-	pstMutex->bLockFlag = FALSE;
+	bInterruptFlag = pstSpinLock->bInterruptFlag;
+	pstSpinLock->bAPICID = 0xff;
+	pstSpinLock->dwLockCount = 0;
+	pstSpinLock->bInterruptFlag = FALSE;
+	pstSpinLock->bLockFlag = FALSE;
+
+	kSetInterruptFlag(bInterruptFlag);
 }

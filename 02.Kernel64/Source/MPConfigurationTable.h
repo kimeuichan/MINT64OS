@@ -69,142 +69,142 @@
 
 // MP 플로팅 포인터 구조체(16byte)
 typedef struct kMPFloatingPointerStruct{
-	// MP 플로팅 포인터 시그니쳐
-	char vcSignature[4];
-	// MP 테이블 시작 어드레스
-	DWORD dwMPConfigurationTableAddress;
-	// MP 플로팅 포인터 길이
-	BYTE bLength;
-	// MultiProcessor Specification 버전
-	BYTE bRevision;
-	// 체크섬
-	BYTE bChecksum;
-	// MP 특성 바이트[5]
-	BYTE vbMPFeatureByte[5];
+    // MP 플로팅 포인터 시그니쳐
+    char vcSignature[4];
+    // MP 테이블 시작 어드레스
+    DWORD dwMPConfigurationTableAddress;
+    // MP 플로팅 포인터 길이
+    BYTE bLength;
+    // MultiProcessor Specification 버전
+    BYTE bRevision;
+    // 체크섬
+    BYTE bChecksum;
+    // MP 특성 바이트[5]
+    BYTE vbMPFeatureByte[5];
 } MPFLOATINGPOINTER;
 
 // MP 설정 테이블 구조체(44byte)
 typedef struct kMPConfigurationTableHeaderStruct{
-	// 시그니쳐
-	char vcSignature[4];
-	// 기본 테이블 길이
-	WORD wBaseTableLength;
-	// MultiProcessor Specification 버전
-	BYTE bRevision;
-	// 체크섬
-	BYTE bChecksum;
-	// 하드웨어를 만든 OEM ID (ASCII)
-	char vcOEMIDString[8];
-	// Product ID
-	char vcProductIDString[12];
-	// OEM 테이블 포인터
-	DWORD dwOEMTablePointerAddress;
-	// OEM 테이블 사이즈
-	WORD wOEMTableSize;
-	// MP 설정 테이블 엔트리 갯수
-	WORD wEntryCount;
-	// 로컬 APIC의 메모리맵 IO 어드레스
-	DWORD dwMemoryMapIOAddressOfLocalAPIC;
-	// 확장 테이블 길이
-	WORD wExtendedTableLength;
-	// 확장 테이블 체크섬
-	BYTE bExtendedTableChecksum;
-	// 예약됨
-	BYTE bReserved;
+    // 시그니쳐
+    char vcSignature[4];
+    // 기본 테이블 길이
+    WORD wBaseTableLength;
+    // MultiProcessor Specification 버전
+    BYTE bRevision;
+    // 체크섬
+    BYTE bChecksum;
+    // 하드웨어를 만든 OEM ID (ASCII)
+    char vcOEMIDString[8];
+    // Product ID
+    char vcProductIDString[12];
+    // OEM 테이블 포인터
+    DWORD dwOEMTablePointerAddress;
+    // OEM 테이블 사이즈
+    WORD wOEMTableSize;
+    // MP 설정 테이블 엔트리 갯수
+    WORD wEntryCount;
+    // 로컬 APIC의 메모리맵 IO 어드레스
+    DWORD dwMemoryMapIOAddressOfLocalAPIC;
+    // 확장 테이블 길이
+    WORD wExtendedTableLength;
+    // 확장 테이블 체크섬
+    BYTE bExtendedTableChecksum;
+    // 예약됨
+    BYTE bReserved;
 } MPCONFIGURATIONTABLEHEADER;
 
 // MP 테이블 PROCESSOR 구조체(20byte)
 typedef struct kProcessorEntryStruct{
-	// 엔트리 타입(0)
-	BYTE bEntryType;
-	// 로컬 APIC ID
-	BYTE bLocalAPICID;
-	// 로컬 APIC 버전
-	BYTE bLocalAPICVersion;
-	// CPU 플래그
-	BYTE bCPUFlags;
-	// CPU 시그니쳐
-	BYTE vbCPUSignature[4];
-	// 특성 플래그
-	DWORD dwFeatureFlags;
-	// 예약된 영역
-	DWORD vdwReserved[2];
+    // 엔트리 타입(0)
+    BYTE bEntryType;
+    // 로컬 APIC ID
+    BYTE bLocalAPICID;
+    // 로컬 APIC 버전
+    BYTE bLocalAPICVersion;
+    // CPU 플래그
+    BYTE bCPUFlags;
+    // CPU 시그니쳐
+    BYTE vbCPUSignature[4];
+    // 특성 플래그
+    DWORD dwFeatureFlags;
+    // 예약된 영역
+    DWORD vdwReserved[2];
 } PROCESSORENTRY;
 
 // MP 테이블 BUS 구조체(8byte)
 typedef struct kBusEntryStruct{
-	// 엔트리 타입(1)
-	BYTE bEntryType;
-	// 버스 ID
-	BYTE bBusID;
-	// 버스 타입 문자열
-	char vcBusTypeString[6];
+    // 엔트리 타입(1)
+    BYTE bEntryType;
+    // 버스 ID
+    BYTE bBusID;
+    // 버스 타입 문자열
+    char vcBusTypeString[6];
 } BUSENTRY;
 
 // MP 테이블 IO APIC 구조체(8byte)
 typedef struct kIOAPICEntryStruct{
-	// 엔트리 타입(2)
-	BYTE bEntryType;
-	// IO APIC ID
-	BYTE bIOAPICID;
-	// IO APIC 버전
-	BYTE bIOAPICVersion;
-	// IO APIC 플래그
-	BYTE bIOAPICFlags;
-	// IO APIC 의 메모리 맵 IO 어드레스
-	DWORD dwMemoryMapIOAddress;
+    // 엔트리 타입(2)
+    BYTE bEntryType;
+    // IO APIC ID
+    BYTE bIOAPICID;
+    // IO APIC 버전
+    BYTE bIOAPICVersion;
+    // IO APIC 플래그
+    BYTE bIOAPICFlags;
+    // IO APIC 의 메모리 맵 IO 어드레스
+    DWORD dwMemoryMapIOAddress;
 } IOAPICENTRY;
 
 // MP 테이블 IO 인터럽트 구조체(8byte)
 typedef struct kIOInterruptAssignmentEntryStruct{
-	// 엔트리 타입(3)
-	BYTE bEntryType;
-	// 인터럽트 타입
-	BYTE bInterruptType;
-	// 인터럽트 플래그
-	WORD wInterruptFlags;
-	// 인터럽트 발생한 버스 ID
-	BYTE bSourceBUSID;
-	// 인터럽트 발생한 버스 IRQ
-	BYTE bSourceBUSIRQ;
-	// 전달할 IO APIC ID
-	BYTE bDestinationIOAPICID;
-	// 전달할 IO APIC INTIN
-	BYTE bDestinationIOAPICINTIN;
+    // 엔트리 타입(3)
+    BYTE bEntryType;
+    // 인터럽트 타입
+    BYTE bInterruptType;
+    // 인터럽트 플래그
+    WORD wInterruptFlags;
+    // 인터럽트 발생한 버스 ID
+    BYTE bSourceBUSID;
+    // 인터럽트 발생한 버스 IRQ
+    BYTE bSourceBUSIRQ;
+    // 전달할 IO APIC ID
+    BYTE bDestinationIOAPICID;
+    // 전달할 IO APIC INTIN
+    BYTE bDestinationIOAPICINTIN;
 } IOINTERRUPTASSIGNMENTENTRY;
 
 // MP 테이블 로컬 인터럽트 구조체(8byte)
 typedef struct kLocalInterruptAssignmentEntryStruct{
-	// 엔트리 타입(4)
-	BYTE bEntryType;
-	// 인터럽트 타입
-	BYTE bInterruptType;
-	// 인터럽트 플래그
-	WORD wInterruptFlags;
-	// 인터럽트 발생한 버스 ID
-	BYTE bSourceBUSID;
-	// 인터럽트 발생한 버스 IRQ
-	BYTE bSourceBUSIRQ;
-	// 전달할 APIC ID
-	BYTE bDestinationLocalAPICID;
-	// 전달할 APIC LINTIN
-	BYTE bDestinationLocalAPICLINTIN;
+    // 엔트리 타입(4)
+    BYTE bEntryType;
+    // 인터럽트 타입
+    BYTE bInterruptType;
+    // 인터럽트 플래그
+    WORD wInterruptFlags;
+    // 인터럽트 발생한 버스 ID
+    BYTE bSourceBUSID;
+    // 인터럽트 발생한 버스 IRQ
+    BYTE bSourceBUSIRQ;
+    // 전달할 APIC ID
+    BYTE bDestinationLocalAPICID;
+    // 전달할 APIC LINTIN
+    BYTE bDestinationLocalAPICLINTIN;
 } LOCALINTERRUPTASSIGNMENTENTRY;
 
 // MP 설정 테이블 매니저
 typedef struct kMPConfigurationManagerStruct {
-	// MP 플로팅 포인터
-	MPFLOATINGPOINTER* pstMPFloatingPointer;
-	// MP 설정 테이블 헤더
-	MPCONFIGURATIONTABLEHEADER* pstMPConfigurationTableHeader; 
-	// 기본 MP 설정 테이블 엔트리 시작 에드레스
-	QWORD qwBaseEntryStartAddress;
-	// 프로세서/코어 개수                             
-	int iProcessorCount;
-	// PIC 모드 지원 여부                                       
-	BOOL bUsePICMode;
-	// ISA 버스 ID                                          
-	BYTE bISABusID;                                            
+    // MP 플로팅 포인터
+    MPFLOATINGPOINTER* pstMPFloatingPointer;
+    // MP 설정 테이블 헤더
+    MPCONFIGURATIONTABLEHEADER* pstMPConfigurationTableHeader; 
+    // 기본 MP 설정 테이블 엔트리 시작 에드레스
+    QWORD qwBaseEntryStartAddress;
+    // 프로세서/코어 개수                             
+    int iProcessorCount;
+    // PIC 모드 지원 여부                                       
+    BOOL bUsePICMode;
+    // ISA 버스 ID                                          
+    BYTE bISABusID;                                            
 } MPCONFIGURATIONMANAGER;
 
 #pragma pack(pop)

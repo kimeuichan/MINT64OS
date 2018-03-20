@@ -6,9 +6,7 @@ global kInPortByte, kOutPortByte, kInPortWord, kOutPortWord
 global kLoadGDTR, kLoadTR, kLoadIDTR
 global kEnableInterrupt, kDisableInterrupt, kReadRFLAGS
 global kReadTSC
-global kSwitchContext
-global kHlt
-global kTestAndSet
+global kSwitchContext, kHlt, kTestAndSet, kPause
 global kInitializeFPU, kSaveFPUContext, kLoadFPUContext, kSetTS, kClearTS
 global kEnableGlobalLocalAPIC
 
@@ -339,4 +337,10 @@ kEnableGlobalLocalAPIC:
 	pop rdx
 	pop rcx
 	pop rax
+	ret
+
+; Processor 쉬게함
+; PARAM : 없음
+kPause:
+	pause
 	ret

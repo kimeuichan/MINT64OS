@@ -35,12 +35,12 @@ void Main(void){
 	// ÄÜ¼Ö ÃÊ±âÈ­
 	kInitializeConsole(0, 10);
 
-	// IA-32e ¸ðµå C¾ð¾î Ä¿³Î ½ÃÀÛ ¸Þ¼¼Áö
+	// IA-32e 모드 C언어 커널 시작 메세지
 	kPrintf("Switch to IA-32e Mode Success~!!\n");
 	kPrintf("IA-32e Mode C Language Kernel Start.........[Pass]\n");
 	kPrintf("Console Initialize..........................[Pass]\n");
 
-	// GDT/TSS »ý¼º ¹× GDT ·Îµå
+	// GDT/TSS 생성 및 GDT 로드
 	kGetCursor(&iCursorX, &iCursorY);
 	kPrintf("GDT/TSS Initialize and GDT Load.............[    ]");
 	kInitializeGDTTableAndTSS();
@@ -48,39 +48,39 @@ void Main(void){
 	kSetCursor(45, iCursorY++);
 	kPrintf("Pass\n");
 
-	// TSS ·Îµå
+	// TSS 로드
 	kPrintf("TSS Load....................................[    ]");
 	kLoadTR(GDT_TSSSEGMENT);
 	kSetCursor(45, iCursorY++);
 	kPrintf("Pass\n");
 
-	// IDT »ý¼º ¹× ·Îµå
+	// IDT 생성 및 로드
 	kPrintf("IDT Initialize and Load.....................[    ]");
 	kInitializeIDTTable();
 	kLoadIDTR(IDTR_STARTADDRESS);
 	kSetCursor(45, iCursorY++);
 	kPrintf("Pass\n");
 
-	// ÃÑ RAM Å©±â Ã¼Å©
+	// 총 RAM 크기 체크
 	kPrintf("Total RAM Size Check........................[    ]");
 	kCheckTotalRAMSize();
 	kSetCursor(45, iCursorY++);
 	kPrintf("Pass], Size = %d MB\n", kGetTotalRAMSize());
 
-	// TCB Ç® ¹× ½ºÄÉÁÙ·¯ ÃÊ±âÈ­
+	// TCB 풀 및 스케줄러 초기화
 	kPrintf("TCB Pool and Scheduler Initialize...........[Pass]\n");
 	iCursorY++;
 	kInitializeScheduler();
 
-	// µ¿Àû ¸Þ¸ð¸® ÃÊ±âÈ­
+	// 동적 메모리 초기화
 	kPrintf("Dynamic Memory Initialize...................[Pass]\n");
 	iCursorY++;
 	kInitializeDynamicMemory();
 
-	// PIT ÃÊ±âÈ­
-	kInitializePIT(MSTOCOUNT(1), TRUE); // 1ms´ç ÇÑ ¹ø¾¿(ÁÖ±âÀûÀ¸·Î) Å¸ÀÌ¸Ó ÀÎÅÍ·´Æ®°¡ ¹ß»ýÇÏµµ·Ï ¼³Á¤
+	// PIT 초기화
+	kInitializePIT(MSTOCOUNT(1), TRUE); // 1ms당 한 번씩(주기적으로) 타이머 인터럽트가 발생하도록 설정
 
-	// Å° Å¥ ÃÊ±âÈ­ ¹× Å°º¸µå È°¼ºÈ­
+	// 키 큐 초기화 및 키보드 활성화
 	kPrintf("Key-Queue Initialize and Keyboard Activate..[    ]");
 	if(kInitializeKeyboard() == TRUE){
 		kSetCursor(45, iCursorY++);
@@ -93,7 +93,7 @@ void Main(void){
 		while(1);
 	}
 
-	// PIC ÃÊ±âÈ­ ¹× ÀÎÅÍ·´Æ® È°¼ºÈ­
+	// PIC 초기화 및 인터럽트 활성화
 	kPrintf("PIC Initialize and Interrupt Activate.......[    ]");
 	kInitializePIC();
 	kMaskPICInterrupt(0);
@@ -101,7 +101,7 @@ void Main(void){
 	kSetCursor(45, iCursorY++);
 	kPrintf("Pass\n");
 
-	// ÆÄÀÏ ½Ã½ºÅÛ ÃÊ±âÈ­
+	// 파일 시스템 초기화
 	kPrintf("File System Initialize......................[    ]");
 	if(kInitializeFileSystem() == TRUE){
 		kSetCursor(45, iCursorY++);
@@ -117,8 +117,8 @@ void Main(void){
 	iCursorY++;
 	kInitializeSerialPort();
 
-	// À¯ÈÞ ÅÂ½ºÅ©¸¦ »ý¼ºÇÏ°í, ÄÜ¼Ö ½©À» ½ÃÀÛ
-	kCreateTask(TASK_FLAGS_LOWEST | TASK_FLAGS_THREAD | TASK_FLAGS_SYSTEM | TASK_FLAGS_IDLE, 0, 0, (QWORD)kIdleTask);
+	// 유휴 태스크를 생성하고, 콘솔 쉘을 시작
+	kCreateTask(TASK_FLAGS_LOWEST | TASK_FLAGS_THREAD | TASK_FLAGS_SYSTEM | TASK_FLAGS_IDLE, 0, 0, (QWORD)kIdleTask, kGetAPICID());
 	kStartConsoleShell();
 }
 
@@ -137,12 +137,23 @@ void MainForApplicationProcessor(void){
 	// IDT 테이블 설정
 	kLoadIDTR(IDTR_STARTADDRESS);
 
-	// 1초마다 한번씩 메시지를 출력
-	qwTickCount = kGetTickCount();
-	while(1){
-		if(kGetTickCount()-qwTickCount > 1000){
-			qwTickCount = kGetTickCount();
-			kPrintf("Application Processor[APIC ID: %d] is Activated\n", kGetAPICID());
-		}
-	}
+	// 스케줄러 초기화
+	kInitializeScheduler();
+
+	// 현재 코어의 로컬 APIC를 활성화
+    kEnableSoftwareLocalAPIC();
+
+    // 모든 인터럽트를 수신할 수 있도록 태스크 우선 순위 레지스터를 0으로 설정
+    kSetTaskPriority( 0 );
+
+    // 로컬 APIC의 로컬 벡터 테이블을 초기화
+    kInitializeLocalVectorTable();
+
+    // 인터럽트를 활성화
+    kEnableInterrupt();  
+
+	kPrintf("Application Processor[APIC ID: %d] is Activated\n", kGetAPICID());
+	
+	// 유휴 태스크 실행
+	kIdleTask();
 }
