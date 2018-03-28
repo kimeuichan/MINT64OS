@@ -89,4 +89,5 @@ static void kShowInterruptProcessingCount(const char* pcParameterBuffer);
 static void kStartInterruptLoadBalancing(const char* pcParameterBuffer);
 static void kStartTaskLoadBalacing(const char* pcParameterBuffer);
 static void kChangeTaskAffinity(const char* pcParameterBuffer);
+static void kShowVBEModeInfo(const char* pcParameterBuffer);
 #endif // __CONSOLE_SHELL_H__

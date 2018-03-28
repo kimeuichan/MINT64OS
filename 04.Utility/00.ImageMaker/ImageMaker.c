@@ -7,6 +7,8 @@
 #include <errno.h>
 #include <unistd.h>
 
+
+
 #define MY_O_BINARY     0x10000 // O_BINARY가 이클립스상에서 심볼에러가 발생하여, 임시방편으로 매크로 변수 재정의.
 #define BYTES_OF_SECTOR 512
 

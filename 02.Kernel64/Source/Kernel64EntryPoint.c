@@ -12,10 +12,12 @@
 #include "HardDisk.h"
 #include "FileSystem.h"
 #include "MultiProcessor.h"
-
+#include "VBE.h"
 
 // AP 를 위한 메인
 void MainForApplicationProcessor(void);
+// 그래픽 모드를 테스트하는 함수
+void kStartGraphicModeTest();
 
 // Bootstrap Processor C 언어 커널 엔트리 포인트
 // 아래 함수는 C 언어 커널의 시작 부분임
@@ -32,7 +34,7 @@ void Main(void){
 	// 0설정하여 ap용으로 코드 경로 변경
 	*((BYTE*)BOOTSTRAPPROCESSOR_FLAGADDRESS) = 0;
 
-	// ÄÜ¼Ö ÃÊ±âÈ­
+	// 콘솔을 먼저 초기화 한 후 다음 작업을 수행
 	kInitializeConsole(0, 10);
 
 	// IA-32e 모드 C언어 커널 시작 메세지
@@ -119,7 +121,12 @@ void Main(void){
 
 	// 유휴 태스크를 생성하고, 콘솔 쉘을 시작
 	kCreateTask(TASK_FLAGS_LOWEST | TASK_FLAGS_THREAD | TASK_FLAGS_SYSTEM | TASK_FLAGS_IDLE, 0, 0, (QWORD)kIdleTask, kGetAPICID());
-	kStartConsoleShell();
+
+	// 그래픽 모드가 아니면 콘솔 셸 실행
+	if( *(BYTE*) VBE_STARTGRAPHICMODEFLAGADDRESS == 0)
+		kStartConsoleShell();
+	else
+		kStartGraphicModeTest();
 }
 
 // AP 용 Main
@@ -156,4 +163,45 @@ void MainForApplicationProcessor(void){
 	
 	// 유휴 태스크 실행
 	kIdleTask();
+}
+
+// 그래픽 모드를 테스트하는 함수
+void kStartGraphicModeTest(){
+	VBEMODEINFOBLOCK* pstVBEMode;
+	WORD* pwFrameBufferAddress;
+	WORD wColor = 0;
+	int iBandHeight;
+	int i,j;
+
+	// 키 입력 대기
+	kGetCh();
+
+	// VBE 모드 정보 블록을 반화하고 선형 프레임 버퍼의 시작 어드레스를 저장
+	pstVBEMode = kGetVBEModeInfoBlock();
+	pwFrameBufferAddress = (WORD*)( (QWORD)pstVBEMode->dwPhysicalBasePointer);
+
+	// 화면을 세로로 32 등분하여 색을 칠함
+	iBandHeight = pstVBEMode->wYResolution / 32;
+
+	while(1){
+		for(j=0; j<pstVBEMode->wYResolution; j++){
+
+			// X 축의 크기 만큼 프레임 버퍼에 색을 저장
+			for(i=0; i<pstVBEMode->wXResolution; i++){
+				// 비디오 메모리 오프셋을 계산하는 부분
+				// Y축의 현재 위치(j)에 X축의 크기를 곱하면 Y축의 어드레스를
+				// 계산할 수 있고, 여기에 X 축의 오프셋(i)을 더하면 현재 픽셀을 출력할 어드레스를 구할 수 있음
+				pwFrameBufferAddress[(j * pstVBEMode->wXResolution)+i] = wColor;
+
+			}
+
+			// Y 위치가 32 등분한 단위로 나누어 떨어지면 색을 바꿈
+			if((j % iBandHeight) == 0)
+				wColor = kRandom() % 0xffff;
+		}
+		kGetCh();
+
+	}
+
+          
 }

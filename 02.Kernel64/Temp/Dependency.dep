@@ -13,7 +13,7 @@ ConsoleShell.o: ../Source/ConsoleShell.c ../Source/ConsoleShell.h \
  ../Source/FileSystem.h ../Source/CacheManager.h ../Source/SerialPort.h \
  ../Source/Queue.h ../Source/MPConfigurationTable.h ../Source/LocalAPIC.h \
  ../Source/MultiProcessor.h ../Source/IOAPIC.h \
- ../Source/InterruptHandler.h
+ ../Source/InterruptHandler.h ../Source/VBE.h
 Descriptor.o: ../Source/Descriptor.c ../Source/Descriptor.h \
  ../Source/Types.h ../Source/Utility.h ../Source/ISR.h \
  ../Source/MultiProcessor.h
@@ -41,7 +41,7 @@ Kernel64EntryPoint.o: ../Source/Kernel64EntryPoint.c ../Source/Types.h \
  ../Source/PIC.h ../Source/Console.h ../Source/ConsoleShell.h \
  ../Source/PIT.h ../Source/Utility.h ../Source/DynamicMemory.h \
  ../Source/HardDisk.h ../Source/FileSystem.h ../Source/CacheManager.h \
- ../Source/MultiProcessor.h
+ ../Source/MultiProcessor.h ../Source/VBE.h
 Keyboard.o: ../Source/Keyboard.c ../Source/Types.h \
  ../Source/AssemblyUtility.h ../Source/Task.h ../Source/List.h \
  ../Source/Synchronization.h ../Source/Keyboard.h ../Source/Queue.h \
@@ -80,3 +80,4 @@ Task.o: ../Source/Task.c ../Source/Task.h ../Source/Types.h \
 Utility.o: ../Source/Utility.c ../Source/Utility.h ../Source/Types.h \
  ../Source/AssemblyUtility.h ../Source/Task.h ../Source/List.h \
  ../Source/Synchronization.h
+VBE.o: ../Source/VBE.c ../Source/VBE.h ../Source/Types.h
