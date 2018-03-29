@@ -6,7 +6,7 @@
 
 
 //  색을 저장하는데 사용할 자료구조, 16비트 색을 사용하므로 WORD로 정의
-#define WORD COLOR;
+typedef WORD COLOR;
 
 
 // 0~255 범위의 R, G, B를 ㅂ16비트 색 형식으로 변환하는 매크로

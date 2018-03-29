@@ -1,3 +1,5 @@
+2DGraphics.o: ../Source/2DGraphics.c ../Source/2DGraphics.h \
+ ../Source/Types.h ../Source/VBE.h
 CacheManager.o: ../Source/CacheManager.c ../Source/CacheManager.h \
  ../Source/Types.h ../Source/FileSystem.h ../Source/Synchronization.h \
  ../Source/HardDisk.h ../Source/Task.h ../Source/List.h \

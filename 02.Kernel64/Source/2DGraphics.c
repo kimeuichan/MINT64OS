@@ -1,14 +1,15 @@
 #include "2DGraphics.h"
+#include "VBE.h"
 
 inline void kDrawPixel(int iX, int iY, COLOR stColor){
 	VBEMODEINFOBLOCK* pstModeInfo;
 
 	pstModeInfo = kGetVBEModeInfoBlock();
 
-	*((COLOR*)(QWORD)pstModeInfo->dwPhysicalBasePointer) + pstModeInfo->wXResolution * iY + iX) = stColor;
+	*(((COLOR*)(QWORD)pstModeInfo->dwPhysicalBasePointer) + pstModeInfo->wXResolution * iY + iX) = stColor;
 }
 
-void kDrawLine(int iX1, iY1, int iX2, int iY2, COLOR stColor){
+void kDrawLine(int iX1, int iY1, int iX2, int iY2, COLOR stColor){
 	int iDeltaX, iDeltaY;
 	int iError = 0;
 	int iDeltaError;
@@ -44,7 +45,7 @@ void kDrawLine(int iX1, iY1, int iX2, int iY2, COLOR stColor){
 		iY = iY1;
 		for(iX=iX1; iX1 != iX2; iX += iStepX){
 			// 점 그리기
-			kDrawPixel(iX, iY, stColor)
+			kDrawPixel(iX, iY, stColor);
 
 			// 오류 누적
 			iError += iDeltaError;
@@ -69,7 +70,7 @@ void kDrawLine(int iX1, iY1, int iX2, int iY2, COLOR stColor){
 		iX = iX1;
 		for(iY=iY1; iY!=iY2; iY+=iStepY){
 			// 점 그리기
-			kDrawPixel(iX, iY, stColor)
+			kDrawPixel(iX, iY, stColor);
 
 			// 오류 누적
 			iError += iDeltaError;
